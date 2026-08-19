@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+web-build/
+builds/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+google-play-service-account.json
+.DS_Store
+npm-debug.*
+
+# dočasný výstup smoke testu webového buildu
+web-smoke/

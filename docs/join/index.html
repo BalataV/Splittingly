@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Group invite — Splittingly</title>
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml" />
+  <style>
+    body { background: #FFE500; color: #101010; font-family: system-ui, sans-serif;
+           display: flex; align-items: center; justify-content: center; min-height: 100vh;
+           margin: 0; font-weight: 700; }
+    @media (prefers-color-scheme: dark) { body { background: #101010; color: #FAF7F0; } }
+  </style>
+</head>
+<body>
+  <p>Opening the invite…</p>
+  <script>
+    /*
+     * Tuhle adresu (`/join/?g=KÓD`) sdílí appka. Kdo má Splittingly
+     * nainstalované, tomu ji systém otevře rovnou v appce a sem se vůbec
+     * nedostane (Android App Links / iOS Universal Links). Sem tedy dojdou
+     * jen lidé bez appky — ty pošleme na landing page s kartou pozvánky.
+     *
+     * Vlastní cesta `/join/` je NUTNÁ: App Links se filtrují podle cesty,
+     * a kdyby pozvánka byla na kořeni, appka by spolkla i
+     * `/app/?token_hash=…` (potvrzení e-mailu, obnova hesla) — a ty musí
+     * zůstat v prohlížeči.
+     */
+    var code = (new URLSearchParams(window.location.search).get('g') || '')
+      .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    window.location.replace(code ? '/?g=' + code : '/');
+  </script>
+  <noscript><p>Continue to <a href="/">splittingly.com</a>.</p></noscript>
+</body>
+</html>

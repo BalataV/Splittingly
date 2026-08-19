@@ -1,0 +1,101 @@
+/* Sdílený styl podstránek Splittingly — tokeny „Hard Split".
+   Hlavní stránka (index.html) má styl inline, aby se načetla na jeden dotaz. */
+
+:root {
+  --bg: #FAF7F0;
+  --surface: #FFFFFF;
+  --sunken: #EFEDE4;
+  --ink: #101010;
+  --muted: #5A5A5A;
+  --primary: #1F49FF;
+  --accent: #FFE500;
+  --positive: #00A34A;
+  --negative: #FF2D16;
+  --divider: #E0DCD0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101010;
+    --surface: #1C1C1C;
+    --sunken: #171717;
+    --ink: #FAF7F0;
+    --muted: #9A9A9A;
+    --primary: #5B7BFF;
+    --positive: #2BE07A;
+    --negative: #FF5C45;
+    --divider: #3A3A3A;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  padding: 40px 18px 64px;
+}
+h1, h2, h3 {
+  font-family: 'Archivo Black', system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+h1 { font-size: clamp(30px, 7vw, 44px); margin-bottom: 8px; }
+h2 { font-size: 22px; margin: 32px 0 10px; }
+h3 { font-size: 17px; margin: 20px 0 6px; }
+p, li { margin-bottom: 12px; }
+ul, ol { padding-left: 22px; }
+a { color: var(--primary); }
+strong { font-weight: 700; }
+
+.wrap { width: 100%; max-width: 720px; margin: 0 auto; }
+
+.card {
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+.card.accent { background: var(--accent); color: #101010; }
+.card.accent a { color: #101010; }
+.card.flat { box-shadow: none; }
+
+.label {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+
+.btn {
+  display: inline-block; text-align: center; text-decoration: none;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+  padding: 15px 22px; min-height: 52px;
+  border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+  background: var(--surface); color: var(--ink); cursor: pointer;
+  transition: transform .09s linear, box-shadow .09s linear;
+}
+.btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-negative { background: var(--negative); color: #fff; }
+.btn-block { display: block; width: 100%; margin-bottom: 12px; }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+label { display: block; margin: 16px 0 6px; }
+input {
+  width: 100%; font-family: inherit; font-size: 17px; color: var(--ink);
+  background: var(--surface); border: 3px solid var(--ink); padding: 13px 14px;
+}
+input:focus { outline: 2px solid var(--primary); outline-offset: 2px; border-color: var(--primary); }
+
+.err { color: var(--negative); font-weight: 700; font-size: 14px; margin-top: 12px; }
+.ok { color: var(--positive); font-weight: 700; font-size: 14px; margin-top: 12px; }
+
+.rule { height: 3px; background: var(--ink); margin: 24px 0; }
+.foot { text-align: center; font-size: 14px; margin-top: 32px; }
+.foot a { color: var(--ink); font-weight: 700; }
+.back { display: inline-block; font-weight: 700; font-size: 14px; margin-bottom: 20px; }

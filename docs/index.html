@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Splittingly — one bill, no arguments</title>
+  <meta name="description" content="Splittingly splits shared expenses in a group — flatmates, friends on holiday, family. Ten debts collapse into one payment. Free, ad-supported, 50 languages." />
+
+  <meta property="og:title" content="Splittingly — ten debts. One payment." />
+  <meta property="og:description" content="Anyone logs what they paid. Splittingly works out who owes whom and minimises the number of transfers." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://splittingly.com/" />
+  <meta property="og:image" content="https://splittingly.com/img/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* Tokeny „Hard Split" — shodné s appkou (src/theme.ts). Nikdy je nerozjížděj. */
+    :root {
+      --bg: #FAF7F0;
+      --surface: #FFFFFF;
+      --sunken: #EFEDE4;
+      --ink: #101010;
+      --muted: #5A5A5A;
+      --primary: #1F49FF;
+      --accent: #FFE500;
+      --positive: #00A34A;
+      --negative: #FF2D16;
+      --divider: #E0DCD0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101010;
+        --surface: #1C1C1C;
+        --sunken: #171717;
+        --ink: #FAF7F0;
+        --muted: #9A9A9A;
+        --primary: #5B7BFF;
+        --positive: #2BE07A;
+        --negative: #FF5C45;
+        --divider: #3A3A3A;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    h1, h2, h3, .display, .amount {
+      font-family: 'Archivo Black', system-ui, sans-serif;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      line-height: 1.0;
+    }
+    .amount { font-variant-numeric: tabular-nums; text-transform: none; }
+    img, svg { max-width: 100%; display: block; }
+    a { color: var(--primary); }
+
+    .wrap { width: 100%; max-width: 1020px; margin: 0 auto; padding: 0 18px; }
+
+    /* Karta: 3px okraj + tvrdý posunutý stín, nulový poloměr. Žádné výjimky. */
+    .card {
+      background: var(--surface);
+      border: 3px solid var(--ink);
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 24px;
+    }
+    .card.flat { box-shadow: none; }
+    .card.accent { background: var(--accent); color: #101010; }
+    .card.accent a { color: #101010; }
+    .card.ink { background: var(--ink); color: var(--bg); }
+
+    .btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 15px 22px;
+      border: 3px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--ink);
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--ink);
+      transition: transform .09s linear, box-shadow .09s linear;
+      min-height: 52px;
+    }
+    /* Podpisová interakce: stín spadne, prvek se posune. 90 ms, bez křivek. */
+    .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-accent { background: var(--accent); color: #101010; }
+    .btn-block { display: block; width: 100%; margin-bottom: 12px; }
+
+    .label {
+      font-size: 11px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    header.top {
+      border-bottom: 3px solid var(--ink);
+      background: var(--bg);
+      position: sticky; top: 0; z-index: 20;
+    }
+    header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; padding-bottom: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .brand .name { font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: -0.02em; }
+    nav a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 14px; margin-left: 18px; }
+
+    section { padding: 56px 0; border-bottom: 3px solid var(--ink); }
+    section:last-of-type { border-bottom: none; }
+    .hero { background: var(--accent); color: #101010; }
+    .hero h1 { font-size: clamp(38px, 9vw, 74px); }
+    .hero p { font-size: 19px; max-width: 620px; margin-top: 20px; }
+    .hero .stores { margin-top: 28px; }
+
+    .grid { display: grid; gap: 18px; }
+    @media (min-width: 760px) { .cols-2 { grid-template-columns: 1fr 1fr; } .cols-3 { grid-template-columns: repeat(3, 1fr); } }
+
+    h2 { font-size: clamp(28px, 5vw, 40px); margin-bottom: 22px; }
+    h3 { font-size: 19px; margin-bottom: 8px; }
+    p + p { margin-top: 12px; }
+    .muted { color: var(--muted); }
+
+    /* Ukázka výpočtu — žádné číslo se v ní nesmí ořezat. */
+    .row {
+      display: flex; align-items: center; gap: 12px;
+      border: 2.5px solid var(--ink); background: var(--surface);
+      padding: 11px 13px; margin-bottom: 7px;
+    }
+    .row .who { flex: 1; font-weight: 700; font-size: 14.5px; }
+    .row .amt { flex: none; font-family: 'Archivo Black', sans-serif; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .pos { color: var(--positive); }
+    .neg { color: var(--negative); }
+    .rule { height: 3px; background: var(--ink); margin: 20px 0; }
+
+    .stores { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .stores .btn { box-shadow: 4px 4px 0 #101010; border-color: #101010; }
+
+    /* Rám reklamy je v appce SDĚLENÍ. Tady ho ukazujeme jako ukázku. */
+    .adframe {
+      border: 2px dashed #5F5F5F; background: var(--sunken); color: #5F5F5F;
+      padding: 16px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    }
+
+    footer { padding: 40px 0; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+    footer a { color: var(--ink); font-weight: 700; font-size: 14px; }
+
+    .hidden { display: none !important; }
+    .invite { padding: 40px 0; }
+    .code {
+      font-family: 'Archivo Black', sans-serif; font-size: 34px; letter-spacing: .16em;
+      text-align: center; border: 3px solid var(--ink); background: var(--surface);
+      padding: 16px; margin: 18px 0;
+    }
+    ol.steps { list-style: none; counter-reset: s; }
+    ol.steps li { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+    ol.steps .num {
+      flex: none; width: 26px; height: 26px; background: var(--accent); color: #101010;
+      border: 2.5px solid var(--ink); display: grid; place-items: center;
+      font-family: 'Archivo Black', sans-serif; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ====================== POZVÁNKA (?g=KÓD) ====================== -->
+<section id="invite" class="invite hidden">
+  <div class="wrap" style="max-width: 560px">
+    <div class="card">
+      <p class="label">Someone invited you</p>
+      <h2 style="font-size: 30px; margin-top: 10px">JOIN THEIR<br />GROUP.</h2>
+      <p class="muted" style="margin-top: 12px">Open the app and enter this code, or install Splittingly first — the code keeps working.</p>
+      <div class="code" id="codeText">——————</div>
+      <a id="openApp" class="btn btn-primary btn-block" href="#">Open in the app</a>
+
+      <div class="rule"></div>
+      <ol class="steps">
+        <li><span class="num">1</span><span>Install Splittingly (free).</span></li>
+        <li><span class="num">2</span><span>Create an account or log in.</span></li>
+        <li><span class="num">3</span><span>Tap <strong>Join with a code</strong> and enter <strong id="codeInline">——————</strong>.</span></li>
+      </ol>
+      <div class="stores" style="margin-top: 18px">
+        <a class="btn" id="appleInvite" href="#" rel="noopener">Download on the App Store</a>
+        <a class="btn" id="playInvite" href="#" rel="noopener">Get it on Google Play</a>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top: 18px"><a href="/">← splittingly.com</a></p>
+  </div>
+</section>
+
+<!-- ====================== HLAVNÍ STRÁNKA ====================== -->
+<div id="home">
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="4" y="4" width="92" height="92" fill="#FFE500" stroke="#101010" stroke-width="7"/>
+        <polygon points="4,4 96,4 4,96" fill="#1F49FF"/>
+        <line x1="0" y1="62" x2="100" y2="38" stroke="#101010" stroke-width="9"/>
+      </svg>
+      <span class="name">SPLITTINGLY</span>
+    </a>
+    <nav>
+      <a href="#how">How</a>
+      <a href="#world">Languages</a>
+      <a href="#get">Get it</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="label" style="color:#101010">Split shared expenses</p>
+    <h1>ONE BILL.<br />NO<br />ARGUMENTS.</h1>
+    <p>Anyone logs what they paid and who it concerns. Splittingly works out who owes whom — and collapses ten debts into one payment.</p>
+    <div class="stores">
+      <a class="btn" id="appleHero" href="#" rel="noopener">Download on the App Store</a>
+      <a class="btn" id="playHero" href="#" rel="noopener">Get it on Google Play</a>
+    </div>
+    <p style="font-size:13px; margin-top:16px">Free. Ad-supported. One-time purchase removes the ads.</p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>TEN DEBTS.<br />ONE PAYMENT.</h2>
+    <div class="grid cols-2">
+      <div>
+        <p class="muted">Four people, six dinners, everybody paying for everybody. Splittingly nets it out and tells you the shortest way to zero.</p>
+        <div class="rule"></div>
+        <p class="label">Before · four separate debts</p>
+        <div class="row"><span class="who">Mira → Tomáš</span><span class="amt neg">€33.60</span></div>
+        <div class="row"><span class="who">Kenji → Tomáš</span><span class="amt neg">€44.60</span></div>
+        <div class="row"><span class="who">Tomáš → Aya</span><span class="amt neg">€18.00</span></div>
+        <div class="row"><span class="who">Aya → Mira</span><span class="amt neg">€18.00</span></div>
+      </div>
+      <div>
+        <div class="card accent">
+          <p class="label" style="color:#101010">After · two payments</p>
+          <div class="row" style="background:#fff"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
+          <div class="row" style="background:#fff; margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
+          <p style="margin-top:14px; font-size:14px"><strong>2 transfers settle everything.</strong> Aya paid and was owed the same amount, so she is out of it entirely — without anyone having to notice.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>WHAT IT DOES</h2>
+    <div class="grid cols-3">
+      <div class="card flat">
+        <h3>Log it in seconds</h3>
+        <p class="muted">Amount, who paid, who it concerns. A receipt photo if you want one.</p>
+      </div>
+      <div class="card flat">
+        <h3>Split any way</h3>
+        <p class="muted">Equally, by shares, or exact amounts. The remainder always goes to the payer, so nothing is lost.</p>
+      </div>
+      <div class="card flat">
+        <h3>Settle in one tap</h3>
+        <p class="muted">Splittingly records the payment. It never touches your bank account.</p>
+      </div>
+      <div class="card flat">
+        <h3>Live groups</h3>
+        <p class="muted">Invite by link or six-character code. Everyone sees the same numbers immediately.</p>
+      </div>
+      <div class="card flat">
+        <h3>Categories and stats</h3>
+        <p class="muted">Where the money went, who spent most, and a playful year in review.</p>
+      </div>
+      <div class="card flat">
+        <h3>Push when it matters</h3>
+        <p class="muted">New expense, settled debt, edited amount. Quiet hours included.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="world">
+  <div class="wrap">
+    <h2>50 LANGUAGES.<br />YOUR CURRENCY.</h2>
+    <div class="grid cols-2">
+      <div>
+        <p class="muted">Language and currency are separate settings. The app in Italian while a group counts in Thai baht is a normal state, not an edge case.</p>
+        <p class="muted">The currency decides the symbol side, the thousands separator, the decimal mark and whether there are decimals at all. Zero-decimal currencies — JPY, KRW, VND, ISK — drop the fraction everywhere, including the split maths.</p>
+        <p class="muted">Right-to-left languages mirror the whole interface. Amounts stay left-to-right inside the line, where they belong.</p>
+      </div>
+      <div class="card flat">
+        <div class="row"><span class="who">Euro</span><span class="amt">€1.234,56</span></div>
+        <div class="row"><span class="who">US Dollar</span><span class="amt">$1,234.56</span></div>
+        <div class="row"><span class="who">Swedish Krona</span><span class="amt">1 234,56 kr</span></div>
+        <div class="row"><span class="who">Japanese Yen</span><span class="amt">¥1,235</span></div>
+        <div class="row"><span class="who">Indonesian Rupiah</span><span class="amt">Rp2.500.000</span></div>
+        <div class="row" style="margin-bottom:0"><span class="who">Thai Baht</span><span class="amt">฿1,234.56</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>HONEST ABOUT ADS</h2>
+    <div class="grid cols-2">
+      <div>
+        <p class="muted">Splittingly is free and pays for itself with advertising. So we drew a hard line and put it in the design.</p>
+        <p class="muted"><strong>No ads where money is entered or confirmed.</strong> New expense, split editor, receipt capture, settle up, every success state and every sign-up screen stay commercially empty. That is not a setting; it is how the app is built.</p>
+        <p class="muted">Everywhere else, an ad is framed in a dashed grey box that appears nowhere else in the interface — so its shape alone reads as "not us".</p>
+        <p class="muted">One payment removes every ad. No subscription.</p>
+      </div>
+      <div>
+        <div class="adframe">Ad · 300 × 250</div>
+        <p class="muted" style="font-size:13px; margin-top:10px">This is exactly how an ad is framed inside the app.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="get">
+  <div class="wrap" style="text-align:center">
+    <h2>GET SPLITTINGLY</h2>
+    <p class="muted" style="max-width:520px; margin: 0 auto 24px">Free on iPhone and Android. Your first group takes about twenty seconds.</p>
+    <div class="stores" style="justify-content:center">
+      <a class="btn" id="appleFinal" href="#" rel="noopener">Download on the App Store</a>
+      <a class="btn" id="playFinal" href="#" rel="noopener">Get it on Google Play</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="muted" style="font-size:14px">© <span id="year">2026</span> Splittingly</span>
+    <span>
+      <a href="privacy.html">Privacy</a> ·
+      <a href="terms.html">Terms</a> ·
+      <a href="support.html">Support</a> ·
+      <a href="delete-account.html">Delete account</a>
+    </span>
+  </div>
+</footer>
+
+</div><!-- /#home -->
+
+<script>
+  /*
+   * Pozvánka: adresu `/?g=KÓD` sem posílá stránka /join/ (a appka ji sdílí
+   * jako `/join/?g=KÓD`). Kdo má appku nainstalovanou, tomu odkaz otevře
+   * rovnou appka (App Links / Universal Links) a sem se vůbec nedostane.
+   */
+  (function () {
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    var APPLE_URL = '';   // doplň po vydání v App Store
+    var PLAY_URL  = '';   // doplň po vydání v Google Play
+    ['appleHero','appleFinal','appleInvite'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.href = APPLE_URL || '#get'; if (APPLE_URL) el.target = '_blank'; }
+    });
+    ['playHero','playFinal','playInvite'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.href = PLAY_URL || '#get'; if (PLAY_URL) el.target = '_blank'; }
+    });
+
+    var code = (new URLSearchParams(window.location.search).get('g') || '')
+      .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+    if (code.length === 6) {
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('invite').classList.remove('hidden');
+      document.getElementById('codeText').textContent = code;
+      document.getElementById('codeInline').textContent = code;
+      document.getElementById('openApp').href = 'splittingly://join/' + code;
+    }
+  })();
+</script>
+</body>
+</html>

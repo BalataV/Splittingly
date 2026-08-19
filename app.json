@@ -1,0 +1,102 @@
+{
+  "expo": {
+    "name": "Splittingly",
+    "slug": "splittingly",
+    "scheme": "splittingly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FFE500",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.balata.splittingly",
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:splittingly.com"
+      ],
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.balata.splittingly",
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "splittingly.com",
+              "pathPrefix": "/join"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#FFE500",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "admobAndroidAppId": "",
+      "admobIosAppId": "",
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFE500",
+          "dark": {
+            "backgroundColor": "#101010"
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Splittingly needs access to your photos so you can attach a receipt to an expense.",
+          "cameraPermission": "Splittingly needs access to your camera so you can photograph a receipt.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "color": "#FFE500"
+        }
+      ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": ""
+    }
+  }
+}

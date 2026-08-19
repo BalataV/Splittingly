@@ -1,0 +1,552 @@
+// Obrazovky 22–29 — profil, jazyk, měna, vzhled, notifikace, odstranění
+// reklam, zásady ochrany údajů, smazání účtu.
+//
+// Reklama tu není nikde kromě jediného tichého řádku k Pro (obrazovka 22).
+
+import React, { useState } from 'react';
+import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
+import Screen, { SectionTitle } from '../components/Screen';
+import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule } from '../components/ui';
+import Mascot from '../components/Mascot';
+import { useApp } from '../store';
+import { t } from '../i18n';
+import { LANGUAGES, searchLanguages, language } from '../languages';
+import { CURRENCIES, FAVOURITE_CURRENCIES, currency } from '../currencies';
+import { fmt } from '../money';
+import { THEMES, THEME_ORDER, AVATAR_COLORS, SPACE, BORDER, TEXT_SCALE } from '../theme';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../config';
+import { initial } from '../logic';
+import type { ThemeName, ModeName, TextSize } from '../types';
+
+// -------------------------------------------------------------- 22 · profil
+
+export function Profile() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+  const [name, setName] = useState(state.myName);
+
+  return (
+    <Screen title={t('PROFILE')} onBack={actions.goBack}>
+      <Card offset={5}>
+        <View style={{ flexDirection: 'row', gap: SPACE.md, alignItems: 'center' }}>
+          <Avatar initial={initial(name || 'You')} color={state.avatarColor} size={64} borderWidth={BORDER.card} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 19, color: c.text }}>{name || t('You')}</Text>
+            <Text style={[ty('rowMeta'), { color: c.textMuted, fontSize: 12.5 }]}>{state.myEmail}</Text>
+          </View>
+        </View>
+      </Card>
+
+      <Field
+        label={t('DISPLAY NAME')}
+        value={name}
+        onChangeText={setName}
+        autoCapitalize="words"
+      />
+      <Text style={[ty('caption'), { color: c.textMuted }]}>
+        {t('This is what other members see in every group.')}
+      </Text>
+      {name !== state.myName && (
+        <Button label={t('Save name')} onPress={() => actions.patch({ myName: name })} />
+      )}
+
+      <Label>{t('AVATAR COLOUR')}</Label>
+      <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
+        {AVATAR_COLORS.map((col) => {
+          const selected = state.avatarColor === col;
+          return (
+            <Pressable key={col} onPress={() => actions.patch({ avatarColor: col })} accessibilityLabel={t('Avatar colour')}>
+              <View style={{ position: 'relative' }}>
+                {selected && <View style={{ position: 'absolute', top: 3, left: 3, right: -3, bottom: -3, backgroundColor: c.shadow }} />}
+                <View style={{ width: 44, height: 44, backgroundColor: col, borderWidth: BORDER.card, borderColor: c.border }} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <SectionTitle>{t('SETTINGS')}</SectionTitle>
+      <View style={{ gap: 6 }}>
+        <SettingRow label={t('Language')} value={language(state.lang).endonym} onPress={() => actions.navigate('language')} />
+        <SettingRow label={t('Currency')} value={state.currency} onPress={() => actions.navigate('currency')} />
+        <SettingRow label={t('Appearance')} value={THEMES[state.theme].label} onPress={() => actions.navigate('appearance')} />
+        <SettingRow label={t('Notifications')} onPress={() => actions.navigate('notifications')} />
+        {/* Jedna ze tří povolených cest k Pro. */}
+        <SettingRow
+          label={state.isPro ? t('Splittingly Pro') : t('Remove the ads')}
+          value={state.isPro ? t('Active') : PRO_PRICE_FALLBACK}
+          onPress={() => actions.navigate('remove_ads')}
+        />
+        <SettingRow label={t('Privacy policy')} onPress={() => actions.navigate('privacy')} />
+      </View>
+
+      <SectionTitle>{t('ACCOUNT')}</SectionTitle>
+      <View style={{ gap: 6 }}>
+        <SettingRow label={t('Change password')} onPress={() => actions.navigate('forgot')} />
+        <SettingRow label={t('Contact support')} onPress={() => Linking.openURL('mailto:' + SUPPORT_EMAIL)} />
+        <SettingRow label={t('Log out')} onPress={actions.logOut} />
+      </View>
+
+      <Rule style={{ marginTop: SPACE.lg }} />
+      <Pressable onPress={() => actions.patch({ dialog: 'delete_account' })}>
+        <View style={{ borderWidth: BORDER.card, borderColor: c.negative, padding: 14, alignItems: 'center' }}>
+          <Text style={[ty('button'), { color: c.negative }]}>{t('Delete account')}</Text>
+        </View>
+      </Pressable>
+
+      {state.dialog === 'delete_account' && <DeleteAccountDialog />}
+    </Screen>
+  );
+}
+
+function SettingRow({ label, value, onPress }: { label: string; value?: string; onPress: () => void }) {
+  const { c, ty } = useUi();
+  return (
+    <Row onPress={onPress}>
+      <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>{label}</Text>
+      {!!value && <Text style={[ty('rowMeta'), { color: c.textMuted, flexShrink: 0 }]}>{value}</Text>}
+      <Text style={{ color: c.textMuted, fontSize: 18 }}>›</Text>
+    </Row>
+  );
+}
+
+// --------------------------------------------------------------- 23 · jazyk
+
+export function LanguagePicker() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+  const [q, setQ] = useState('');
+  const list = searchLanguages(q);
+
+  return (
+    <Screen title={t('LANGUAGE')} onBack={actions.goBack}>
+      <Field value={q} onChangeText={setQ} placeholder={t('Search 50 languages')} autoCapitalize="none" />
+      <Text style={[ty('label'), { color: c.textMuted }]}>
+        {t('{n} OF {total} MATCH', { n: list.length, total: LANGUAGES.length })}
+      </Text>
+
+      <View style={{ gap: 6 }}>
+        {list.map((l) => {
+          const selected = state.lang === l.code;
+          return (
+            <Row key={l.code} onPress={() => actions.setLang(l.code)}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[ty('rowTitle'), { color: c.text }]}>{l.endonym}</Text>
+                <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
+                  {l.english}{l.rtl ? ' · RTL' : ''}
+                </Text>
+              </View>
+              {selected && (
+                <View style={{ width: 24, height: 24, backgroundColor: c.accent, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: c.onAccent, fontSize: 13 }}>✓</Text>
+                </View>
+              )}
+            </Row>
+          );
+        })}
+      </View>
+
+      <Card fill={c.accent}>
+        <Text style={[ty('caption'), { color: c.onAccent }]}>
+          {t('Language and currency are separate settings. Changing the language never changes how a group counts money.')}
+        </Text>
+      </Card>
+    </Screen>
+  );
+}
+
+// ----------------------------------------------------------------- 24 · měna
+
+export function CurrencyPicker() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+  const [q, setQ] = useState('');
+
+  const match = (code: string) => {
+    const cur = currency(code);
+    const s = q.toLowerCase();
+    return !s || cur.code.toLowerCase().includes(s) || cur.name.toLowerCase().includes(s);
+  };
+  const favourites = FAVOURITE_CURRENCIES.filter(match);
+  const rest = CURRENCIES.map((x) => x.code).filter((code) => !FAVOURITE_CURRENCIES.includes(code)).filter(match);
+
+  const CurrencyRow = ({ code, star }: { code: string; star?: boolean }) => {
+    const cur = currency(code);
+    const selected = state.currency === code;
+    return (
+      <Row onPress={() => actions.setCurrency(code)}>
+        <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 15, color: c.text, width: 44 }}>{cur.code}</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[ty('rowTitle'), { color: c.text }]}>{t(cur.name)}</Text>
+          {/* Živý vzorek formátu — hned je vidět, jak bude částka vypadat. */}
+          <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
+            {fmt(cur.decimals === 0 ? 1235 : 123456, code)}
+          </Text>
+        </View>
+        {(star || selected) && (
+          <View style={{ width: 22, height: 22, backgroundColor: c.accent, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: c.onAccent, fontSize: 11 }}>{selected ? '✓' : '★'}</Text>
+          </View>
+        )}
+      </Row>
+    );
+  };
+
+  return (
+    <Screen title={t('CURRENCY')} onBack={actions.goBack}>
+      <Field value={q} onChangeText={setQ} placeholder={t('Search currencies')} autoCapitalize="characters" />
+
+      {favourites.length > 0 && (
+        <>
+          <Label>{t('FAVOURITES')}</Label>
+          <View style={{ gap: 6 }}>{favourites.map((code) => <CurrencyRow key={code} code={code} star />)}</View>
+        </>
+      )}
+
+      <Label>{t('ALL')}</Label>
+      <View style={{ gap: 6 }}>{rest.map((code) => <CurrencyRow key={code} code={code} />)}</View>
+
+      <Card fill={c.accent}>
+        <Text style={[ty('caption'), { color: c.onAccent }]}>
+          {t('Zero-decimal currencies (JPY, KRW, VND, ISK) drop the fraction everywhere, including split maths. Symbol position, thousands separator and decimal mark all follow the currency, not the language.')}
+        </Text>
+      </Card>
+    </Screen>
+  );
+}
+
+// --------------------------------------------------------------- 25 · vzhled
+
+export function Appearance() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+
+  return (
+    <Screen title={t('APPEARANCE')} onBack={actions.goBack}>
+      <Label>{t('MODE')}</Label>
+      <Segmented<ModeName>
+        value={state.mode}
+        onChange={actions.setMode}
+        options={[
+          { key: 'light', label: t('Light') },
+          { key: 'dark', label: t('Dark') },
+          { key: 'system', label: t('System') },
+        ]}
+      />
+
+      <Label>{t('THEME')}</Label>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm }}>
+        {THEME_ORDER.map((key) => {
+          const th = THEMES[key];
+          const locked = th.pro && !state.isPro && state.rewardTheme !== key;
+          const selected = state.theme === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => (locked ? actions.navigate('remove_ads') : actions.setTheme(key as ThemeName))}
+              style={{ width: '48%' }}
+            >
+              <View style={{ position: 'relative' }}>
+                {selected && <View style={{ position: 'absolute', top: 4, left: 4, right: -4, bottom: -4, backgroundColor: c.shadow }} />}
+                <View style={{ backgroundColor: locked ? c.surfaceSunken : c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 12, gap: SPACE.sm }}>
+                  <View style={{ flexDirection: 'row', gap: 5 }}>
+                    {[th.accent, th.primary, th.secondary].map((col) => (
+                      <View key={col} style={{ width: 22, height: 22, backgroundColor: col, borderWidth: 2, borderColor: c.border }} />
+                    ))}
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={[ty('rowTitle'), { color: c.text }]}>{th.label}</Text>
+                    {th.pro && (
+                      <View style={{ backgroundColor: c.text, paddingHorizontal: 5, paddingVertical: 1 }}>
+                        <Text style={[ty('label'), { color: c.accent, fontSize: 9 }]}>PRO</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Label>{t('TEXT SIZE')}</Label>
+      <Segmented<TextSize>
+        value={state.textSize}
+        onChange={actions.setTextSize}
+        options={[
+          { key: 'small', label: t('Small') },
+          { key: 'medium', label: t('Medium') },
+          { key: 'large', label: t('Large') },
+        ]}
+      />
+
+      {/* Živý náhled na DLOUHÉM německém řetězci: tlačítko musí povyrůst,
+          ne uříznout. Tohle je test, ne dekorace. */}
+      <Card fill={c.surfaceSunken}>
+        <Label>{t('PREVIEW')}</Label>
+        <View style={{ marginTop: SPACE.sm, backgroundColor: c.primary, borderWidth: BORDER.card, borderColor: c.border, padding: 14, alignItems: 'center' }}>
+          <Text style={{
+            fontFamily: 'SpaceGrotesk_700Bold',
+            fontSize: 16 * TEXT_SCALE[state.textSize],
+            lineHeight: 21 * TEXT_SCALE[state.textSize],
+            color: c.onPrimary,
+            textAlign: 'center',
+          }}>
+            Zahlung bestätigen · €64,20
+          </Text>
+        </View>
+        <Text style={[ty('caption'), { color: c.textMuted, marginTop: SPACE.sm }]}>
+          {t('Buttons grow with the label — never truncate, never scroll sideways.')}
+        </Text>
+      </Card>
+    </Screen>
+  );
+}
+
+// ----------------------------------------------------------- 26 · notifikace
+
+export function Notifications() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+
+  const rows: { key: keyof typeof state.notif; title: string; scope: string }[] = [
+    { key: 'expense', title: t('New expense added'), scope: t('Every group you are in') },
+    { key: 'settled', title: t('Someone settled up'), scope: t('Only payments that involve you') },
+    { key: 'edited', title: t('Expense edited or deleted'), scope: t('Changes to expenses you can see') },
+    { key: 'weekly', title: t('Weekly summary'), scope: t('One message, Sunday evening') },
+  ];
+
+  return (
+    <Screen title={t('NOTIFICATIONS')} onBack={actions.goBack}>
+      <Label>{t('PUSH')}</Label>
+      <View style={{ gap: 6 }}>
+        {rows.map((r) => (
+          <Row key={String(r.key)}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[ty('rowTitle'), { color: c.text }]}>{r.title}</Text>
+              <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{r.scope}</Text>
+            </View>
+            <Toggle
+              value={state.notif[r.key] as boolean}
+              onChange={(v) => actions.setNotif(r.key, v)}
+              label={r.title}
+            />
+          </Row>
+        ))}
+      </View>
+
+      <Label>{t('FROM THE CAST')}</Label>
+      <View style={{ gap: 6 }}>
+        <Row>
+          <Mascot who="closer" size={28} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Closer')}</Text>
+            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Celebrations, big rounds')}</Text>
+          </View>
+          <Toggle value={state.notif.closer} onChange={(v) => actions.setNotif('closer', v)} label={t('The Closer')} />
+        </Row>
+        <Row>
+          <Mascot who="analyst" size={28} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Analyst')}</Text>
+            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Reminders, warnings')}</Text>
+          </View>
+          <Toggle value={state.notif.analyst} onChange={(v) => actions.setNotif('analyst', v)} label={t('The Analyst')} />
+        </Row>
+      </View>
+
+      <Row>
+        <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>
+          {t('Quiet hours')} — {String(state.notif.quietFrom).padStart(2, '0')}:00 – {String(state.notif.quietTo).padStart(2, '0')}:00
+        </Text>
+      </Row>
+
+      <Text style={[ty('caption'), { color: c.textMuted }]}>
+        {t('Both characters can be switched off entirely without losing any functional notification.')}
+      </Text>
+    </Screen>
+  );
+}
+
+// ------------------------------------------------------- 27 · odstranit reklamy
+
+export function RemoveAds() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+
+  const benefits = [
+    t('No banners, no native rows, no interstitials'),
+    t('All colour themes, including Dusk'),
+    t('CSV and PDF export per group'),
+    t('Unlimited receipt photos'),
+  ];
+
+  return (
+    <Screen
+      fill={c.text}
+      onBack={actions.goBack}
+      footer={
+        <View style={{ gap: 9 }}>
+          <Button label={t('Buy Pro — {price}', { price: PRO_PRICE_FALLBACK })} kind="accent" onPress={actions.buyPro} />
+          <Pressable onPress={actions.restorePro} style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={[ty('caption'), { color: c.textMuted, textAlign: 'center' }]}>{t('Restore a previous purchase')}</Text>
+          </Pressable>
+        </View>
+      }
+    >
+      <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 34, lineHeight: 33, color: c.bg, marginTop: SPACE.lg }}>
+        {t('REMOVE\nTHE ADS.')}
+      </Text>
+      <Text style={[ty('bodySecondary'), { color: c.isDark ? c.textMuted : '#9A9A9A' }]}>
+        {t('One payment. No subscription. Applies to every group you are in.')}
+      </Text>
+
+      <View style={{ position: 'relative', marginTop: SPACE.lg }}>
+        <View style={{ position: 'absolute', top: 6, left: 6, right: -6, bottom: -6, backgroundColor: c.bg }} />
+        <View style={{ backgroundColor: c.accent, borderWidth: BORDER.card, borderColor: c.border, padding: 16, gap: SPACE.md }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: SPACE.sm }}>
+            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 20, color: c.onAccent, flex: 1 }}>
+              {t('SPLITTINGLY PRO')}
+            </Text>
+            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 24, color: c.onAccent }}>{PRO_PRICE_FALLBACK}</Text>
+          </View>
+          <View style={{ height: BORDER.card, backgroundColor: c.onAccent }} />
+          {benefits.map((b) => (
+            <View key={b} style={{ flexDirection: 'row', gap: SPACE.sm }}>
+              <Text style={{ color: c.onAccent, fontSize: 15 }}>✓</Text>
+              <Text style={[ty('caption'), { color: c.onAccent, flex: 1 }]}>{b}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Odměněná reklama — JEDINÁ, kterou si uživatel vybere sám. */}
+      <View style={{ borderWidth: BORDER.card, borderColor: c.bg, padding: 14, gap: SPACE.sm, marginTop: SPACE.xl }}>
+        <Label color={c.bg}>{t('NOT READY?')}</Label>
+        <Text style={[ty('caption'), { color: c.isDark ? c.textMuted : '#9A9A9A' }]}>
+          {t('Watch a short video to unlock any theme for seven days. Rewarded video is the only ad you ever choose to see.')}
+        </Text>
+        <Pressable onPress={() => actions.unlockThemeByReward('dusk')}>
+          <View style={{ borderWidth: BORDER.small, borderColor: c.bg, padding: 12, alignItems: 'center', marginTop: SPACE.sm }}>
+            <Text style={[ty('button'), { color: c.bg }]}>{t('Watch and unlock a theme')}</Text>
+          </View>
+        </Pressable>
+      </View>
+
+      {state.isPro && (
+        <Text style={[ty('caption'), { color: c.accent, marginTop: SPACE.lg }]}>{t('Pro is already active on this account.')}</Text>
+      )}
+    </Screen>
+  );
+}
+
+// ------------------------------------------------------------- 28 · soukromí
+
+export function Privacy() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+
+  const summary = [
+    { bold: t('We never connect to your bank.'), body: t('There is no bank integration and no card on file. Splittingly records what people tell it.') },
+    { bold: t('Your group data stays in your groups.'), body: t('Expenses are visible to the members of that group and nobody else.') },
+    { bold: t('Ads are contextless.'), body: t('No expense text, amount, category or group name is shared with an ad network.') },
+  ];
+
+  const sections = [
+    t('What we collect'),
+    t('How we use it'),
+    t('Who else sees it'),
+    t('How long we keep it'),
+    t('Your rights and how to use them'),
+  ];
+
+  return (
+    <Screen title={t('PRIVACY')} onBack={actions.goBack}>
+      <Text style={[ty('caption'), { color: c.textMuted }]}>
+        {t('Last updated 4 June 2026 · plain-language summary first')}
+      </Text>
+
+      <Card fill={c.accent}>
+        <Label color={c.onAccent}>{t('THE SHORT VERSION')}</Label>
+        <View style={{ gap: SPACE.md, marginTop: SPACE.sm }}>
+          {summary.map((s) => (
+            <View key={s.bold} style={{ gap: 3 }}>
+              <Text style={[ty('rowTitle'), { color: c.onAccent }]}>{s.bold}</Text>
+              <Text style={[ty('caption'), { color: c.onAccent }]}>{s.body}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+
+      <View style={{ gap: 6 }}>
+        {sections.map((s, i) => (
+          <Row key={s} onPress={() => Linking.openURL(PRIVACY_URL)}>
+            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 15, color: c.text, width: 26 }}>{i + 1}</Text>
+            <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>{s}</Text>
+            <Text style={{ color: c.textMuted, fontSize: 18 }}>›</Text>
+          </Row>
+        ))}
+      </View>
+
+      <Row>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[ty('rowTitle'), { color: c.text }]}>{t('Personalised ads')}</Text>
+          <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
+            {t('Off by default. With it off you still see ads, just untargeted ones.')}
+          </Text>
+        </View>
+        <Toggle value={state.personalisedAds} onChange={actions.setPersonalisedAds} label={t('Personalised ads')} />
+      </Row>
+
+      <Button label={t('Read the full policy')} kind="plain" onPress={() => Linking.openURL(PRIVACY_URL)} />
+      <Button label={t('Terms of use')} kind="plain" offset={0} onPress={() => Linking.openURL(TERMS_URL)} />
+    </Screen>
+  );
+}
+
+// ------------------------------------------------------ 29 · smazání účtu
+
+export function DeleteAccountDialog() {
+  const { c, ty } = useUi();
+  const { state, actions } = useApp();
+  const typed = state.deleteConfirmText.trim().toUpperCase() === 'DELETE';
+
+  return (
+    <View style={{ marginTop: SPACE.lg }}>
+      <View style={{ position: 'relative' }}>
+        <View style={{ position: 'absolute', top: 7, left: 7, right: -7, bottom: -7, backgroundColor: c.shadow }} />
+        <View style={{ backgroundColor: c.surface, borderWidth: BORDER.frame, borderColor: c.border, padding: 20, gap: SPACE.md }}>
+          <View style={{ width: 44, height: 44, backgroundColor: c.negative, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#FFFFFF', fontFamily: 'ArchivoBlack_400Regular', fontSize: 24 }}>!</Text>
+          </View>
+
+          <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 24, lineHeight: 25, color: c.text }}>
+            {t('DELETE YOUR\nACCOUNT?')}
+          </Text>
+
+          <Text style={[ty('caption'), { color: c.textMuted }]}>
+            {t('This cannot be undone. Expenses you created stay in the group as "former member" so other people\'s balances remain correct.')}
+          </Text>
+
+          <View style={{ backgroundColor: c.negativeSurface, borderWidth: BORDER.small, borderColor: c.negative, padding: 11 }}>
+            <Text style={[ty('caption'), { color: c.isDark ? c.negativeTextOnSurface : c.negative }]}>
+              {t('Settle any open balance first, or the group keeps the record open.')}
+            </Text>
+          </View>
+
+          <Field
+            label={t('TYPE DELETE TO CONFIRM')}
+            value={state.deleteConfirmText}
+            onChangeText={(v) => actions.patch({ deleteConfirmText: v })}
+            autoCapitalize="characters"
+          />
+
+          <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
+            <Button label={t('Cancel')} kind="plain" offset={0} onPress={() => actions.patch({ dialog: null, deleteConfirmText: '' })} style={{ flex: 1 }} />
+            <Button label={t('Delete')} kind="negative" offset={0} disabled={!typed} onPress={actions.deleteAccount} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}

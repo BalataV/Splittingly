@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Your account — Splittingly</title>
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body { display: flex; justify-content: center; align-items: flex-start; }
+    .wrap { max-width: 460px; }
+    .card { text-align: center; }
+    .card label, .card input { text-align: left; }
+    .mark { width: 56px; height: 56px; margin: 0 auto 14px; border: 3px solid var(--ink); }
+    .mark.ok { background: var(--positive); }
+    .mark.key { background: var(--accent); }
+    .mark.bad { background: var(--negative); }
+    .stores { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+    .stores .btn { font-size: 14px; padding: 12px 16px; min-height: 44px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="card"><p class="muted" id="boot">…</p></div>
+    <p class="foot">Splittingly · <a href="https://splittingly.com">splittingly.com</a></p>
+  </div>
+
+  <script>
+    /*
+     * Tahle stránka NENÍ webová verze aplikace — Splittingly běží jen jako
+     * mobilní appka. Adresa /app/ je „Site URL" v Supabase, takže sem míří
+     * odkazy z e-mailů (potvrzení registrace, obnova hesla). Stránka umí
+     * právě tyhle dvě věci a nic jiného; kdo sem přijde bez platného odkazu,
+     * jde na web.
+     *
+     * ⚠️ VYPLŇ SB_URL a SB_KEY stejnými hodnotami jako v app.json → extra.
+     * Anon (publishable) klíč je veřejný a bezpečný; data chrání RLS.
+     */
+    var SB_URL = '';   // https://xxxx.supabase.co
+    var SB_KEY = '';   // sb_publishable_…
+    var APPSTORE_URL = '';
+    var PLAY_URL = '';
+    var LANDING = 'https://splittingly.com/';
+    var MIN_PW = 8;
+
+    var card = document.getElementById('card');
+    var params = new URLSearchParams(window.location.search);
+    var tokenHash = params.get('token_hash');
+    var type = params.get('type');
+    var hash = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    var linkError = hash.get('error_description') || hash.get('error');
+
+    // Adresu hned uklidíme, ať se jednorázový token neválí v historii prohlížeče.
+    if (tokenHash || linkError) history.replaceState(null, '', window.location.pathname);
+
+    function esc(s) {
+      return String(s).replace(/[&<>"]/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
+      });
+    }
+
+    function storesHtml() {
+      if (!APPSTORE_URL && !PLAY_URL) return '';
+      var out = '<div class="stores">';
+      if (APPSTORE_URL) out += '<a class="btn" href="' + APPSTORE_URL + '">App Store</a>';
+      if (PLAY_URL) out += '<a class="btn" href="' + PLAY_URL + '">Google Play</a>';
+      return out + '</div>';
+    }
+
+    function showDone(kind, title, text) {
+      card.innerHTML =
+        '<div class="mark ' + kind + '"></div>' +
+        '<h1 style="font-size:28px">' + esc(title) + '</h1>' +
+        '<p class="muted">' + esc(text) + '</p>' +
+        storesHtml();
+    }
+
+    function showError(detail) {
+      card.innerHTML =
+        '<div class="mark bad"></div>' +
+        '<h1 style="font-size:28px">THIS LINK<br />HAS EXPIRED</h1>' +
+        '<p class="muted">Email links are short-lived and single-use. Request a new one from the app.</p>' +
+        (detail ? '<p class="err">' + esc(detail) + '</p>' : '') +
+        '<p style="margin-top:18px"><a href="' + LANDING + '">‹ Back to splittingly.com</a></p>';
+    }
+
+    // Supabase Auth přes REST — žádná knihovna, žádné CDN, žádné ukládání session.
+    function api(path, opts) {
+      opts = opts || {};
+      var headers = { apikey: SB_KEY, 'Content-Type': 'application/json' };
+      if (opts.token) headers.Authorization = 'Bearer ' + opts.token;
+      return fetch(SB_URL + '/auth/v1' + path, {
+        method: opts.method || 'POST',
+        headers: headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      }).then(function (res) {
+        return res.text().then(function (raw) {
+          var data = {};
+          try { data = raw ? JSON.parse(raw) : {}; } catch (e) { /* prázdná odpověď je v pořádku */ }
+          if (!res.ok) throw new Error(data.msg || data.error_description || data.message || ('HTTP ' + res.status));
+          return data;
+        });
+      });
+    }
+
+    function renderRecoveryForm(accessToken) {
+      card.innerHTML =
+        '<div class="mark key"></div>' +
+        '<h1 style="font-size:28px">SET A NEW<br />PASSWORD</h1>' +
+        '<p class="muted">At least ' + MIN_PW + ' characters. Then sign in with it in the app.</p>' +
+        '<label for="pw">New password</label>' +
+        '<input id="pw" type="password" autocomplete="new-password" />' +
+        '<label for="pw2">Repeat password</label>' +
+        '<input id="pw2" type="password" autocomplete="new-password" />' +
+        '<button class="btn btn-primary btn-block" id="save" style="margin-top:18px">Save password</button>' +
+        '<p class="err" id="msg" hidden></p>';
+
+      var pw = document.getElementById('pw');
+      var pw2 = document.getElementById('pw2');
+      var btn = document.getElementById('save');
+      var msg = document.getElementById('msg');
+
+      function fail(text) {
+        msg.textContent = text;
+        msg.hidden = false;
+        btn.disabled = false;
+        btn.textContent = 'Save password';
+      }
+
+      function submit() {
+        msg.hidden = true;
+        if (pw.value.length < MIN_PW) return fail('Password must be at least ' + MIN_PW + ' characters.');
+        if (pw.value !== pw2.value) return fail('The two passwords do not match.');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        api('/user', { method: 'PUT', token: accessToken, body: { password: pw.value } })
+          .then(function () {
+            // Session, kterou jsme si kvůli změně hesla vyrobili, rovnou zahodíme.
+            return api('/logout', { token: accessToken }).catch(function () {});
+          })
+          .then(function () {
+            showDone('ok', 'PASSWORD CHANGED', 'Open Splittingly and sign in with your new password.');
+          })
+          .catch(function (e) { fail(e.message); });
+      }
+
+      btn.addEventListener('click', submit);
+      pw2.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+      pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') pw2.focus(); });
+      pw.focus();
+    }
+
+    (function main() {
+      if (!SB_URL || !SB_KEY) {
+        card.innerHTML = '<p class="err">This page is not configured yet — fill in SB_URL and SB_KEY.</p>';
+        return;
+      }
+      if (linkError) return showError(linkError);
+
+      // Bez platného odkazu tu není co dělat — appka je jen pro mobil.
+      if (!tokenHash || (type !== 'signup' && type !== 'recovery' && type !== 'email')) {
+        return window.location.replace(LANDING);
+      }
+
+      card.innerHTML = '<p class="muted">Checking your link…</p>';
+
+      api('/verify', { body: { type: type, token_hash: tokenHash } })
+        .then(function (data) {
+          if (type !== 'recovery') {
+            // Potvrzení e-mailu session nepotřebuje — rovnou ji zneplatníme.
+            if (data.access_token) api('/logout', { token: data.access_token }).catch(function () {});
+            return showDone('ok', 'EMAIL CONFIRMED', 'Your account is live. Open Splittingly and sign in.');
+          }
+          if (!data.access_token) throw new Error('Invalid link.');
+          renderRecoveryForm(data.access_token);
+        })
+        .catch(function (e) { showError(e.message); });
+    })();
+  </script>
+</body>
+</html>
