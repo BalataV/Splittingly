@@ -29,6 +29,11 @@ Návrhový směr **„Hard Split"** (neo-brutalismus) podle
 - `src/logic.ts` — bilance (`netFor`) a minimalizace převodů (`transfersFor`).
 - `src/ads.ts` — ⭐ kde reklama smí být a kde ne. Ta pravidla jsou návrh, ne
   obchodní vsuvka; neobcházej je.
+- `src/entitlements.ts` — ⭐ co umí free a co odemyká Pro. Jediné místo, kde se
+  to rozhoduje; obrazovky se sem ptají. **Princip: omezuj jen to, co se dotkne
+  plátce, nikdy to, co se dotkne ostatních členů skupiny.** Proto se nikdy
+  neomezuje počet skupin, členů, výdajů, výpočet vyrovnání ani pozvánky.
+  Pro je **jednorázový nákup, ne předplatné** — viz komentář v `config.ts`.
 - `src/quips.ts` — hlášky obou maskotů + pravidlo, kdy který mluví.
 - `src/api/` — datová vrstva nad Supabase.
 - `src/components/` — knihovna prvků, maskoti, reklamní plochy.
@@ -92,7 +97,10 @@ Grafika v `components/Mascot.tsx` je **placeholder** — viz IMPLEMENTACE.md, kr
 ## Stav (2026-08-19)
 
 - Hotovo: všechny obrazovky, peněžní matematika (otestovaná), schéma pro
-  Supabase, datová vrstva, webové stránky, ikony.
-- Chybí: klíče Supabase v `app.json`, doména splittingly.com, reklamní SDK,
-  nákup v aplikaci, skutečná grafika maskotů, ikony kategorií, ~43 překladů.
+  Supabase, datová vrstva, webové stránky, ikony, **klíče Supabase**
+  (projekt `aqikqephinmelmrbsage`), **doména splittingly.com**, Google OAuth
+  klient, model Pro (jednorázový nákup, `entitlements.ts`).
+- Chybí: reklamní SDK, skutečné IAP, publikace OAuth consent screenu
+  (je v režimu Testing → přihlásí se jen testeři), skutečná grafika maskotů,
+  ikony kategorií, ~43 překladů.
 - Postup krok za krokem: **IMPLEMENTACE.md**.

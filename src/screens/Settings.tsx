@@ -15,6 +15,7 @@ import { CURRENCIES, FAVOURITE_CURRENCIES, currency } from '../currencies';
 import { fmt } from '../money';
 import { THEMES, THEME_ORDER, AVATAR_COLORS, SPACE, BORDER, TEXT_SCALE } from '../theme';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../config';
+import { PRO_BENEFITS, canUseTheme } from '../entitlements';
 import { initial } from '../logic';
 import type { ThemeName, ModeName, TextSize } from '../types';
 
@@ -238,7 +239,7 @@ export function Appearance() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm }}>
         {THEME_ORDER.map((key) => {
           const th = THEMES[key];
-          const locked = th.pro && !state.isPro && state.rewardTheme !== key;
+          const locked = !canUseTheme(key, state.isPro, state.rewardTheme, state.rewardUntil);
           const selected = state.theme === key;
           return (
             <Pressable
@@ -374,12 +375,9 @@ export function RemoveAds() {
   const { c, ty } = useUi();
   const { state, actions } = useApp();
 
-  const benefits = [
-    t('No banners, no native rows, no interstitials'),
-    t('All colour themes, including Dusk'),
-    t('CSV and PDF export per group'),
-    t('Unlimited receipt photos'),
-  ];
+  // Seznam výhod žije v entitlements.ts, ať se nerozejde s tím, co appka
+  // opravdu odemyká.
+  const benefits = PRO_BENEFITS.map((b) => t(b));
 
   return (
     <Screen

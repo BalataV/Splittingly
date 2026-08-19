@@ -22,6 +22,7 @@ import { parseAmount, splitEqual, splitShares, remainderOf, fmt, toInputText } f
 import { currency, decimalsOf } from '../currencies';
 import { CATEGORIES, category } from '../categories';
 import { initial, ME } from '../logic';
+import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from '../entitlements';
 import { SPACE, BORDER } from '../theme';
 import type { SplitType } from '../types';
 
@@ -213,9 +214,18 @@ export default function AddExpense() {
         </View>
       )}
 
-      <Pressable onPress={() => actions.navigate('receipt')}>
-        <View style={{ borderWidth: BORDER.card, borderColor: c.border, borderStyle: 'dashed', padding: 14, alignItems: 'center' }}>
+      {/* Účtenka se ve free verzi NEVYPÍNÁ, jen se omezuje počet — je to
+          důkaz, ne bonus. Limit se říká dopředu, ne až po zmáčknutí. */}
+      <Pressable onPress={() => actions.navigate(canAddReceipt(state.isPro, d.receipts.length) ? 'receipt' : 'remove_ads')}>
+        <View style={{ borderWidth: BORDER.card, borderColor: c.border, borderStyle: 'dashed', padding: 14, alignItems: 'center', gap: 4 }}>
           <Text style={[ty('rowTitle'), { color: c.text }]}>📷 {t('Attach receipt')}</Text>
+          {!state.isPro && (
+            <Text style={[ty('rowMeta'), { color: c.textMuted, textAlign: 'center' }]}>
+              {d.receipts.length >= FREE_RECEIPTS_PER_EXPENSE
+                ? t('Pro removes the limit')
+                : t('{n} of {max} used', { n: d.receipts.length, max: FREE_RECEIPTS_PER_EXPENSE })}
+            </Text>
+          )}
         </View>
       </Pressable>
 

@@ -32,5 +32,14 @@ export const APP_STORE_URL = '';
 export const PLAY_STORE_URL = '';
 
 // Jednorázový nákup „bez reklam".
+//
+// ZÁMĚRNĚ NENÍ PŘEDPLATNÉ. Splittingly se používá nárazově (dovolená, pár
+// měsíců spolubydlení, pak pauza) — měsíční platba za takovou appku se ruší
+// a stahuje hodnocení dolů. „One payment. No subscription." je navíc jeden
+// z mála argumentů, kterým se produkt odliší; je natvrdo na obrazovce 27
+// i na webu. Než to změníš, přepiš obojí.
+//
+// Skutečnou cenu vždycky čti z obchodu (StoreKit / Play Billing) — tahle
+// konstanta je jen záloha, než se ceník načte, a pro měny se to jinak rozjede.
 export const PRO_PRODUCT_ID = 'splittingly_pro';
-export const PRO_PRICE_FALLBACK = '$1.99';
+export const PRO_PRICE_FALLBACK = '$4.99';

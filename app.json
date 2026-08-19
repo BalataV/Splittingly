@@ -52,8 +52,8 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "supabaseUrl": "",
-      "supabaseAnonKey": "",
+      "supabaseUrl": "https://aqikqephinmelmrbsage.supabase.co",
+      "supabaseAnonKey": "sb_publishable_jcFrlwXXrQjryxjT4fUFUA_NRheYFST",
       "admobAndroidAppId": "",
       "admobIosAppId": "",
       "eas": {

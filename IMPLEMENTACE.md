@@ -19,14 +19,70 @@ kalendářně 2–4 týdny, protože se čeká na schválení a Google vyžaduje
 | Peněžní matematika (minor units, dělení, měny bez desetinných míst) | **hotovo a otestované** (`npm run check:money`) |
 | Databázové schéma pro Supabase | **hotovo** — `supabase/schema.sql` |
 | Webové stránky | **hotovo** — složka `docs/` |
-| Klíče Supabase v `app.json` | **prázdné — krok 3** |
-| Doména splittingly.com | **nemáš — krok 2** |
+| Klíče Supabase v `app.json` | **hotovo** — projekt `aqikqephinmelmrbsage`, ověřeno že RLS drží |
+| Doména splittingly.com | **koupená** — zbývá nasměrovat DNS (krok 5d) |
 | Reklamní SDK | **není — krok 12** (potřebuje vývojový build, ne Expo Go) |
 | Nákup v aplikaci (Pro) | **není — krok 13** |
 | Překlady mimo en/de/ru/fi/ar/th/ja/cs | **nejsou — krok 16** |
 
 > **Bez klíčů Supabase appka běží v LOKÁLNÍM režimu** — data jen v telefonu,
 > nic se nesdílí. Můžeš si ji tak hned proklikat. Nic se tím nerozbije.
+
+---
+
+---
+
+## Stav k 19. 8. 2026 (ověřeno, ne odhadnuto)
+
+Odškrtnuté položky jsem ověřil zvenčí — dotazem na živý web, na Supabase API
+nebo spuštěním kontrol. Neodškrtnuté buď ověřit nejdou, nebo selhaly.
+
+### ✅ Hotovo a ověřeno
+
+- [x] **Krok 1** — appka běží, `npm run typecheck` i `npm run check:money` procházejí
+- [x] **Krok 2** — doména `splittingly.com` koupená, DNS míří na GitHub Pages
+      (ověřeno přes Google i Cloudflare resolver, všechny čtyři A záznamy)
+- [x] **Krok 3a** — schéma nahrané: všech 8 tabulek odpovídá, RLS drží
+      (nepřihlášený dotaz vrací prázdno), všech 5 RPC funguje
+      (`group_preview`, `join_group_by_code`, `join_group_choose`,
+      `group_push_tokens`, `delete_my_account`)
+- [x] **Krok 3b** — klíče v `app.json` i v `docs/app/index.html`
+- [x] **Krok 3c** — bucket `receipts` existuje
+- [x] **Krok 4b** — Site URL a všechny tři Redirect URLs nastavené
+- [x] **Krok 5a** — právní údaje doplněné (Vojtěch Balata + adresa, rozhodné právo ČR)
+- [x] **Krok 5b–5e** — repo `BalataV/Splittingly`, Pages servíruje `/docs`,
+      doména běží přes HTTPS, HTTP se přesměrovává na HTTPS.
+      Všech 10 stránek vrací 200 včetně obou `.well-known` souborů
+- [x] **Krok 13 (rozhodnutí)** — model Pro: jednorázový nákup, `src/entitlements.ts`
+
+### ⚠️ Nalezené problémy — vyřeš dřív než cokoli dalšího
+
+- [ ] **E-mail provider je v Supabase VYPNUTÝ.** Registrace vrací
+      `email_provider_disabled`. Nikdo se momentálně nepřihlásí ani nezaregistruje.
+      → *Authentication → Providers → **Email** → zapnout.*
+      Pozor, tohle je jiný přepínač než „Confirm email" (ten je správně zapnutý).
+- [ ] **Web servíruje starou verzi.** V repu chybí 15 změn, takže na živém
+      `privacy.html` pořád stojí `[FULL LEGAL NAME]` a `/app/` nemá klíče
+      Supabase — tedy **obnova hesla a potvrzení e-mailu zatím nefungují**.
+      → `git add -A && git commit -m "…" && git push`
+- [ ] **Google provider v Supabase je vypnutý.** OAuth klient v Google Cloudu
+      existuje, ale Client ID / secret ještě nejsou vložené v Supabase.
+      → *Authentication → Providers → Google → vložit → Save.*
+      Nezapomeň secret předtím zresetovat.
+
+### ⬜ Zbývá (v tomhle pořadí)
+
+- [ ] **Krok 4d** — Apple Sign In (povinné, když nabízíš Google)
+- [ ] **Krok 6** — `eas build:configure`; `extra.eas.projectId` a `updates.url`
+      jsou zatím prázdné
+- [ ] **Krok 7** — otisky SHA-256 do `docs/.well-known/assetlinks.json`
+      (teď tam stojí `PASTE_…_HERE`, takže App Links neověří) a Team ID
+      do `apple-app-site-association` (teď `TEAMID`)
+- [ ] **Krok 9–11** — materiály do obchodů, dotazníky, produkční build
+- [ ] **Krok 12** — reklamní SDK (až po vývojovém buildu)
+- [ ] **Krok 13** — produkt `splittingly_pro` v obou obchodech + napojení IAP
+- [ ] **Krok 15** — skutečná grafika maskotů, ikonová sada kategorií
+- [ ] **Krok 16** — zbývajících ~43 překladů
 
 ---
 
@@ -120,7 +176,13 @@ ale před vydáním do obchodů to chceš mít hotové.
 > s hláškou, že tabulka už v publikaci je, ten blok přeskoč a zbytek pusť znovu.
 > Nic jiného v souboru na tom nezávisí.
 
-### 3b · Zkopíruj klíče do appky
+### 3b · Zkopíruj klíče do appky — ✅ HOTOVO
+
+Doplněno: projekt `aqikqephinmelmrbsage`, publishable klíč v `app.json`
+i v `docs/app/index.html`. Ověřeno, že REST odpovídá a **RLS drží**
+(nepřihlášený dotaz vrací prázdno).
+
+<details><summary>Postup, kdyby se klíče měnily</summary>
 
 1. **Project Settings** (ozubené kolo) → **API**.
 2. Vezmi **Project URL** a **anon / publishable** klíč.
@@ -138,6 +200,12 @@ ale před vydáním do obchodů to chceš mít hotové.
 
 4. Stejné dvě hodnoty vlož i do `docs/app/index.html` (proměnné `SB_URL`, `SB_KEY`).
 
+</details>
+
+> 🔐 **Secret klíče nikam nedávej.** `service_role` JWT ani `sb_secret_…`
+> nepatří do appky, na web, do gitu ani do chatu — obcházejí RLS a kdo je má,
+> vidí data všech skupin. Když se někde objeví, rotuj je v Supabase.
+
 ### 3c · Úložiště fotek
 
 **Storage** → **New bucket** → název `receipts` → zaškrtni **Public bucket** → Save.
@@ -152,12 +220,20 @@ V Supabase → **Table Editor** → `expenses` musí ten výdaj být vidět.
 
 ## Krok 4 · Přihlášení (e-mail, Google, Apple)
 
+> **Přes `gcloud` / Cloud Shell to nejde.** Nastavení Supabase Auth žije
+> v Supabase, ne v Google Cloudu. A OAuth client typu **Web application**
+> nelze z CLI vytvořit vůbec — `gcloud alpha iap oauth-clients` je výhradně
+> pro Identity-Aware Proxy a vyrábí jiný druh klienta, který Supabase nevezme.
+> Obojí je klikací. Přes Cloud Shell má smysl jen založit projekt (viz 4c).
+
 ### 4a · E-mail
 
-**Authentication → Providers → Email** je zapnutý ve výchozím stavu.
+**Authentication → Providers → Email** je zapnutý — ověřeno.
 
-Pro rychlé testování dočasně vypni **Confirm email**
-(*Authentication → Sign In / Up*), ať nemusíš potvrzovat každou registraci.
+**Confirm email je právě teď ZAPNUTÉ** (`mailer_autoconfirm: false`), takže
+každou testovací registraci musíš potvrdit z e-mailu. Než bude web na
+doméně živý, ten odkaz nemá kam vést — pro testování ho dočasně vypni:
+*Authentication → Sign In / Up → Email → Confirm email* → **off**.
 **Před vydáním zase zapni.**
 
 ### 4b · Adresy pro přesměrování
@@ -177,10 +253,19 @@ Pro rychlé testování dočasně vypni **Confirm email**
 
 ### 4c · Google
 
-1. **Google Cloud Console** → nový projekt → **APIs & Services → Credentials**.
+> ⚠️ **Založ NOVÝ projekt, nepoužívej `babisovnik`.** OAuth consent screen je
+> per-projekt a jeho název se ukazuje uživatelům v přihlašovacím okně —
+> lidem přihlašujícím se do Splittingly by vyskočilo „babisovnik".
+>
+> Tenhle jeden krok z Cloud Shellu udělat můžeš:
+> ```bash
+> gcloud projects create splittingly-app --name="Splittingly"
+> ```
+
+1. **Google Cloud Console** → přepni na projekt **Splittingly** → **APIs & Services → Credentials**.
 2. **Create Credentials → OAuth client ID → Web application**.
-3. Do **Authorized redirect URIs** dej adresu ze Supabase:
-   `https://<tvůj-ref>.supabase.co/auth/v1/callback`
+3. Do **Authorized redirect URIs** dej přesně tuhle adresu:
+   `https://aqikqephinmelmrbsage.supabase.co/auth/v1/callback`
 4. **Client ID** a **Client secret** vlož v Supabase do
    **Authentication → Providers → Google** → zapni → Save.
 
@@ -249,8 +334,24 @@ U registrátora nastav DNS:
 | A | `@` | `185.199.111.153` |
 | CNAME | `www` | `balatav.github.io` |
 
-Pak v **Settings → Pages → Custom domain** zadej `splittingly.com`
-a zaškrtni **Enforce HTTPS** (objeví se do ~hodiny).
+**Přidej všechny čtyři A záznamy** se jménem `@` — GitHub je používá pro
+rozložení zátěže a fungují jako záloha jeden druhého. TTL 3600 je v pořádku.
+
+Volitelně i IPv6 (AAAA, jméno `@`), ať se appka načte i na sítích bez IPv4:
+`2606:50c0:8000::153`, `2606:50c0:8001::153`, `2606:50c0:8002::153`, `2606:50c0:8003::153`
+
+Pak v **Settings → Pages → Custom domain** zadej `splittingly.com`.
+
+> **„Enforce HTTPS — Unavailable"** není chyba, jen pořadí. GitHub si nechá
+> vystavit certifikát od Let's Encrypt teprve ve chvíli, kdy DNS **skutečně
+> míří** na jeho servery. Dokud se A záznamy nepropíšou, checkbox je šedý.
+> Trvá to od pár minut do ~24 hodin. Až zmodrá, zaškrtni ho.
+>
+> Průběh si ověříš z terminálu:
+> ```bash
+> nslookup splittingly.com
+> ```
+> Musí vrátit ty čtyři adresy `185.199.10x.153`.
 
 ### 5e · Ověř
 
@@ -421,8 +522,26 @@ eas build -p android --profile development
 
 ## Krok 13 · Nákup v aplikaci (Splittingly Pro)
 
-1. V App Store Connect i Play Console vytvoř **jednorázový produkt**
-   s ID `splittingly_pro` (viz `src/config.ts` → `PRO_PRODUCT_ID`), cena ~1,99 $.
+**Rozhodnuto: jednorázový nákup, ne předplatné.** Důvod je v komentáři
+u `PRO_PRODUCT_ID` v `src/config.ts` — než to změníš, přečti si ho.
+
+Co Pro odemyká, je na jediném místě: **`src/entitlements.ts`**. Obrazovky se
+tam ptají, nikdy si pravidlo nedomýšlejí. Řídící princip: *omezuj jen to, co
+se dotkne plátce, nikdy to, co se dotkne ostatních členů skupiny.*
+
+| | Free | Pro |
+| --- | --- | --- |
+| Skupiny, členové, výdaje, vyrovnání, pozvánky | neomezeně | neomezeně |
+| Účtenky | 1 na výdaj | neomezeně |
+| Statistiky | aktuální měsíc | + Trip a All time |
+| Roční přehled a sdílecí kartička | ✅ | ✅ |
+| Barevná témata | 3 | 4 (včetně Dusk) |
+| Export CSV / PDF | — | ✅ |
+| Reklamy | ano | ne |
+
+1. V App Store Connect i Play Console vytvoř **jednorázový produkt** (Apple:
+   *Non-Consumable*, Google: *In-app product*) s ID `splittingly_pro`
+   (viz `src/config.ts` → `PRO_PRODUCT_ID`), cena ~4,99 $.
 2. Doinstaluj knihovnu (RevenueCat je nejjednodušší cesta pro obě platformy):
    ```bash
    npx expo install react-native-purchases

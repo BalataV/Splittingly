@@ -17,6 +17,7 @@ import { quipFor } from '../quips';
 import { inPeriod, dominantCurrency, total, byCategory, bySpender, weeklyBars } from '../stats';
 import { category } from '../categories';
 import { showRectangle } from '../ads';
+import { canUsePeriod } from '../entitlements';
 import { PRO_PRICE_FALLBACK } from '../config';
 import { initial, ME } from '../logic';
 import { SPACE, BORDER } from '../theme';
@@ -47,16 +48,21 @@ export default function Stats() {
 
   return (
     <Screen title={t('STATS')} onBack={actions.goBack}>
+      {/* Trip a All time jsou za Pro. Zamčené období se NESKRÝVÁ — uživatel
+          má vidět, co si kupuje, a ťuknutí ho pošle na nabídku, ne do zdi. */}
       <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
-        {periods.map((p) => (
-          <Chip
-            key={p.key}
-            label={p.label}
-            active={state.statsPeriod === p.key}
-            fill={state.statsPeriod === p.key ? c.text : undefined}
-            onPress={() => actions.patch({ statsPeriod: p.key })}
-          />
-        ))}
+        {periods.map((p) => {
+          const allowed = canUsePeriod(state.isPro, p.key);
+          return (
+            <Chip
+              key={p.key}
+              label={allowed ? p.label : p.label + ' · PRO'}
+              active={state.statsPeriod === p.key}
+              fill={state.statsPeriod === p.key ? c.text : (allowed ? undefined : c.surfaceSunken)}
+              onPress={() => (allowed ? actions.patch({ statsPeriod: p.key }) : actions.navigate('remove_ads'))}
+            />
+          );
+        })}
       </View>
 
       {/* celkem + týdenní graf */}

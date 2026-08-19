@@ -29,6 +29,7 @@ import { ME, transfersFor } from './logic';
 import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
+import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from './entitlements';
 import * as haptics from './haptics';
 import type {
   AppState, Actions, AppContextValue, Patch, Group, Expense, Payment,
@@ -747,6 +748,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const attachReceipt = async (from: 'camera' | 'library') => {
+    // Limit se hlídá TADY, ne na obrazovce — jinak by ho obešla jiná cesta
+    // k té samé akci (foťák, galerie, sdílení z jiné appky).
+    const st = stateRef.current;
+    if (!canAddReceipt(st.isPro, st.draft.receipts.length)) {
+      showToast(`Free includes ${FREE_RECEIPTS_PER_EXPENSE} receipt per expense. Pro removes the limit.`);
+      navigate('remove_ads');
+      return;
+    }
     try {
       const perm = from === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()

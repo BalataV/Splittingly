@@ -14,3 +14,9 @@ npm-debug.*
 
 # dočasný výstup smoke testu webového buildu
 web-smoke/
+
+# lokalni konfigurace nastroju
+.claude/
+
+# CNAME patri VYHRADNE do docs/ — v koreni by mátl (Pages cte ten ve zvolene slozce)
+/CNAME
