@@ -508,6 +508,23 @@ npx expo install react-native-google-mobile-ads
 eas build -p android --profile development
 ```
 
+> ⚠️ **Na iOS musíš přidat ATT prompt, jinak porušuješ licenční smlouvu.**
+> §3.3.3(E) Apple Developer Program License Agreement: kdo používá Advertising
+> Identifier, **musí** před zobrazením reklamy zkontrolovat *Tracking
+> Preference* uživatele a respektovat ji. AdMob ho používá.
+> ```bash
+> npx expo install expo-tracking-transparency
+> ```
+> Prompt vyvolej **před** inicializací AdMob. Když uživatel odmítne (nebo
+> nechá `personalisedAds` vypnuté, což je náš výchozí stav), předej AdMobu
+> `requestNonPersonalizedAdsOnly: true`.
+>
+> ⚠️ **Privacy manifest.** §3.3.3(B) vyžaduje, aby appka v metadatech uvedla
+> důvod použití u vyjmenovaných API, a aby každé běžně používané SDK třetí
+> strany bylo **podepsané dodavatelem** a neslo požadovaná metadata. Expo SDK 54
+> to pro vlastní moduly řeší; u `react-native-google-mobile-ads` ověř, že máš
+> verzi s `PrivacyInfo.xcprivacy`. Bez toho App Store build odmítne.
+
 1. Založ účet na <https://admob.google.com>, vytvoř appku pro Android i iOS.
 2. ID appek vlož do `app.json` → `extra.admobAndroidAppId` / `admobIosAppId`
    a přidej plugin `react-native-google-mobile-ads` podle jeho dokumentace.
@@ -570,6 +587,47 @@ se dotkne plátce, nikdy to, co se dotkne ostatních členů skupiny.*
 - [ ] Vyzkoušený tmavý i světlý režim a všechny tři velikosti písma
 - [ ] Vyzkoušená arabština (zrcadlení) a němčina (dlouhé popisky)
 - [ ] `npm run typecheck` a `npm run check:money` procházejí
+
+---
+
+## Krok 14b · Co plyne z Apple Developer Program License Agreement
+
+Prošel jsem smlouvu proti tomu, co appka dělá. Čtyři body mají dopad:
+
+**1 · Reklama a ATT** — §3.3.3(E). Viz varování v kroku 12. Tohle je smluvní
+povinnost, ne doporučení.
+
+**2 · Sign in with Apple** — §3.3.5(C). Data získaná přes Apple login **nesmí
+jít reklamním platformám ani datovým brokerům**. Náš model to splňuje
+(reklama je bezkontextová, viz `ads.ts`), ale až budeš zapojovat AdMob,
+nikdy mu nepředávej e-mail ani jméno uživatele.
+
+Praktický důsledek: uživatel si může e-mail skrýt a dostaneš adresu tvaru
+`…@privaterelay.appleid.com`. Appka s tím počítá (je to normální adresa),
+jen počítej s tím, že v profilu takovou adresu uvidí.
+
+**3 · Nákup Pro** — Attachment 2, §1.1 a §3.3.1(C). Pro odemyká funkce
+**uvnitř** appky, takže IAP je správná a jediná povolená cesta. Nikdy
+neodemykej Pro přes web ani mimo App Store — §3.3.1(C) to zakazuje.
+
+**4 · Bilance mezi uživateli — a proč jsme v pořádku.** Attachment 2 §2.1
+a §2.2 zakazují vytvářet předplacené účty, kredity nebo „Currency", tedy
+cokoli, co jde směnit či použít k pozdějšímu nákupu.
+
+Splittingly **peníze nepřevádí** — zaznamenává, že k platbě došlo mimo appku.
+Dluh ve skupině tedy není Currency: nedá se za něj nic koupit ani ho převést.
+Tím se celý produkt vyhýbá regulaci platebních služeb. **Je to zásadní
+návrhové omezení, ne detail** — jakmile by appka začala peníze skutečně
+posílat, spadne do úplně jiné kategorie (Apple Pay, licence, KYC).
+Proto ta věta na obrazovce 16 („Splittingly records the payment; it does not
+move money") není marketing, ale hranice produktu. Nemazat ji.
+
+**Bez dopadu:** fotky účtenek (§3.3.3(A) řeší skryté nahrávání — náš hledáček
+je viditelný), poloha (nepoužíváme), Apple Pay, Wallet, MDM, SiriKit.
+
+> Poznámka: tohle je porovnání smlouvy s tím, co appka dělá — **ne** rozbor,
+> co se ve smlouvě oproti minulé verzi změnilo. Na to by bylo potřeba mít obě
+> verze vedle sebe.
 
 ---
 
