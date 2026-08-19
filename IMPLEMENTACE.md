@@ -281,11 +281,24 @@ doméně živý, ten odkaz nemá kam vést — pro testování ho dočasně vypn
 
 ### 4d · Apple
 
-Povinné, pokud nabízíš Google (Apple to vyžaduje v App Store Review Guidelines 4.8).
+Povinné, pokud nabízíš Google (App Store Review Guidelines 4.8).
 
-1. V Apple Developer účtu založ **Service ID** a klíč **Sign in with Apple**.
-2. Vlož do Supabase → **Authentication → Providers → Apple**.
+> **Service ID ani klíč `.p8` NEPOTŘEBUJEŠ.** Appka používá *nativní* Sign in
+> with Apple (`expo-apple-authentication` → `signInWithIdToken`), ne webový
+> OAuth flow. Nativní cesta ověřuje identity token přímo proti bundle ID,
+> takže odpadá celý blok Service ID → Return URLs → generování JWT secretu.
+> Service ID by bylo potřeba jen pro přihlášení Applem **na webu**, a ten
+> Splittingly nemá.
+
+1. **Apple Developer → Certificates, Identifiers & Profiles → Identifiers**
+   → otevři App ID `com.balata.splittingly` → zaškrtni **Sign In with Apple**
+   → Save.
+2. **Supabase → Authentication → Providers → Apple** → zapni a do
+   **Client IDs** vlož `com.balata.splittingly` (bundle ID, nic jiného).
+   Pole *Secret Key (for OAuth)* nech **prázdné**.
 3. V `app.json` už je `"usesAppleSignIn": true`.
+4. Otestovat jde až na skutečném iPhonu ve vývojovém buildu — v Expo Go
+   ani v simulátoru Apple přihlášení nefunguje.
 
 ### 4e · Vlastní e-maily
 
