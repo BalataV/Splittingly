@@ -1,15 +1,3 @@
-<!--
-  Supabase → Authentication → Templates → "Confirm sign up"
-  Subject: Confirm your Splittingly account
-
-  DŮLEŽITÉ: appka má obrazovku se šesti políčky na kód (obrazovka 07) a volá
-  `verifyOtp`. Proto tahle šablona nese OBOJÍ — odkaz {{ .ConfirmationURL }}
-  i šestimístný kód {{ .Token }}. Kdyby v ní kód chyběl, uživatel by v appce
-  neměl co zadat a obrazovka 07 by nešla dokončit.
-
-  E-mailové klienty neumí flexbox ani CSS proměnné, takže je to tabulkový
-  layout s inline styly. Archivo Black v e-mailu není, fallback je Arial Black.
--->
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF7F0;padding:24px 12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <tr>
     <td align="center">
