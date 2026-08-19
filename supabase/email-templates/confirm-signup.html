@@ -1,0 +1,91 @@
+<!--
+  Supabase → Authentication → Templates → "Confirm sign up"
+  Subject: Confirm your Splittingly account
+
+  DŮLEŽITÉ: appka má obrazovku se šesti políčky na kód (obrazovka 07) a volá
+  `verifyOtp`. Proto tahle šablona nese OBOJÍ — odkaz {{ .ConfirmationURL }}
+  i šestimístný kód {{ .Token }}. Kdyby v ní kód chyběl, uživatel by v appce
+  neměl co zadat a obrazovka 07 by nešla dokončit.
+
+  E-mailové klienty neumí flexbox ani CSS proměnné, takže je to tabulkový
+  layout s inline styly. Archivo Black v e-mailu není, fallback je Arial Black.
+-->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF7F0;padding:24px 12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#FFFFFF;border:3px solid #101010;">
+
+        <!-- hlavička v akcentní žluté -->
+        <tr>
+          <td style="background:#FFE500;border-bottom:3px solid #101010;padding:22px 24px;">
+            <div style="font-family:'Arial Black',Arial,sans-serif;font-size:26px;line-height:26px;letter-spacing:-0.5px;color:#101010;text-transform:uppercase;">
+              SPLITTINGLY
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:28px 24px 8px 24px;">
+            <div style="font-family:'Arial Black',Arial,sans-serif;font-size:28px;line-height:29px;letter-spacing:-0.5px;color:#101010;text-transform:uppercase;">
+              CONFIRM<br />YOUR EMAIL
+            </div>
+            <p style="font-size:16px;line-height:24px;color:#5A5A5A;margin:16px 0 0 0;">
+              One step and your groups are live. Either tap the button, or type the six digits into the app.
+            </p>
+          </td>
+        </tr>
+
+        <!-- odkaz -->
+        <tr>
+          <td style="padding:20px 24px 0 24px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="center" style="background:#1F49FF;border:3px solid #101010;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:block;padding:15px 20px;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;">
+                    Confirm my email
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- kód pro obrazovku 07 -->
+        <tr>
+          <td style="padding:24px 24px 0 24px;">
+            <div style="font-size:11px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#5A5A5A;margin-bottom:8px;">
+              Or type this code in the app
+            </div>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="center" style="background:#FAF7F0;border:3px solid #101010;padding:16px;">
+                  <span style="font-family:'Arial Black',Arial,sans-serif;font-size:32px;letter-spacing:8px;color:#101010;">{{ .Token }}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 24px 28px 24px;">
+            <p style="font-size:13px;line-height:19px;color:#5A5A5A;margin:0;">
+              The link and the code both expire in 60 minutes and work once.
+              If you did not create a Splittingly account, ignore this email — nothing was set up.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="border-top:3px solid #101010;padding:16px 24px;">
+            <p style="font-size:12px;line-height:18px;color:#5A5A5A;margin:0;">
+              Splittingly · <a href="https://splittingly.com" style="color:#1F49FF;text-decoration:none;">splittingly.com</a><br />
+              Splittingly never connects to your bank account.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

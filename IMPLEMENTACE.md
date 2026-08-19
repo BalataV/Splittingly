@@ -49,6 +49,15 @@ nebo spuštěním kontrol. Neodškrtnuté buď ověřit nejdou, nebo selhaly.
 - [x] **Krok 3b** — klíče v `app.json` i v `docs/app/index.html`
 - [x] **Krok 3c** — bucket `receipts` existuje
 - [x] **Krok 4b** — Site URL a všechny tři Redirect URLs nastavené
+- [x] **Krok 4c** — Google provider v Supabase **zapnutý** (ověřeno)
+- [x] **Krok 4e** — vlastní SMTP (Zoner) zapnuté; šablony připravené
+      v `supabase/email-templates/`
+- [x] **Krok 7 (iOS část)** — Apple Team ID `5N974388GT` v
+      `apple-app-site-association` i v `eas.json`, nasazeno živě
+- [x] **Krok 8** — oba účty zaplacené z Dotačníčku. Google Play má
+      **production access** (Dotačníček je v produkci), takže
+      **14denní uzavřené testování s 12 testery odpadá** — je to požadavek
+      na účet, ne na aplikaci
 - [x] **Krok 5a** — právní údaje doplněné (Vojtěch Balata + adresa, rozhodné právo ČR)
 - [x] **Krok 5b–5e** — repo `BalataV/Splittingly`, Pages servíruje `/docs`,
       doména běží přes HTTPS, HTTP se přesměrovává na HTTPS.
@@ -61,23 +70,20 @@ nebo spuštěním kontrol. Neodškrtnuté buď ověřit nejdou, nebo selhaly.
       `email_provider_disabled`. Nikdo se momentálně nepřihlásí ani nezaregistruje.
       → *Authentication → Providers → **Email** → zapnout.*
       Pozor, tohle je jiný přepínač než „Confirm email" (ten je správně zapnutý).
-- [ ] **Web servíruje starou verzi.** V repu chybí 15 změn, takže na živém
-      `privacy.html` pořád stojí `[FULL LEGAL NAME]` a `/app/` nemá klíče
-      Supabase — tedy **obnova hesla a potvrzení e-mailu zatím nefungují**.
-      → `git add -A && git commit -m "…" && git push`
-- [ ] **Google provider v Supabase je vypnutý.** OAuth klient v Google Cloudu
-      existuje, ale Client ID / secret ještě nejsou vložené v Supabase.
-      → *Authentication → Providers → Google → vložit → Save.*
-      Nezapomeň secret předtím zresetovat.
+- [ ] **E-mailové šablony ještě nejsou vložené.** Výchozí šablona neobsahuje
+      `{{ .Token }}`, takže obrazovka 07 (šest políček na kód) nemá co zobrazit.
+      → Zkopíruj `supabase/email-templates/confirm-signup.html` a
+      `reset-password.html` do *Authentication → Templates*. Podrobně
+      v `supabase/email-templates/README.md`.
 
 ### ⬜ Zbývá (v tomhle pořadí)
 
 - [ ] **Krok 4d** — Apple Sign In (povinné, když nabízíš Google)
 - [ ] **Krok 6** — `eas build:configure`; `extra.eas.projectId` a `updates.url`
       jsou zatím prázdné
-- [ ] **Krok 7** — otisky SHA-256 do `docs/.well-known/assetlinks.json`
-      (teď tam stojí `PASTE_…_HERE`, takže App Links neověří) a Team ID
-      do `apple-app-site-association` (teď `TEAMID`)
+- [ ] **Krok 7 (Android část)** — otisky SHA-256 do
+      `docs/.well-known/assetlinks.json`; teď tam stojí `PASTE_…_HERE`,
+      takže App Links neověří. Otisky vypadnou z prvního EAS buildu.
 - [ ] **Krok 9–11** — materiály do obchodů, dotazníky, produkční build
 - [ ] **Krok 12** — reklamní SDK (až po vývojovém buildu)
 - [ ] **Krok 13** — produkt `splittingly_pro` v obou obchodech + napojení IAP
