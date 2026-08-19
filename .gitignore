@@ -18,5 +18,7 @@ web-smoke/
 # lokalni konfigurace nastroju
 .claude/
 
-# CNAME patri VYHRADNE do docs/ — v koreni by mátl (Pages cte ten ve zvolene slozce)
-/CNAME
+# Pozn.: CNAME je v repu DVAKRAT — v koreni (vytvoril ho GitHub sam pri
+# nastaveni custom domain) a v docs/. Pages je nastavene na slozku /docs,
+# takze plati `docs/CNAME`; ten v koreni je necinny. Nemazat ho — GitHub si
+# ho spravuje sam a rucni zasah muze shodit custom domain.
