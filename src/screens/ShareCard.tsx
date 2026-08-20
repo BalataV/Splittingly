@@ -7,8 +7,9 @@
 // zkrátit na iniciály a částky úplně skrýt.
 
 import React, { useRef, useState } from 'react';
-import { View, Text, Share } from 'react-native';
-import ViewShot, { captureRef } from 'react-native-view-shot';
+import { View, Text, Share, Platform } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import Screen from '../components/Screen';
 import { useUi, Button, Chip, HardShadow, Rule } from '../components/ui';
 import { Money } from '../components/Money';
@@ -45,7 +46,24 @@ export default function ShareCard() {
   const doShare = async () => {
     try {
       const uri = await captureRef(shotRef, { format: 'png', quality: 1 });
-      await Share.share({ url: uri, message: `${g.name} — Splittingly` });
+
+      // `Share.share({ url })` z React Native umí obrázek POUZE na iOS —
+      // na Androidu tichý spolkne a odešle jen text, takže uživateli přijde
+      // holá věta bez kartičky. `expo-sharing` posílá skutečný soubor na
+      // obou platformách a systémový dialog pak nabídne i uložení.
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: `${g.name} — Splittingly`,
+          UTI: 'public.png',
+        });
+      } else if (Platform.OS === 'ios') {
+        await Share.share({ url: uri });
+      } else {
+        actions.showToast(t('Sharing is not available on this device.'));
+        return;
+      }
+
       if (mayShowInterstitial('share', state.isPro)) {
         markInterstitialShown();
         // Skutečný interstitial se doplní se SDK; tady je jen záznam, že padl.
@@ -60,12 +78,12 @@ export default function ShareCard() {
       title={t('SHARE CARD')}
       onBack={actions.goBack}
       backLabel={t('Close')}
-      footer={<Button label={t('Save image')} kind="accent" onPress={doShare} />}
+      footer={<Button label={t('Share image')} kind="accent" onPress={doShare} />}
     >
       <Text style={[ty('label'), { color: c.textMuted }]}>{t('PREVIEW · 1080×1080')}</Text>
 
       <HardShadow offset={6}>
-        <ViewShot ref={shotRef as any} style={{ aspectRatio: 1 }}>
+        <View ref={shotRef} collapsable={false} style={{ aspectRatio: 1 }}>
           <View style={{ flex: 1, backgroundColor: bg, borderWidth: BORDER.card, borderColor: c.border, padding: 18, gap: SPACE.md }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 15, lineHeight: 16, color: fg, flex: 1 }}>
@@ -105,7 +123,7 @@ export default function ShareCard() {
               <Mascot who="analyst" size={52} />
             </View>
           </View>
-        </ViewShot>
+        </View>
       </HardShadow>
 
       <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
