@@ -14,7 +14,7 @@ import React, { createContext, useContext, useMemo, useRef, useState, ReactNode 
 import {
   View, Text, Pressable, TextInput, StyleProp, ViewStyle, TextStyle, I18nManager,
 } from 'react-native';
-import { makePalette, THEMES, BORDER, SHADOW, SPACE, TOUCH } from '../theme';
+import { makePalette, onColor, THEMES, BORDER, SHADOW, SPACE, TOUCH } from '../theme';
 import { type as typeFor, TABULAR, Role } from '../typography';
 import { currentScript, currentRTL } from '../i18n';
 import type { Palette, TextSize, ThemeName } from '../types';
@@ -293,6 +293,11 @@ interface ChipProps {
 export function Chip({ label, active, onPress, onRemove, dashed, fill }: ChipProps) {
   const { c, ty } = useUi();
   const bg = fill || (active ? c.accent : c.surface);
+  // Barva textu se počítá ze SKUTEČNÉ výplně, ne z příznaku `active`.
+  // Dřív se brala z `active`, takže chip s vlastním tmavým `fill` (období
+  // ve statistikách) dostal inkoustový text na inkoustovém podkladu a
+  // vybraná položka zmizela.
+  const fg = dashed ? c.text : onColor(bg);
   return (
     <Pressable
       onPress={onPress}
@@ -310,10 +315,10 @@ export function Chip({ label, active, onPress, onRemove, dashed, fill }: ChipPro
         minHeight: TOUCH - 8,
       }}
     >
-      <Text style={[ty('rowTitle'), { color: active ? c.onAccent : c.text }]}>{label}</Text>
+      <Text style={[ty('rowTitle'), { color: fg }]}>{label}</Text>
       {!!onRemove && (
         <Pressable onPress={onRemove} hitSlop={10} accessibilityLabel={'Remove ' + label}>
-          <Text style={[ty('rowTitle'), { color: active ? c.onAccent : c.textMuted }]}>✕</Text>
+          <Text style={[ty('rowTitle'), { color: fg, opacity: 0.7 }]}>✕</Text>
         </Pressable>
       )}
     </Pressable>
