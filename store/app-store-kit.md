@@ -124,7 +124,12 @@ https://splittingly.com
 ### Screenshots
 - **6,7"** (1290×2796) — povinné, min. 3
 - **6,5"** (1242×2688) — povinné, min. 3
-- iPad se nevyžaduje (`supportsTablet: false`)
+- **iPad 13" (2064×2752) — POVINNÉ**, protože `supportsTablet: true`
+
+> ⚠️ Zapnutím podpory iPadu jsi si přidal povinné iPad screenshoty. Bez nich
+> App Store Connect verzi nepustí k odeslání. Nafoť je v simulátoru iPadu,
+> nebo `supportsTablet` vrať na `false` — appka pak na iPadu poběží
+> v telefonním okně a screenshoty odpadnou.
 
 ### App Review Information ⚠️ **nejčastější důvod zamítnutí**
 

@@ -58,6 +58,9 @@ Návrhový směr **„Hard Split"** (neo-brutalismus) podle
 
 ## Klíčové konvence
 
+- **Orientace se řídí typem zařízení** (`App.tsx`): telefon zamčený na výšku,
+  tablet volný. V `app.json` je proto `orientation: "default"` — konfigurace
+  umí jen jednu globální hodnotu a neumí rozlišit telefon od tabletu.
 - **Šířka obsahu je omezená na 600 pt** (`MAX_W` v `Root.tsx`) a vycentrovaná.
   Návrh je kreslený pro 390pt telefon; na tabletu by roztažený řádek měl jméno
   vlevo a částku o půl obrazovky dál. Pozadí jde přes celou plochu, omezuje se

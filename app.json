@@ -4,12 +4,12 @@
     "slug": "splittingly",
     "scheme": "splittingly",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#FFE500",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.balata.splittingly",
       "usesAppleSignIn": true,
       "associatedDomains": [
@@ -64,6 +64,7 @@
     "plugins": [
       "expo-font",
       "expo-localization",
+      "expo-screen-orientation",
       [
         "expo-splash-screen",
         {
