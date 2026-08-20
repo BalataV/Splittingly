@@ -146,7 +146,16 @@
     .rule { height: 3px; background: var(--ink); margin: 20px 0; }
 
     .stores { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .stores .btn { box-shadow: 4px 4px 0 #101010; border-color: #101010; }
+    .stores-center { justify-content: center; }
+    /* Oficiální odznaky obchodů: grafiku neupravujeme, jen umisťujeme.
+       Výška 52 px splňuje minimum, které obě pravidla vyžadují. */
+    .badge { display: inline-block; line-height: 0; transition: transform .15s linear; }
+    .badge img { height: 52px; width: auto; display: block; }
+    .badge:hover { transform: translateY(-3px); }
+    .badge.soon { opacity: .55; cursor: default; }
+    .badge.soon:hover { transform: none; }
+    .soon-note { font-size: 13px; font-weight: 700; color: var(--muted); width: 100%; margin-top: 4px; }
+    @media (max-width: 380px) { .badge img { height: 46px; } }
 
     /* Rám reklamy je v appce SDĚLENÍ. Tady ho ukazujeme jako ukázku. */
     .adframe {
@@ -193,8 +202,12 @@
         <li><span class="num">3</span><span>Tap <strong>Join with a code</strong> and enter <strong id="codeInline">——————</strong>.</span></li>
       </ol>
       <div class="stores" style="margin-top: 18px">
-        <a class="btn" id="appleInvite" href="#" rel="noopener">Download on the App Store</a>
-        <a class="btn" id="playInvite" href="#" rel="noopener">Get it on Google Play</a>
+        <a class="badge soon" id="appleInvite" href="#" aria-label="Download on the App Store — coming soon">
+          <img src="img/appstore-en.svg" alt="Download on the App Store" />
+        </a>
+        <a class="badge soon" id="playInvite" href="#" aria-label="Get it on Google Play — coming soon">
+          <img src="img/googleplay-en.png" alt="Get it on Google Play" />
+        </a>
       </div>
     </div>
     <p style="text-align:center; margin-top: 18px"><a href="/">← splittingly.com</a></p>
@@ -228,8 +241,13 @@
     <h1>ONE BILL.<br />NO<br />ARGUMENTS.</h1>
     <p>Anyone logs what they paid and who it concerns. Splittingly works out who owes whom — and collapses ten debts into one payment.</p>
     <div class="stores">
-      <a class="btn" id="appleHero" href="#" rel="noopener">Download on the App Store</a>
-      <a class="btn" id="playHero" href="#" rel="noopener">Get it on Google Play</a>
+<a class="badge soon" id="appleHero" href="#get" aria-label="Download on the App Store — coming soon">
+        <img src="img/appstore-en.svg" alt="Download on the App Store" />
+      </a>
+      <a class="badge soon" id="playHero" href="#get" aria-label="Get it on Google Play — coming soon">
+        <img src="img/googleplay-en.png" alt="Get it on Google Play" />
+      </a>
+      <div class="soon-note">Coming soon to both stores.</div>
     </div>
     <p style="font-size:13px; margin-top:16px">Free. Ad-supported. One-time purchase removes the ads.</p>
   </div>
@@ -336,9 +354,14 @@
   <div class="wrap" style="text-align:center">
     <h2>GET SPLITTINGLY</h2>
     <p class="muted" style="max-width:520px; margin: 0 auto 24px">Free on iPhone and Android. Your first group takes about twenty seconds.</p>
-    <div class="stores" style="justify-content:center">
-      <a class="btn" id="appleFinal" href="#" rel="noopener">Download on the App Store</a>
-      <a class="btn" id="playFinal" href="#" rel="noopener">Get it on Google Play</a>
+    <div class="stores stores-center">
+<a class="badge soon" id="appleFinal" href="#get" aria-label="Download on the App Store — coming soon">
+        <img src="img/appstore-en.svg" alt="Download on the App Store" />
+      </a>
+      <a class="badge soon" id="playFinal" href="#get" aria-label="Get it on Google Play — coming soon">
+        <img src="img/googleplay-en.png" alt="Get it on Google Play" />
+      </a>
+      <div class="soon-note">Coming soon to both stores.</div>
     </div>
   </div>
 </section>
@@ -368,14 +391,27 @@
 
     var APPLE_URL = '';   // doplň po vydání v App Store
     var PLAY_URL  = '';   // doplň po vydání v Google Play
-    ['appleHero','appleFinal','appleInvite'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { el.href = APPLE_URL || '#get'; if (APPLE_URL) el.target = '_blank'; }
-    });
-    ['playHero','playFinal','playInvite'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { el.href = PLAY_URL || '#get'; if (PLAY_URL) el.target = '_blank'; }
-    });
+    // Dokud jsou adresy prázdné, odznaky jsou ztlumené a nikam nevedou.
+    // Po vydání stačí vyplnit APPLE_URL / PLAY_URL nahoře a ožijí samy.
+    function wire(ids, url) {
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (url) {
+          el.href = url;
+          el.target = '_blank';
+          el.rel = 'noopener';
+          el.classList.remove('soon');
+        } else {
+          el.href = '#get';
+        }
+      });
+    }
+    wire(['appleHero','appleFinal','appleInvite'], APPLE_URL);
+    wire(['playHero','playFinal','playInvite'], PLAY_URL);
+    if (APPLE_URL || PLAY_URL) {
+      [].forEach.call(document.querySelectorAll('.soon-note'), function (n) { n.remove(); });
+    }
 
     var code = (new URLSearchParams(window.location.search).get('g') || '')
       .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);

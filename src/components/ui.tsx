@@ -106,6 +106,9 @@ interface PushableProps {
   onPress?: () => void;
   onLongPress?: () => void;
   disabled?: boolean;
+  /** Ztlumit průhledností? Prvky s vlastním vypnutým stavem posílají false —
+   *  jinak se ztlumení sečte s šedou výplní a text přestane být čitelný. */
+  dimWhenDisabled?: boolean;
   offset?: number;
   shadowColor?: string;
   style?: StyleProp<ViewStyle>;
@@ -120,8 +123,8 @@ interface PushableProps {
  * posune o +3,+3. Devadesát milisekund, žádné easing křivky.
  */
 export function Pushable({
-  onPress, onLongPress, disabled, offset = SHADOW.hero, shadowColor,
-  style, contentStyle, accessibilityLabel, haptic = true, children,
+  onPress, onLongPress, disabled, dimWhenDisabled = true, offset = SHADOW.hero,
+  shadowColor, style, contentStyle, accessibilityLabel, haptic = true, children,
 }: PushableProps) {
   const { c, rtl } = useUi();
   const [pressed, setPressed] = useState(false);
@@ -130,7 +133,7 @@ export function Pushable({
   const dx = rtl ? -o : o;
 
   return (
-    <View style={[{ position: 'relative', opacity: disabled ? 0.5 : 1 }, style]}>
+    <View style={[{ position: 'relative', opacity: disabled && dimWhenDisabled ? 0.5 : 1 }, style]}>
       {offset > 0 && (
         <View
           pointerEvents="none"
@@ -231,12 +234,22 @@ export function Button({ label, onPress, kind = 'primary', disabled, offset = SH
     ink:      { bg: c.text,     fg: c.bg,         border: c.border },
     outline:  { bg: 'transparent', fg: c.text,    border: c.border },
   };
+  // Vypnuté tlačítko musí zůstat ČITELNÉ — uživatel z něj má vyčíst, co má
+  // udělat, aby se odemklo. Tyhle dvojice drží kontrast nad 4.5:1.
   const s = disabled
-    ? { bg: c.isDark ? '#3A3A3A' : '#DEDACE', fg: c.textDisabled, border: c.borderInactive }
+    ? c.isDark
+      ? { bg: '#2E2E2E', fg: '#B4B4B4', border: '#5A5A5A' }
+      : { bg: '#E4E0D5', fg: '#4A4A4A', border: '#9A9488' }
     : map[kind];
 
   return (
-    <Pushable onPress={onPress} disabled={disabled} offset={kind === 'outline' ? 0 : offset} style={style}>
+    <Pushable
+      onPress={onPress}
+      disabled={disabled}
+      dimWhenDisabled={false}
+      offset={kind === 'outline' ? 0 : offset}
+      style={style}
+    >
       <View
         style={{
           backgroundColor: s.bg,

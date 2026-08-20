@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Screen from '../components/Screen';
 import { useUi, Card, Button, Rule, Avatar, HardShadow } from '../components/ui';
-import { Money, MoneySlot } from '../components/Money';
+import { Money, MoneySlot, ApproxMoney } from '../components/Money';
 import { useApp, CLOUD_MODE } from '../store';
 import { expensesApi } from '../api';
 import { t, fmtDate, fmtTime } from '../i18n';
@@ -57,6 +57,7 @@ export default function ExpenseDetail() {
           </View>
 
           <Money amountMinor={e.amountMinor} currency={e.currency} role="sectionAmount" style={{ fontSize: 34, textAlign: 'left' }} />
+          <ApproxMoney amountMinor={e.amountMinor} currency={e.currency} style={{ marginTop: -6 }} />
 
           <Text style={[ty('caption'), { color: c.textMuted }]}>
             {e.payer === ME ? t('Paid by you') : t('Paid by {who}', { who: e.payer })} · {

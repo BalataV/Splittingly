@@ -10,7 +10,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Screen from '../components/Screen';
 import { useUi, Card, Button, Field, Avatar, HardShadow, Label } from '../components/ui';
-import { Money } from '../components/Money';
+import { Money, ApproxMoney } from '../components/Money';
 import Mascot from '../components/Mascot';
 import { useApp } from '../store';
 import { t } from '../i18n';
@@ -59,6 +59,7 @@ export default function SettleUp() {
             {t('{from} pays {to}', { from: tr.from === ME ? t('You') : tr.from, to: tr.to === ME ? t('you') : tr.to })}
           </Text>
           <Money amountMinor={tr.amountMinor} currency={tr.currency} role="heroAmount" style={{ fontSize: 44 }} />
+          <ApproxMoney amountMinor={tr.amountMinor} currency={tr.currency} />
           <Text style={[ty('caption'), { color: c.textMuted, textAlign: 'center' }]}>
             {t('Clears the full balance between you two.')}
           </Text>

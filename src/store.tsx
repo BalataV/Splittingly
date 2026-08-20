@@ -30,6 +30,7 @@ import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
 import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from './entitlements';
+import * as queue from './queue';
 import * as haptics from './haptics';
 import type {
   AppState, Actions, AppContextValue, Patch, Group, Expense, Payment,
@@ -297,6 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         screen: 'overview',
       });
       setLangGlobal(stateRef.current.lang);
+      patch({ sync: { ...stateRef.current.sync, queued: await queue.count() } });
       await refreshAll(true);
       registerForPush().catch(() => undefined);
     } catch {
@@ -352,12 +354,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }
 
+  /**
+   * Zkusí odeslat frontu čekajících zápisů a promítne výsledek do `sync`.
+   * Volá se při startu, při každém obnovení dat a po každém úspěšném zápisu.
+   */
+  async function flushQueue(): Promise<void> {
+    if (!CLOUD_MODE) return;
+    const left = await queue.flush({
+      addExpense: async (input, receipts) => {
+        const newId = await expensesApi.addExpense(input);
+        for (const url of receipts) await expensesApi.addReceipt(newId, input.groupId, url).catch(() => undefined);
+      },
+      updateExpense: (id, input) => expensesApi.updateExpense(id, input, []),
+      deleteExpense: (id, gid) => expensesApi.deleteExpense(id, gid),
+      addPayment: (input) => expensesApi.addPayment(input),
+    });
+    patch((st) => ({ sync: { ...st.sync, queued: left, online: left === 0 ? true : st.sync.online } }));
+  }
+
   async function refreshAll(force = false) {
     if (!CLOUD_MODE) return;
     const s = stateRef.current;
     if (!s.meUid) return;
     if (!force && s.loading) return;
     patch({ loading: true });
+    // Nejdřív doručit, co čeká — jinak by čerstvě načtená data přepsala
+    // lokální zápisy, které ještě neodešly.
+    await flushQueue().catch(() => undefined);
     try {
       const rawGroups = await groupsApi.fetchGroups();
       const myName = s.myName;
@@ -392,7 +415,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       });
 
-      patch({ groups, expenses, payments, sync: { online: true, lastSyncedAt: new Date().toISOString(), queued: 0 } });
+      const queued = await queue.count();
+      patch({ groups, expenses, payments, sync: { online: true, lastSyncedAt: new Date().toISOString(), queued } });
     } catch {
       patch({ sync: { ...stateRef.current.sync, online: false } });
     } finally {
@@ -516,6 +540,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const logOut = async () => {
+    // Fronta patří k účtu — kdyby zůstala, doručila by se pod cizím
+    // přihlášením. Radši ji zahodíme; nedoručené zápisy má uživatel
+    // pořád vidět v seznamu, dokud se neodhlásí.
+    await queue.clear();
     if (CLOUD_MODE) await authApi.signOut();
     setState({ ...makeInitialState(), booting: false, screen: 'onboarding' });
   };
@@ -813,15 +841,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
           splitType: d.splitType, shares, exactMinor,
           category: d.category, spentAt: d.spentAt,
         };
-        if (d.id) {
-          await expensesApi.updateExpense(d.id, input, [{ field: 'amount', from: '', to: String(amountMinor) }]);
-        } else {
-          const newId = await expensesApi.addExpense(input);
-          for (const url of d.receipts) await expensesApi.addReceipt(newId, g.id, url).catch(() => undefined);
-        }
-        await refreshGroup(g.id);
-        if (s.notif.expense && !inQuietHours(s.notif)) {
-          notifyGroup(g.id, g.name, `${s.myName} added ${d.desc || 'an expense'}`).catch(() => undefined);
+        try {
+          if (d.id) {
+            await expensesApi.updateExpense(d.id, input, [{ field: 'amount', from: '', to: String(amountMinor) }]);
+          } else {
+            const newId = await expensesApi.addExpense(input);
+            for (const url of d.receipts) await expensesApi.addReceipt(newId, g.id, url).catch(() => undefined);
+          }
+          await refreshGroup(g.id);
+          if (s.notif.expense && !inQuietHours(s.notif)) {
+            notifyGroup(g.id, g.name, `${s.myName} added ${d.desc || 'an expense'}`).catch(() => undefined);
+          }
+          await flushQueue();
+        } catch (err) {
+          // Bez připojení výdaj NEZAHAZUJEME. Uloží se do fronty, promítne se
+          // do stavu a odejde, jakmile se síť vrátí — přesně proto appka
+          // existuje i v hospodě bez signálu.
+          if (!queue.looksOffline(err)) throw err;
+          const queued = await queue.enqueue(
+            d.id
+              ? { kind: 'expense.update', groupId: g.id, expenseId: d.id, input }
+              : { kind: 'expense.add', groupId: g.id, input, receipts: d.receipts },
+          );
+          const local: Expense = {
+            id: d.id || 'local-' + uid(), groupId: g.id, desc: input.desc, amountMinor,
+            currency: d.currency, payer: d.payer, parts: d.parts, splitType: d.splitType,
+            shares, exactMinor, category: d.category, spentAt: d.spentAt,
+            receipts: d.receipts, editCount: d.id ? 1 : 0, createdAt: new Date().toISOString(),
+          };
+          patch((st) => ({
+            expenses: {
+              ...st.expenses,
+              [g.id]: d.id
+                ? (st.expenses[g.id] || []).map((e) => (e.id === d.id ? local : e))
+                : [local, ...(st.expenses[g.id] || [])],
+            },
+            sync: { ...st.sync, online: false, queued },
+          }));
+          showToast('Saved on this phone. It will upload when you are back online.');
         }
       } else {
         const expense: Expense = {
@@ -879,16 +936,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const realMyName = g.memberList.find((m) => m.userId === s.meUid)?.name || s.myName;
       if (CLOUD_MODE) {
         const idFor = (display: string) => g.memberList.find((m) => m.name === denorm(display, realMyName))?.id || null;
-        await expensesApi.addPayment({
+        const paymentInput = {
           groupId: g.id,
           fromId: idFor(tr.from), toId: idFor(tr.to),
           fromName: denorm(tr.from, realMyName), toName: denorm(tr.to, realMyName),
           amountMinor: tr.amountMinor, currency: tr.currency,
           method: s.settleMethod, note: s.settleNote || null,
-        });
-        await refreshAll(true);
-        if (s.notif.settled && !inQuietHours(s.notif)) {
-          notifyGroup(g.id, g.name, `${tr.from} settled up with ${tr.to}`).catch(() => undefined);
+        };
+        try {
+          await expensesApi.addPayment(paymentInput);
+          await refreshAll(true);
+          if (s.notif.settled && !inQuietHours(s.notif)) {
+            notifyGroup(g.id, g.name, `${tr.from} settled up with ${tr.to}`).catch(() => undefined);
+          }
+        } catch (err) {
+          if (!queue.looksOffline(err)) throw err;
+          const queued = await queue.enqueue({ kind: 'payment.add', groupId: g.id, input: paymentInput });
+          const local: Payment = {
+            id: 'local-' + uid(), groupId: g.id, from: tr.from, to: tr.to,
+            amountMinor: tr.amountMinor, currency: tr.currency,
+            method: s.settleMethod, note: s.settleNote || null, createdAt: new Date().toISOString(),
+          };
+          patch((st) => ({
+            payments: { ...st.payments, [g.id]: [...(st.payments[g.id] || []), local] },
+            sync: { ...st.sync, online: false, queued },
+          }));
         }
       } else {
         const payment: Payment = {
