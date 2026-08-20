@@ -11,7 +11,7 @@ import Mascot from '../components/Mascot';
 import { useApp } from '../store';
 import { t, translationCoverage } from '../i18n';
 import { LANGUAGES, searchLanguages, language } from '../languages';
-import { CURRENCIES, FAVOURITE_CURRENCIES, currency } from '../currencies';
+import { CURRENCIES, currency } from '../currencies';
 import { fmt } from '../money';
 import { THEMES, THEME_ORDER, AVATAR_COLORS, SPACE, BORDER, TEXT_SCALE } from '../theme';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../config';
@@ -173,12 +173,16 @@ export function CurrencyPicker() {
     const s = q.toLowerCase();
     return !s || cur.code.toLowerCase().includes(s) || cur.name.toLowerCase().includes(s);
   };
-  const favourites = FAVOURITE_CURRENCIES.filter(match);
-  const rest = CURRENCIES.map((x) => x.code).filter((code) => !FAVOURITE_CURRENCIES.includes(code)).filter(match);
+  // Oblíbené si volí uživatel (úvodní nastavení nebo hvězdička zde).
+  const favourites = state.favouriteCurrencies.filter(match);
+  const rest = CURRENCIES.map((x) => x.code)
+    .filter((code) => !state.favouriteCurrencies.includes(code))
+    .filter(match);
 
-  const CurrencyRow = ({ code, star }: { code: string; star?: boolean }) => {
+  const CurrencyRow = ({ code }: { code: string }) => {
     const cur = currency(code);
     const selected = state.currency === code;
+    const fav = state.favouriteCurrencies.includes(code);
     return (
       <Row onPress={() => actions.setCurrency(code)}>
         <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 15, color: c.text, width: 44 }}>{cur.code}</Text>
@@ -189,11 +193,27 @@ export function CurrencyPicker() {
             {fmt(cur.decimals === 0 ? 1235 : 123456, code)}
           </Text>
         </View>
-        {(star || selected) && (
-          <View style={{ width: 22, height: 22, backgroundColor: c.accent, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: c.onAccent, fontSize: 11 }}>{selected ? '✓' : '★'}</Text>
+        {selected && (
+          <View style={{ width: 22, height: 22, backgroundColor: c.primary, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: c.onPrimary, fontSize: 11 }}>✓</Text>
           </View>
         )}
+        {/* Hvězdička je samostatný cíl: řádek mění zobrazovací měnu,
+            hvězda jen to, jestli je měna nahoře v seznamu. */}
+        <Pressable
+          onPress={() => actions.toggleFavouriteCurrency(code)}
+          hitSlop={12}
+          accessibilityLabel={fav ? t('Remove from favourites') : t('Add to favourites')}
+        >
+          <View style={{
+            width: 30, height: 30,
+            backgroundColor: fav ? c.accent : c.surface,
+            borderWidth: BORDER.small, borderColor: c.border,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text style={{ color: fav ? c.onAccent : c.textMuted, fontSize: 14 }}>★</Text>
+          </View>
+        </Pressable>
       </Row>
     );
   };
@@ -205,7 +225,7 @@ export function CurrencyPicker() {
       {favourites.length > 0 && (
         <>
           <Label>{t('FAVOURITES')}</Label>
-          <View style={{ gap: 6 }}>{favourites.map((code) => <CurrencyRow key={code} code={code} star />)}</View>
+          <View style={{ gap: 6 }}>{favourites.map((code) => <CurrencyRow key={code} code={code} />)}</View>
         </>
       )}
 

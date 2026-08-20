@@ -28,13 +28,14 @@ import YearInReview from './screens/YearInReview';
 import Activity from './screens/Activity';
 import Search from './screens/Search';
 import ShareCard from './screens/ShareCard';
+import Setup from './screens/Setup';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
 
 /** Obrazovky bez spodní navigace — vstup do účtu a modální toky. */
 const NO_CHROME: ScreenName[] = [
   'onboarding', 'signup', 'login', 'forgot', 'new_password', 'confirm_email',
   'add_expense', 'split_method', 'settle', 'create_group', 'join_group',
-  'share_card', 'year_in_review', 'remove_ads',
+  'share_card', 'year_in_review', 'remove_ads', 'setup',
 ];
 
 export default function Root() {
@@ -82,6 +83,7 @@ function RootInner() {
   else if (sc === 'notifications') screen = <Notifications />;
   else if (sc === 'remove_ads') screen = <RemoveAds />;
   else if (sc === 'privacy') screen = <Privacy />;
+  else if (sc === 'setup') screen = <Setup />;
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -157,11 +159,14 @@ export function AppMark({ size, ink, accent, primary }: { size: number; ink: str
 
 // ------------------------------------------------------------- spodní navigace
 
+// „Groups" tu bývalo místo „Profile", ale vedlo na tutéž obrazovku jako
+// „Overview" — seznam skupin je na přehledu. Profil naopak visel jen pod
+// avatarem v rohu, kam většina lidí nesáhne. Tohle je užitečnější rozdělení.
 const TABS: { key: TabName; label: string; glyph: string }[] = [
   { key: 'overview', label: 'Overview', glyph: '▣' },
-  { key: 'groups', label: 'Groups', glyph: '⊞' },
   { key: 'activity', label: 'Activity', glyph: '▤' },
   { key: 'stats', label: 'Stats', glyph: '◔' },
+  { key: 'profile', label: 'Profile', glyph: '◎' },
 ];
 
 function TabBar() {

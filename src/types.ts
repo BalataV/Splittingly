@@ -21,9 +21,11 @@ export type ScreenName =
   | 'year_in_review' | 'activity' | 'search' | 'share_card'
   // nastavení (22–29)
   | 'profile' | 'language' | 'currency' | 'appearance' | 'notifications'
-  | 'remove_ads' | 'privacy' | 'settings';
+  | 'remove_ads' | 'privacy' | 'settings'
+  // úvodní nastavení po první registraci
+  | 'setup';
 
-export type TabName = 'overview' | 'groups' | 'activity' | 'stats';
+export type TabName = 'overview' | 'activity' | 'stats' | 'profile';
 
 export interface GroupMember {
   id: string;
@@ -192,6 +194,8 @@ export interface AppState {
   lang: string;
   langChosen: boolean;
   currency: string;          // MOJE zobrazovací měna (nezávislá na jazyku)
+  favouriteCurrencies: string[];  // měny nahoře v seznamu, volí si je uživatel
+  setupDone: boolean;        // proběhlo úvodní nastavení jazyka a měn?
   theme: ThemeName;
   mode: ModeName;
   systemDark: boolean;
@@ -265,6 +269,8 @@ export interface Actions {
   // předvolby
   setLang: (l: string) => void;
   setCurrency: (c: string) => void;
+  toggleFavouriteCurrency: (c: string) => void;
+  finishSetup: () => void;
   setTheme: (t: ThemeName) => void;
   setMode: (m: ModeName) => void;
   setTextSize: (s: TextSize) => void;

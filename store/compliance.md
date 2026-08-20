@@ -37,6 +37,15 @@ Google, kdyby z toho vznikl spor.
 i územně neomezená licence ke všem způsobům užití, včetně práva na úpravy
 a poskytnutí podlicence*.
 
+> 📌 **A pak přepni deklaraci AI podkladů.** Dnes je v Play Console správně
+> *„Neoznačovat podklady"* — ikona i hlavní grafika jsou procedurálně
+> generované z kódu (geometrie loga, HTML+CSS), což je stejná kategorie jako
+> kresba v Illustratoru, ne syntetické médium.
+>
+> Jakmile ale maskoty nakreslí generativní model (Midjourney, DALL-E a spol.),
+> musíš přepnout na *„Označit podklady jako vytvořené pomocí AI"*. Zeptej se
+> ilustrátora dopředu — na faktuře to nebude.
+
 ### 2 · §4.7 — podpora do 3 pracovních dnů, urgentní do 24 hodin
 
 > *„Souhlasíte s tím, že na žádosti zákazníků o podporu (…) budete reagovat

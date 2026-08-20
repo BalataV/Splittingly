@@ -24,7 +24,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { setLangGlobal, canAutoDetect, t } from './i18n';
 import { language, isRTL } from './languages';
 import { parseAmount, splitEqual, splitShares, remainderOf } from './money';
-import { decimalsOf } from './currencies';
+import { decimalsOf, FAVOURITE_CURRENCIES } from './currencies';
 import { ME, transfersFor } from './logic';
 import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
@@ -126,6 +126,8 @@ function makeInitialState(): AppState {
     lang,
     langChosen: false,
     currency: detectCurrency(),
+    favouriteCurrencies: [...FAVOURITE_CURRENCIES],
+    setupDone: false,
     theme: 'acid',
     mode: 'system',
     systemDark: Appearance.getColorScheme() === 'dark',
@@ -222,7 +224,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const setTab = (tab: TabName) => {
-    const screen: ScreenName = tab === 'activity' ? 'activity' : tab === 'stats' ? 'stats' : 'overview';
+    const screen: ScreenName =
+      tab === 'activity' ? 'activity'
+      : tab === 'stats' ? 'stats'
+      : tab === 'profile' ? 'profile'
+      : 'overview';
     setState((s) => ({ ...s, tab, screen, history: [] }));
   };
 
@@ -256,6 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (state.booting) return;
     const prefs = {
       lang: state.lang, langChosen: state.langChosen, currency: state.currency,
+      favouriteCurrencies: state.favouriteCurrencies, setupDone: state.setupDone,
       theme: state.theme, mode: state.mode, textSize: state.textSize,
       notif: state.notif, personalisedAds: state.personalisedAds,
       isPro: state.isPro, rewardTheme: state.rewardTheme, rewardUntil: state.rewardUntil,
@@ -263,7 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     AsyncStorage.setItem(STATE_KEY, JSON.stringify(prefs)).catch(() => undefined);
   }, [
-    state.booting, state.lang, state.langChosen, state.currency, state.theme, state.mode,
+    state.booting, state.lang, state.langChosen, state.currency,
+    state.favouriteCurrencies, state.setupDone, state.theme, state.mode,
     state.textSize, state.notif, state.personalisedAds, state.isPro, state.rewardTheme,
     state.rewardUntil, state.mascotsOn, state.recentSearches,
   ]);
@@ -304,7 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isPro: !!profile?.isPro,
         rewardTheme: profile?.rewardTheme || null,
         rewardUntil: profile?.rewardUntil || null,
-        screen: 'overview',
+        screen: stateRef.current.setupDone ? 'overview' : 'setup',
       });
       setLangGlobal(stateRef.current.lang);
       patch({ sync: { ...stateRef.current.sync, queued: await queue.count() } });
@@ -473,10 +481,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (s.authPassword.length < 8) { patch({ authError: 'Use at least eight characters.' }); return; }
     patch({ busy: true, authError: null });
     try {
-      if (!CLOUD_MODE) { patch({ meUid: 'local', myName: s.authName || 'You', screen: 'overview' }); return; }
+      if (!CLOUD_MODE) {
+        patch({ meUid: 'local', myName: s.authName || 'You', screen: s.setupDone ? 'overview' : 'setup' });
+        return;
+      }
       const { needsConfirm } = await authApi.signUpEmail(s.authEmail, s.authPassword, s.authName);
       if (needsConfirm) { navigate('confirm_email'); showToast('Check your inbox for the code.'); }
-      else await boot();
+      else { await boot(); if (!stateRef.current.setupDone) navigate('setup'); }
     } catch (e: any) {
       patch({ authError: humanAuthError(e) });
     } finally {
@@ -600,6 +611,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveProfile({ currency: c });
     loadRates(c).then((rates) => patch({ fxRates: rates })).catch(() => undefined);
   };
+  /**
+   * Přepne měnu mezi oblíbenými. Oblíbené se drží NAHOŘE v seznamu — u padesáti
+   * měn je to rozdíl mezi „ťuknu" a „hledám".
+   */
+  const toggleFavouriteCurrency = (code: string) => {
+    patch((s) => ({
+      favouriteCurrencies: s.favouriteCurrencies.includes(code)
+        ? s.favouriteCurrencies.filter((x) => x !== code)
+        : [...s.favouriteCurrencies, code],
+    }));
+  };
+
+  /** Úvodní nastavení proběhlo — příště už rovnou na přehled. */
+  const finishSetup = () => {
+    patch({ setupDone: true });
+    navigate('overview');
+  };
+
   const setTheme = (t: ThemeName) => { patch({ theme: t }); saveProfile({ theme: t }); };
   const setMode = (m: ModeName) => { patch({ mode: m }); saveProfile({ mode: m }); };
   const setTextSize = (s: TextSize) => { patch({ textSize: s }); saveProfile({ text_size: s }); };
@@ -1051,7 +1080,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     patch, showToast, navigate, goBack, setTab,
     signUp, logIn, logInGoogle, logInApple, sendReset, saveNewPassword,
     confirmEmailCode, resendCode, logOut, deleteAccount,
-    setLang, setCurrency, setTheme, setMode, setTextSize, setNotif,
+    setLang, setCurrency, toggleFavouriteCurrency, finishSetup,
+    setTheme, setMode, setTextSize, setNotif,
     setPersonalisedAds, buyPro, restorePro, unlockThemeByReward,
     openGroup, createGroup, addDraftMember, removeDraftMember,
     joinByCode, finishJoin, leaveGroup, shareInvite,
