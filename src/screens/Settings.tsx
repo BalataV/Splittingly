@@ -9,7 +9,7 @@ import Screen, { SectionTitle } from '../components/Screen';
 import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule } from '../components/ui';
 import Mascot from '../components/Mascot';
 import { useApp } from '../store';
-import { t } from '../i18n';
+import { t, translationCoverage } from '../i18n';
 import { LANGUAGES, searchLanguages, language } from '../languages';
 import { CURRENCIES, FAVOURITE_CURRENCIES, currency } from '../currencies';
 import { fmt } from '../money';
@@ -135,6 +135,11 @@ export function LanguagePicker() {
                 <Text style={[ty('rowTitle'), { color: c.text }]}>{l.endonym}</Text>
                 <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
                   {l.english}{l.rtl ? ' · RTL' : ''}
+                  {/* Rozpracovaný překlad se přizná dopředu. Uživatel má vědět,
+                      že uvidí půl rozhraní anglicky, dřív než přepne. */}
+                  {translationCoverage(l.code) < 1
+                    ? ' · ' + t('partly translated')
+                    : ''}
                 </Text>
               </View>
               {selected && (

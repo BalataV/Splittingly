@@ -21,7 +21,7 @@ import * as Updates from 'expo-updates';
 import { authApi, groupsApi, expensesApi, storageApi } from './api';
 import type { RawExpense } from './api/expenses';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { setLangGlobal } from './i18n';
+import { setLangGlobal, canAutoDetect } from './i18n';
 import { language, isRTL } from './languages';
 import { parseAmount, splitEqual, splitShares, remainderOf } from './money';
 import { decimalsOf } from './currencies';
@@ -60,15 +60,24 @@ function emptyDraft(): ExpenseDraft {
   };
 }
 
-/** Jazyk telefonu, pokud ho podporujeme; jinak angličtina. */
+/**
+ * Jazyk telefonu — ale JEN pokud je jeho překlad hotový.
+ *
+ * Rozdělaný jazyk se automaticky nenastaví. Rozhraní z poloviny přeložené
+ * a z poloviny anglické působí jako rozbitá appka, ne jako appka, která se
+ * snaží. Čistá angličtina je poctivější východisko.
+ *
+ * Uživateli to nic nebere: v nastavení si vybere kterýkoli z 50 jazyků,
+ * jen o tom rozhodne sám a vidí u něj poznámku o rozpracovanosti.
+ */
 function detectLang(): string {
   try {
     const tags = Localization.getLocales();
     for (const l of tags) {
       const exact = l.languageTag;
       const base = l.languageCode || '';
-      if (language(exact).code === exact) return exact;
-      if (language(base).code === base) return base;
+      if (language(exact).code === exact && canAutoDetect(exact)) return exact;
+      if (language(base).code === base && canAutoDetect(base)) return base;
     }
   } catch {
     // detekce je pohodlí, ne požadavek

@@ -267,7 +267,40 @@ const DICT: Record<string, Dict> = {
   de: DE, ru: RU, fi: FI, ar: AR, th: TH, ja: JA, cs: CS,
 };
 
-/** Které jazyky už mají slovník (ostatní běží v angličtině). */
+/** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
 export function translatedLanguages(): string[] {
   return ['en', ...Object.keys(DICT)];
+}
+
+/**
+ * Kolik klíčů má jazyk přeloženo. Slouží k rozlišení „hotový" od „rozdělaný".
+ *
+ * Referencí je nejbohatší slovník, ne skutečný počet klíčů v appce — ten
+ * bychom museli udržovat ručně a rozešel by se s realitou hned při první
+ * nové obrazovce.
+ */
+export function translationCoverage(lang: string): number {
+  if (lang === 'en') return 1;
+  const dict = DICT[lang];
+  if (!dict) return 0;
+  const richest = Math.max(...Object.values(DICT).map((d) => Object.keys(d).length));
+  return Object.keys(dict).length / richest;
+}
+
+/**
+ * Jazyky dost hotové na to, aby se nabídly SAMY podle nastavení telefonu.
+ *
+ * ZATÍM PRÁZDNÉ, a je to záměr. Všechny slovníky jsou ukázkové (~20 klíčů),
+ * takže autodetekce by uživateli naservírovala rozhraní z poloviny česky
+ * a z poloviny anglicky — což je horší než čistá angličtina.
+ *
+ * Jakmile je nějaký jazyk dotažený, přidej ho sem. Ruční volbu v nastavení
+ * to nijak neomezuje — tam si uživatel může vybrat kterýkoli z 50 jazyků
+ * a u rozdělaných uvidí upozornění.
+ */
+export const AUTO_DETECT_READY: string[] = [];
+
+/** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
+export function canAutoDetect(lang: string): boolean {
+  return lang === 'en' || AUTO_DETECT_READY.includes(lang);
 }
