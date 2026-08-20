@@ -10,7 +10,7 @@
 // Žádná karta nemá pevnou výšku. Když text nabobtná (němčina, finština),
 // roste kontejner, ne ellipsis. `numberOfLines` se v téhle appce nepoužívá.
 
-import React, { createContext, useContext, useMemo, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, useRef, useState, ReactNode } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleProp, ViewStyle, TextStyle, I18nManager,
 } from 'react-native';
@@ -19,6 +19,7 @@ import { type as typeFor, TABULAR, Role } from '../typography';
 import { currentScript, currentRTL } from '../i18n';
 import type { Palette, TextSize, ThemeName } from '../types';
 import type { ScriptName } from '../languages';
+import { useEnsureVisible } from './keyboardScroll';
 import * as haptics from '../haptics';
 
 // ---------------------------------------------------------------- kontext
@@ -487,8 +488,13 @@ export function Field({
   const [focused, setFocused] = useState(false);
   const borderColor = error ? c.negative : success ? c.positive : focused ? c.primary : c.border;
 
+  // Po zaostření si řekneme obrazovce, ať na pole odscrolluje — jinak by
+  // u delšího formuláře uživatel psal naslepo pod klávesnicí.
+  const boxRef = useRef<View>(null);
+  const ensureVisible = useEnsureVisible();
+
   return (
-    <View style={style}>
+    <View style={style} ref={boxRef} collapsable={false}>
       {!!label && <Label color={error ? c.negative : c.textMuted} style={{ marginBottom: 6 }}>{label}</Label>}
       <View
         style={{
@@ -511,7 +517,7 @@ export function Field({
           autoCapitalize={autoCapitalize}
           autoCorrect={false}
           multiline={multiline}
-          onFocus={() => setFocused(true)}
+          onFocus={() => { setFocused(true); ensureVisible(boxRef); }}
           onBlur={() => setFocused(false)}
           style={[
             ty('body'),

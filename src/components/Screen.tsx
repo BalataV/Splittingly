@@ -3,11 +3,24 @@
 // Bezpečné zóny: horní výřez 44 pt, spodní gesture pill 34 pt. Do žádné z nich
 // nesmí zasáhnout okraj, částka ani dotykový cíl — proto se insety počítají
 // tady jednou a obrazovky je neřeší.
+//
+// KLÁVESNICE se řeší na třech úrovních, protože ani jedna sama nestačí:
+//   1. `softwareKeyboardLayoutMode: 'resize'` (app.json) — Android okno zmenší,
+//      místo aby ho klávesnice překryla,
+//   2. `KeyboardAvoidingView` — vytlačí ukotvenou spodní akci nad klávesnici,
+//   3. `ensureVisible` — po zaostření pole na něj ScrollView odscrolluje.
+//
+// Bez toho třetího kroku by uživatel u dlouhého formuláře (nový výdaj) psal
+// naslepo do pole schovaného pod klávesnicí.
 
-import React, { ReactNode } from 'react';
-import { View, Text, ScrollView, Pressable, Keyboard, StyleProp, ViewStyle } from 'react-native';
+import React, { ReactNode, useRef, useCallback } from 'react';
+import {
+  View, Text, ScrollView, Pressable, Keyboard, StyleProp, ViewStyle,
+  KeyboardAvoidingView, Platform, findNodeHandle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUi } from './ui';
+import { KeyboardScrollContext, type EnsureVisible } from './keyboardScroll';
 import { SPACE, BORDER } from '../theme';
 
 interface ScreenProps {
@@ -29,6 +42,27 @@ export default function Screen({
   const { c, ty, rtl } = useUi();
   const insets = useSafeAreaInsets();
   const bg = fill || c.bg;
+
+  const scrollRef = useRef<ScrollView>(null);
+
+  const ensureVisible = useCallback<EnsureVisible>((node) => {
+    const scroller = scrollRef.current;
+    if (!node?.current || !scroller) return;
+    // Krátká prodleva: klávesnice teprve vyjíždí a než dojede, nemá smysl
+    // počítat, kolik místa zbylo.
+    setTimeout(() => {
+      const handle = findNodeHandle(scroller);
+      if (!handle || !node.current) return;
+      node.current.measureLayout(
+        handle,
+        (_x, y) => {
+          // 90 px nad polem — ať je vidět i jeho popisek, ne jen rámeček.
+          scroller.scrollTo({ y: Math.max(0, y - 90), animated: true });
+        },
+        () => undefined,
+      );
+    }, 180);
+  }, []);
 
   const header = (title || onBack || right) ? (
     <View style={{ paddingHorizontal: padded ? SPACE.screen : 0, paddingBottom: SPACE.md, gap: SPACE.sm }}>
@@ -53,7 +87,11 @@ export default function Screen({
 
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       keyboardShouldPersistTaps="handled"
+      // iOS si při vyjeté klávesnici sám upraví vnitřní odsazení; bez toho
+      // by spodek obsahu zůstal pod ní i po odscrollování.
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       contentContainerStyle={[
         { paddingHorizontal: padded ? SPACE.screen : 0, paddingBottom: SPACE.xl, gap: SPACE.md },
         contentStyle,
@@ -71,24 +109,34 @@ export default function Screen({
   return (
     // Ťuknutí kamkoli mimo pole zavře klávesnici; potomci mají přednost.
     <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1, backgroundColor: bg }}>
-      <View style={{ flex: 1, paddingTop: Math.max(insets.top, 12) + SPACE.sm }}>
-        {header}
-        {body}
-        {!!footer && (
-          <View
-            style={{
-              borderTopWidth: BORDER.card,
-              borderTopColor: c.border,
-              backgroundColor: bg,
-              paddingHorizontal: SPACE.screen,
-              paddingTop: SPACE.md,
-              paddingBottom: Math.max(insets.bottom, 12) + SPACE.sm,
-            }}
-          >
-            {footer}
+      <KeyboardScrollContext.Provider value={ensureVisible}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          // iOS klávesnice plave nad obsahem → odsazujeme sami.
+          // Android okno zmenšuje sám (`softwareKeyboardLayoutMode: resize`),
+          // takže druhá vrstva odsazení by obsah vytlačila dvakrát.
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={{ flex: 1, paddingTop: Math.max(insets.top, 12) + SPACE.sm }}>
+            {header}
+            {body}
+            {!!footer && (
+              <View
+                style={{
+                  borderTopWidth: BORDER.card,
+                  borderTopColor: c.border,
+                  backgroundColor: bg,
+                  paddingHorizontal: SPACE.screen,
+                  paddingTop: SPACE.md,
+                  paddingBottom: Math.max(insets.bottom, 12) + SPACE.sm,
+                }}
+              >
+                {footer}
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </KeyboardAvoidingView>
+      </KeyboardScrollContext.Provider>
     </Pressable>
   );
 }
