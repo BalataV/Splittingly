@@ -63,15 +63,46 @@ Přihlášení, právní souhlasy a samotnou publikaci klikáš ty.
 https://splittingly.com/privacy.html
 ```
 
-## B2 · App access (Přístup k aplikaci)
-Vyber **„All or some functionality is restricted"** → **Add new instructions**:
+## B2 · Přihlašovací údaje (dříve „App access")
+
+Otázka *„Je některá část vaší aplikace omezena?"* → **ANO**.
+
+Appka splňuje čtyři body ze seznamu naráz: přihlášení k účtu, jednorázový
+nákup `splittingly_pro`, šestimístný kód pro připojení do skupiny a
+jednorázový kód pro potvrzení e-mailu.
+
+**Add new instructions:**
 
 | Pole | ▶ VLOŽ |
 | --- | --- |
 | Name | `Email sign-in` |
 | Username / e-mail | *(tvůj testovací e-mail)* |
 | Password | *(heslo)* |
-| Instructions | `On the welcome screen tap "Log in", enter the email and password above, then tap "Log in". The app then shows the Overview screen with your groups.` |
+
+Instructions ▶ VLOŽ:
+```
+On the welcome screen tap "Log in", enter the email and password above, then tap "Log in".
+
+The account already contains a group with expenses, so the full flow is visible immediately:
+- Overview shows the balance summary and the list of groups.
+- Tap the group to see who owes whom and the minimum number of transfers.
+- Tap "+ Add expense" to create one; "Settle up" records a payment.
+
+No email confirmation is needed — this account is already verified.
+
+Splittingly does not move money. "Settle up" only records that a payment happened outside the app and updates the balance.
+```
+
+> ⚠️ **Účet musí být předem potvrzený.** *Confirm email* je zapnuté, takže
+> nový účet se bez kliknutí v e-mailu nepřihlásí — a Google výslovně píše,
+> že si účty k testování nezakládá. Založ ho, potvrď a teprve pak vyplň.
+>
+> ⚠️ **Dej jim účet, který už má data.** Prázdná appka vypadá jako rozbitá.
+> Přihlas se, založ skupinu se dvěma třemi členy a pár výdaji, ať recenzent
+> vidí výpočet vyrovnání hned, ne až po pěti krocích.
+>
+> 📌 **Až zapojíš skutečné IAP**, přidej recenzenty i jako *license testers*
+> (Setup → License testing), jinak si Pro nemůžou vyzkoušet.
 
 ## B3 · Ads (Reklamy) — ⚠️ **ZDE SE LIŠÍME OD DOTAČNÍČKU**
 ▶ **Yes, my app contains ads.**
