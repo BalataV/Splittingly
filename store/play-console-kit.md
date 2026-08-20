@@ -144,7 +144,9 @@ Je to poslední volba pod celým seznamem. **Nezaškrtávej nic z nabídky.**
 
 Je to hranice, na které stojí celý produkt — viz IMPLEMENTACE.md, krok 14b.
 
-## B9 · Health → **No**
+## B9 · Health → **„Aplikace nemá žádné zdravotní funkce"**
+
+Poslední volba pod seznamem, nic nezaškrtávej.
 
 ---
 

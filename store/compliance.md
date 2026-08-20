@@ -100,6 +100,52 @@ otázku. **Nemazat ji.**
 
 ---
 
+## Požadavky konkrétních zemí
+
+Google má zvláštní požadavky pro některé trhy. Splittingly se týkají dva.
+
+### Japonsko — veřejné jméno, telefon a adresa ⚠️
+
+Zákon *Tokuteišotorihiki-ho* (o vybraných komerčních transakcích) vyžaduje,
+aby appka s **nákupy v aplikaci** zobrazovala spotřebitelům jméno, telefonní
+číslo a adresu provozovatele. Splittingly má `splittingly_pro`, takže se
+to na něj vztahuje.
+
+**Kolize se soukromím:** z webu jsme adresu záměrně odstranili. Tady ji ale
+Play Console vyžaduje. Údaje se ukazují **jen japonským uživatelům**, ne
+globálně.
+
+Možnosti:
+1. Vyplnit a přijmout, že to japonští uživatelé uvidí
+2. **Použít P.O. box nebo virtuální adresu** — splní požadavek, nevystaví bydliště
+3. Vynechat Japonsko z dostupnosti (ztráta trhu, kde appka dává smysl —
+   máme JPY včetně bezdesetinné matematiky)
+
+### Brazílie — ověření obchodníka
+
+Google si vyžádá jméno, adresu a doklad totožnosti. Jako **fyzická osoba**
+to máš jednodušší než firma (odpadají skuteční vlastníci a manažeři).
+
+**Nedělej nic dopředu** — Google se ozve sám e-mailem s předmětem
+„Důležité informace o vašem účtu Google" a v konzoli se objeví banner.
+
+### EU — zákaz geoblockingu
+
+Nařízení **(EU) 2018/302** zakazuje neoprávněné geografické blokování:
+appka musí být dostupná **v celé EU**. Naše vyloučení (Kuba, Írán, Rusko,
+Bělorusko) je v pořádku — žádná z nich není členem EU.
+
+### Netýká se nás
+
+| Trh | Proč ne |
+| --- | --- |
+| Korea | Dodatečné údaje jen pro vývojáře **se sídlem v Koreji** |
+| Izrael | KYC jen pro vývojáře s **fakturační adresou v Izraeli** |
+| Vietnam | Licencování jen pro **online hry** |
+| Brazílie — Digital ECA | Od 17. 3. 2026 pro appky **pro děti**; Splittingly je 18+ |
+
+---
+
 ## Fonty a grafika třetích stran (§11.2)
 
 | Materiál | Licence | V pořádku? |
