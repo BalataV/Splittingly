@@ -36,9 +36,16 @@ Přihlášení, právní souhlasy a samotnou publikaci klikáš ty.
 | **Zdarma/placená** | **Za 0 Kč** (zdarma) |
 | Deklarace | zaškrtni **obě** |
 
-> **„Název balíčku" (0/150)** není `com.balata.splittingly`! Google tím myslí
-> **jméno vývojáře/balíčku pro interní přehled** — vyplň `Splittingly`.
-> Skutečný applicationId se přebírá z nahraného `.aab` a už ho nezměníš.
+> **„Název balíčku" musí být ve formátu `com.example.mojeaplikace`** — malá
+> písmena, číslice, podtržítka, začíná malým písmenem. Pro nás
+> `com.balata.splittingly`, tedy přesně to, co je v `app.json` →
+> `android.package`.
+>
+> ⚠️ **Musí to sedět na chlup.** Nahraný `.aab` má applicationId zapečený
+> uvnitř; když se rozejde s tím, co zadáš tady, Play Console build odmítne.
+> A jakmile jednou nahraješ první `.aab`, **package name už nikdy nezměníš** —
+> jediná cesta zpět je založit aplikaci znovu pod jiným názvem a přijít
+> o všechna stažení i hodnocení.
 
 > **Pozor na „Zdarma".** Po publikaci **už nejde změnit na placenou**. Nám to
 > nevadí — Splittingly je zdarma a vydělává reklamou a jednorázovým nákupem
