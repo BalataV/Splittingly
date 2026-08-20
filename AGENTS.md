@@ -58,6 +58,10 @@ Návrhový směr **„Hard Split"** (neo-brutalismus) podle
 
 ## Klíčové konvence
 
+- **Šířka obsahu je omezená na 600 pt** (`MAX_W` v `Root.tsx`) a vycentrovaná.
+  Návrh je kreslený pro 390pt telefon; na tabletu by roztažený řádek měl jméno
+  vlevo a částku o půl obrazovky dál. Pozadí jde přes celou plochu, omezuje se
+  jen obsah.
 - **Poloměr rohů je 0. Všude.** Okraj je vždy `c.border`, nikdy šedý —
   jediná výjimka je přerušovaný rám reklamy `#5F5F5F`.
 - **Stín** je posunutý obdélník bez rozostření, kreslený jako podložená

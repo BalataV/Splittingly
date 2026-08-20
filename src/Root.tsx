@@ -31,6 +31,19 @@ import ShareCard from './screens/ShareCard';
 import Setup from './screens/Setup';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
 
+/**
+ * Maximální šířka obsahu.
+ *
+ * Návrh „Hard Split" je kreslený pro 390pt telefon a na tabletu by se rozpadl:
+ * řádek výdaje přes 1200 px má jméno vlevo a částku o půl metru dál, takže se
+ * ztratí souvislost mezi nimi. Místo dvousloupcového layoutu (což je vlastní
+ * návrh, ne úprava) obsah omezíme a vycentrujeme — appka pak na tabletu
+ * vypadá jako záměr, ne jako natažený telefon.
+ *
+ * Pozadí zůstává přes celou plochu, omezuje se jen obsah.
+ */
+const MAX_W = 600;
+
 /** Obrazovky bez spodní navigace — vstup do účtu a modální toky. */
 const NO_CHROME: ScreenName[] = [
   'onboarding', 'signup', 'login', 'forgot', 'new_password', 'confirm_email',
@@ -86,13 +99,16 @@ function RootInner() {
   else if (sc === 'setup') screen = <Setup />;
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center' }}>
       <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} backgroundColor={c.bg} />
-      <View style={{ flex: 1 }}>{screen}</View>
+      {/* Na telefonu se `maxWidth` neuplatní; na tabletu drží obsah pohromadě. */}
+      <View style={{ flex: 1, width: '100%', maxWidth: MAX_W }}>
+        <View style={{ flex: 1 }}>{screen}</View>
 
-      {showBanner(sc, state.isPro, state.groups.length > 0) && <BannerAd />}
-      {chrome && <TabBar />}
-      {!!state.toast && <Toast text={state.toast} />}
+        {showBanner(sc, state.isPro, state.groups.length > 0) && <BannerAd />}
+        {chrome && <TabBar />}
+        {!!state.toast && <Toast text={state.toast} />}
+      </View>
     </View>
   );
 }
@@ -115,7 +131,7 @@ function Splash() {
       </Text>
 
       {/* Určitý postup místo nekonečného kolečka — uživatel vidí, že to končí. */}
-      <View style={{ position: 'absolute', bottom: 40, left: 40, right: 40, gap: SPACE.sm }}>
+      <View style={{ position: 'absolute', bottom: 40, left: 40, right: 40, maxWidth: MAX_W, alignSelf: 'center', gap: SPACE.sm }}>
         <View style={{ height: 8, borderWidth: BORDER.card, borderColor: ink }}>
           <View style={{ width: '60%', height: '100%', backgroundColor: ink }} />
         </View>
