@@ -57,7 +57,7 @@
       "admobAndroidAppId": "",
       "admobIosAppId": "",
       "eas": {
-        "projectId": ""
+        "projectId": "5815c77b-07f5-4745-840d-6eaac97db942"
       }
     },
     "plugins": [
@@ -96,7 +96,8 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": ""
-    }
+      "url": "https://u.expo.dev/5815c77b-07f5-4745-840d-6eaac97db942"
+    },
+    "owner": "balatav"
   }
 }
