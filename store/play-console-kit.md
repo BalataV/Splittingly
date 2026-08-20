@@ -196,6 +196,27 @@ Splittingly records payments; it does not move money. There is no bank connectio
 | Feature graphic | 1024×500 |
 | Phone screenshots | min. 2, doporučeno 5 |
 
+## Countries / regions (Dostupnost)
+
+**Zaškrtni všechny země včetně „Zbytek světa", kromě:**
+
+| Vynechat | Důvod |
+| --- | --- |
+| **Kuba** | Embargo OFAC. §16.5 smlouvy tě zavazuje dodržovat americká vývozní omezení a sankce a činí tě odpovědným za to, že je Google kvůli tobě neporuší. |
+| **Írán** | Totéž. Google Play tam prakticky nefunguje. |
+| **Rusko** (doporučeno) | Google Play tam má pozastavené placené transakce a AdMob nemonetizuje — nulový příjem, ale plný závazek podpory podle §4.7. |
+| **Bělorusko** (doporučeno) | Totéž. |
+
+> Severní Korea a Sýrie v seznamu nejsou — ty Google vyřadil sám. Kubu a Írán
+> nechává na tobě.
+
+Jinde omezovat nemá smysl: appka má 50 jazyků a 50 měn a je stavěná na to, že
+běží v italštině a počítá v bahtech. „Zbytek světa" navíc pokryje země, které
+Google přidá později.
+
+> **Dostupnost jde kdykoli změnit** — na rozdíl od volby „Zdarma", která je po
+> publikaci nevratná.
+
 ## Kategorizace a kontakt
 - App category: **Finance**
 - Tags: *expense tracking, budgeting, bill splitting*
