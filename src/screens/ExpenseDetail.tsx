@@ -4,6 +4,7 @@ import { View, Text, Pressable } from 'react-native';
 import Screen from '../components/Screen';
 import { useUi, Card, Button, Rule, Avatar, HardShadow } from '../components/ui';
 import { Money, MoneySlot, ApproxMoney } from '../components/Money';
+import { ReceiptThumb } from '../components/Receipt';
 import { useApp, CLOUD_MODE } from '../store';
 import { expensesApi } from '../api';
 import { t, fmtDate, fmtTime } from '../i18n';
@@ -99,13 +100,16 @@ export default function ExpenseDetail() {
       </View>
 
       {e.receipts.length > 0 && (
-        <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
-          {e.receipts.map((url) => (
-            <View key={url} style={{ width: 78, height: 78, backgroundColor: c.surfaceSunken, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 22 }}>🧾</Text>
-            </View>
-          ))}
-        </View>
+        <>
+          <Text style={[ty('label'), { color: c.textMuted, marginTop: SPACE.sm }]}>{t('RECEIPTS')}</Text>
+          <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
+            {/* Ťuknutím se otevře přes celou obrazovku. Odebrat jde jen
+                v editaci výdaje, ne odsud — tady se účtenka jen prohlíží. */}
+            {e.receipts.map((url) => (
+              <ReceiptThumb key={url} uri={url} size={78} />
+            ))}
+          </View>
+        </>
       )}
 
       {e.editCount > 0 && (

@@ -21,7 +21,7 @@ export const AD_SIZES = {
 /** Obrazovky, kde reklama NESMÍ být za žádných okolností. */
 const AD_FREE: ScreenName[] = [
   'onboarding', 'signup', 'login', 'forgot', 'new_password', 'confirm_email', // 01–07
-  'add_expense', 'split_method', 'receipt',                                    // zadávání peněz
+  'add_expense', 'split_method',                                               // zadávání peněz
   'settle',                                                                    // potvrzení platby
   'group',                                                                     // sídlí tu akce „Settle up"
 ];

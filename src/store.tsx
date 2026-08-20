@@ -11,7 +11,7 @@
 // výpočetní vrstva je jméno-orientovaná, převod tam a zpět dělá `norm`/`denorm`.
 
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
-import { Appearance, BackHandler, Share, Platform, I18nManager } from 'react-native';
+import { Appearance, BackHandler, Share, Platform, I18nManager, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
@@ -21,7 +21,7 @@ import * as Updates from 'expo-updates';
 import { authApi, groupsApi, expensesApi, storageApi } from './api';
 import type { RawExpense } from './api/expenses';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { setLangGlobal, canAutoDetect } from './i18n';
+import { setLangGlobal, canAutoDetect, t } from './i18n';
 import { language, isRTL } from './languages';
 import { parseAmount, splitEqual, splitShares, remainderOf } from './money';
 import { decimalsOf } from './currencies';
@@ -183,7 +183,7 @@ const BACK_MAP: Partial<Record<ScreenName, ScreenName>> = {
   new_password: 'login', confirm_email: 'signup',
   create_group: 'overview', join_group: 'overview',
   group: 'overview', add_expense: 'group', split_method: 'add_expense',
-  receipt: 'add_expense', expense_detail: 'group', settle: 'group',
+  expense_detail: 'group', settle: 'group',
   stats: 'overview', year_in_review: 'stats', activity: 'overview',
   search: 'overview', share_card: 'group',
   profile: 'overview', language: 'profile', currency: 'profile',
@@ -784,7 +784,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     patch((s) => ({ draft: { ...s.draft, exactText: { ...s.draft.exactText, [name]: text } } }));
   };
 
-  const attachReceipt = async (from: 'camera' | 'library') => {
+  /**
+   * Přiloží účtenku. Bez parametru se nejdřív zeptá odkud.
+   *
+   * Volba jde přes systémový dialog schválně: appka nemá živý náhled
+   * z fotoaparátu (to by znamenalo `expo-camera` a vlastní obrazovku),
+   * takže vlastní mezikrok by byl jen prázdný obdélník navíc. Systémový
+   * foťák se otevře rovnou a uživatel je v něm doma.
+   */
+  const attachReceipt = async (from?: 'camera' | 'library') => {
+    if (!from) {
+      Alert.alert(t('Attach receipt'), undefined, [
+        { text: t('Take a photo'), onPress: () => { attachReceipt('camera'); } },
+        { text: t('Choose from library'), onPress: () => { attachReceipt('library'); } },
+        { text: t('Cancel'), style: 'cancel' },
+      ]);
+      return;
+    }
     // Limit se hlídá TADY, ne na obrazovce — jinak by ho obešla jiná cesta
     // k té samé akci (foťák, galerie, sdílení z jiné appky).
     const st = stateRef.current;

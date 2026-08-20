@@ -642,8 +642,15 @@ posílat, spadne do úplně jiné kategorie (Apple Pay, licence, KYC).
 Proto ta věta na obrazovce 16 („Splittingly records the payment; it does not
 move money") není marketing, ale hranice produktu. Nemazat ji.
 
-**Bez dopadu:** fotky účtenek (§3.3.3(A) řeší skryté nahrávání — náš hledáček
-je viditelný), poloha (nepoužíváme), Apple Pay, Wallet, MDM, SiriKit.
+**Bez dopadu:** fotky účtenek (§3.3.3(A) řeší skryté nahrávání — používáme
+systémový fotoaparát, kde je indikátor vestavěný), poloha (nepoužíváme),
+Apple Pay, Wallet, MDM, SiriKit.
+
+> 📌 **Obrazovka 14 z návrhu (kamerový hledáček) se neimplementovala.**
+> Živý náhled by znamenal `expo-camera` a vlastní kamerovou vrstvu; místo ní
+> se otevírá systémový fotoaparát, který uživatel zná a který sám splňuje
+> požadavek na viditelný indikátor snímání. Kdyby se někdy přidal ořez
+> účtenky nebo OCR, vlastní kamera bude potřeba a návrh 14 se hodí.
 
 > Poznámka: tohle je porovnání smlouvy s tím, co appka dělá — **ne** rozbor,
 > co se ve smlouvě oproti minulé verzi změnilo. Na to by bylo potřeba mít obě

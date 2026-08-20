@@ -15,6 +15,7 @@ import Screen from '../components/Screen';
 import { useUi, Button, Field, Label, Segmented, Check, Chip, Avatar, Stepper, HardShadow } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { MascotStrip } from '../components/Mascot';
+import { ReceiptThumb, ReceiptAdd } from '../components/Receipt';
 import { useApp } from '../store';
 import { t, plural } from '../i18n';
 import { quipFor } from '../quips';
@@ -85,7 +86,7 @@ export default function AddExpense() {
         onChangeText={(v) => actions.setDraft({ desc: v })}
         placeholder={t('What was it?')}
         trailing={
-          <Pressable onPress={() => actions.navigate('receipt')} hitSlop={10} accessibilityLabel={t('Attach receipt')}>
+          <Pressable onPress={() => actions.attachReceipt()} hitSlop={10} accessibilityLabel={t('Attach receipt')}>
             <Text style={{ fontSize: 18 }}>📷</Text>
           </Pressable>
         }
@@ -214,33 +215,36 @@ export default function AddExpense() {
         <MascotStrip who="analyst" text={quipFor('split_error', 'analyst', true) || ''} />
       )}
 
-      {/* účtenky */}
-      {d.receipts.length > 0 && (
-        <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
+      {/* Účtenky. Náhled je SKUTEČNÁ fotka — u appky, kde je účtenka důkaz,
+          se musí nečitelný snímek poznat hned, ne až při hádce. Ťuknutí ji
+          otevře přes celou obrazovku, podržení nabídne odebrání.
+
+          Účtenka se ve free verzi NEVYPÍNÁ, jen se omezuje počet. */}
+      <View style={{ gap: 6 }}>
+        <Label>{t('RECEIPTS')}</Label>
+        <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap', alignItems: 'center' }}>
           {d.receipts.map((url) => (
-            <Pressable key={url} onLongPress={() => actions.removeReceipt(url)} accessibilityLabel={t('Receipt')}>
-              <View style={{ width: 56, height: 56, backgroundColor: c.surfaceSunken, borderWidth: BORDER.small, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 18 }}>🧾</Text>
+            <ReceiptThumb key={url} uri={url} size={64} onRemove={() => actions.removeReceipt(url)} />
+          ))}
+          {canAddReceipt(state.isPro, d.receipts.length) ? (
+            <ReceiptAdd size={64} onPress={() => actions.attachReceipt()} />
+          ) : (
+            <Pressable onPress={() => actions.navigate('remove_ads')}>
+              <View style={{
+                minHeight: 64, justifyContent: 'center', paddingHorizontal: 12,
+                borderWidth: BORDER.small, borderColor: c.border, borderStyle: 'dashed',
+              }}>
+                <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Pro removes the limit')}</Text>
               </View>
             </Pressable>
-          ))}
-        </View>
-      )}
-
-      {/* Účtenka se ve free verzi NEVYPÍNÁ, jen se omezuje počet — je to
-          důkaz, ne bonus. Limit se říká dopředu, ne až po zmáčknutí. */}
-      <Pressable onPress={() => actions.navigate(canAddReceipt(state.isPro, d.receipts.length) ? 'receipt' : 'remove_ads')}>
-        <View style={{ borderWidth: BORDER.card, borderColor: c.border, borderStyle: 'dashed', padding: 14, alignItems: 'center', gap: 4 }}>
-          <Text style={[ty('rowTitle'), { color: c.text }]}>📷 {t('Attach receipt')}</Text>
-          {!state.isPro && (
-            <Text style={[ty('rowMeta'), { color: c.textMuted, textAlign: 'center' }]}>
-              {d.receipts.length >= FREE_RECEIPTS_PER_EXPENSE
-                ? t('Pro removes the limit')
-                : t('{n} of {max} used', { n: d.receipts.length, max: FREE_RECEIPTS_PER_EXPENSE })}
-            </Text>
           )}
         </View>
-      </Pressable>
+        {!state.isPro && d.receipts.length < FREE_RECEIPTS_PER_EXPENSE && (
+          <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
+            {t('{n} of {max} used', { n: d.receipts.length, max: FREE_RECEIPTS_PER_EXPENSE })}
+          </Text>
+        )}
+      </View>
 
       {/* Orientační přepočet do MOJÍ měny. Do výpočtu dluhu nikdy nevstupuje. */}
       {d.currency !== state.currency && amountMinor > 0 && (

@@ -21,7 +21,6 @@ import CreateGroup from './screens/CreateGroup';
 import JoinGroup from './screens/JoinGroup';
 import GroupDetail from './screens/GroupDetail';
 import AddExpense from './screens/AddExpense';
-import ReceiptCapture from './screens/ReceiptCapture';
 import ExpenseDetail from './screens/ExpenseDetail';
 import SettleUp from './screens/SettleUp';
 import Stats from './screens/Stats';
@@ -34,7 +33,7 @@ import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, Rem
 /** Obrazovky bez spodní navigace — vstup do účtu a modální toky. */
 const NO_CHROME: ScreenName[] = [
   'onboarding', 'signup', 'login', 'forgot', 'new_password', 'confirm_email',
-  'add_expense', 'split_method', 'receipt', 'settle', 'create_group', 'join_group',
+  'add_expense', 'split_method', 'settle', 'create_group', 'join_group',
   'share_card', 'year_in_review', 'remove_ads',
 ];
 
@@ -69,7 +68,6 @@ function RootInner() {
   else if (sc === 'join_group') screen = <JoinGroup />;
   else if (sc === 'group') screen = <GroupDetail />;
   else if (sc === 'add_expense' || sc === 'split_method') screen = <AddExpense />;
-  else if (sc === 'receipt') screen = <ReceiptCapture />;
   else if (sc === 'expense_detail') screen = <ExpenseDetail />;
   else if (sc === 'settle') screen = <SettleUp />;
   else if (sc === 'stats') screen = <Stats />;

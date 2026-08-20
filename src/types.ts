@@ -17,7 +17,7 @@ export type ScreenName =
   | 'onboarding' | 'signup' | 'login' | 'forgot' | 'new_password' | 'confirm_email'
   // hlavní tok (08–21)
   | 'overview' | 'create_group' | 'join_group' | 'group' | 'add_expense'
-  | 'split_method' | 'receipt' | 'expense_detail' | 'settle' | 'stats'
+  | 'split_method' | 'expense_detail' | 'settle' | 'stats'
   | 'year_in_review' | 'activity' | 'search' | 'share_card'
   // nastavení (22–29)
   | 'profile' | 'language' | 'currency' | 'appearance' | 'notifications'
@@ -293,7 +293,8 @@ export interface Actions {
   setSplitType: (t: SplitType) => void;
   setShare: (name: string, delta: number) => void;
   setExact: (name: string, text: string) => void;
-  attachReceipt: (from: 'camera' | 'library') => Promise<void>;
+  /** Bez parametru se zeptá, odkud fotku vzít. */
+  attachReceipt: (from?: 'camera' | 'library') => Promise<void>;
   removeReceipt: (url: string) => void;
   saveExpense: () => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
