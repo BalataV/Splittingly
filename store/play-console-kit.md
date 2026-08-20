@@ -126,11 +126,23 @@ stažení aplikace.
 
 ## B7 · Government apps → **No**
 
-## B8 · Financial features → **„My app doesn't provide any financial features"**
+## B8 · Financial features → **„Aplikace neposkytuje žádné finanční funkce"**
 
-> Appka jen **eviduje**, kdo komu kolik dluží. Nezpracovává platby, nepřevádí
-> peníze, nemá přístup k účtu. Kdyby ano, spadla by pod finanční regulaci —
-> viz IMPLEMENTACE.md, krok 14b.
+Je to poslední volba pod celým seznamem. **Nezaškrtávej nic z nabídky.**
+
+> ⚠️ **Past: „Převody a posílání peněz".** Je lákavé to zaškrtnout, protože
+> appka mluví o „settle up" — ale Splittingly peníze **nepřevádí**, jen
+> zaznamenává, že platba proběhla mimo appku.
+>
+> Zaškrtnutím spustíš kontrolu specializovaným týmem, který bude chtít
+> **licenci k poskytování platebních služeb** (v EU podle PSD2). Tu nemáš
+> a nepotřebuješ — appka by uvízla ve schvalování.
+>
+> Stejně tak nezaškrtávej „Odměny, body, věrnostní programy" (Pro je
+> jednorázový nákup funkcí, ne věrnostní systém) ani cokoli z „Obchodování
+> a fondy".
+
+Je to hranice, na které stojí celý produkt — viz IMPLEMENTACE.md, krok 14b.
 
 ## B9 · Health → **No**
 

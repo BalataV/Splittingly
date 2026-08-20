@@ -79,11 +79,18 @@ nebo spuštěním kontrol. Neodškrtnuté buď ověřit nejdou, nebo selhaly.
 ### ⬜ Zbývá (v tomhle pořadí)
 
 - [ ] **Krok 4d** — Apple Sign In (povinné, když nabízíš Google)
-- [ ] **Krok 6** — `eas build:configure`; `extra.eas.projectId` a `updates.url`
-      jsou zatím prázdné
+- [x] **Krok 6** — hotovo. EAS projekt `@balatav/splittingly`
+      (`5815c77b-07f5-4745-840d-6eaac97db942`), `updates.url` doplněno,
+      keystore vygenerovaný v cloudu, **první production build hotový**
+      (1.0.0, versionCode 2, `.aab`)
 - [ ] **Krok 7 (Android část)** — otisky SHA-256 do
       `docs/.well-known/assetlinks.json`; teď tam stojí `PASTE_…_HERE`,
-      takže App Links neověří. Otisky vypadnou z prvního EAS buildu.
+      takže App Links neověří.
+      **Kde je vzít:** po nahrání `.aab` v Play Console →
+      *Test and release → Setup → App integrity*. Jsou tam oba —
+      *App signing key certificate* i *Upload key certificate*.
+      (`eas credentials -p android` je taky umí, ale chce interaktivní
+      terminál a lokálně nainstalovaný `keytool`.)
 - [ ] **Krok 9–11** — materiály do obchodů, dotazníky, produkční build
 - [ ] **Krok 12** — reklamní SDK (až po vývojovém buildu)
 - [ ] **Krok 13** — produkt `splittingly_pro` v obou obchodech + napojení IAP
