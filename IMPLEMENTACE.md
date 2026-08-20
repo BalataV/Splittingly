@@ -545,6 +545,17 @@ eas build -p android --profile development
 > to pro vlastní moduly řeší; u `react-native-google-mobile-ads` ověř, že máš
 > verzi s `PrivacyInfo.xcprivacy`. Bez toho App Store build odmítne.
 
+> ⚠️ **A PŘEPNI DEKLARACI INZERTNÍHO ID V PLAY CONSOLE.**
+> *Zásady → Obsah aplikace → Inzertní ID* → z **Ne** na **Ano**.
+>
+> Tohle je past, která se projeví tiše: bez přepnutí ti systém při čtení
+> inzertního ID vrátí **samé nuly** místo identifikátoru. Reklamy poběží,
+> ale bez správného ID — hůř placené, bez měření, a **nikde nevyskočí chyba**.
+> Zjistíš to jen z toho, že příjem nedává smysl.
+>
+> Oprávnění `com.google.android.gms.permission.AD_ID` se do manifestu přidá
+> samo (má ho AdMob SDK a Gradle ho sloučí); ruční je jen ta deklarace.
+
 1. Založ účet na <https://admob.google.com>, vytvoř appku pro Android i iOS.
 2. ID appek vlož do `app.json` → `extra.admobAndroidAppId` / `admobIosAppId`
    a přidej plugin `react-native-google-mobile-ads` podle jeho dokumentace.
