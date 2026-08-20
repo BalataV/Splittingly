@@ -56,7 +56,16 @@ export default function AddExpense() {
       backLabel={t('Cancel')}
       footer={
         <Button
-          label={amountMinor > 0 ? t('Add {amount}', { amount: fmt(amountMinor, d.currency) }) : t('Add expense')}
+          // Při editaci nesmí tlačítko slibovat „Add" — uživatel nic nepřidává,
+          // ukládá změnu. Částka v popisku by ho navíc nutila ověřovat, jestli
+          // omylem nevytváří druhý výdaj.
+          label={
+            d.id
+              ? t('Save changes')
+              : amountMinor > 0
+                ? t('Add {amount}', { amount: fmt(amountMinor, d.currency) })
+                : t('Add expense')
+          }
           onPress={actions.saveExpense}
           disabled={!canSave || state.busy}
         />

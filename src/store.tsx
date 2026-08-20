@@ -869,6 +869,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try {
           if (d.id) {
             await expensesApi.updateExpense(d.id, input, [{ field: 'amount', from: '', to: String(amountMinor) }]);
+            // Účtenky se při editaci musí DOROVNAT, ne jen uložit znovu.
+            // Bez toho by přidaná fotka nikdy nedoletěla na server a odebraná
+            // by se po synchronizaci vrátila.
+            const before = (s.expenses[g.id] || []).find((e) => e.id === d.id)?.receipts || [];
+            for (const url of d.receipts.filter((u) => !before.includes(u))) {
+              await expensesApi.addReceipt(d.id, g.id, url).catch(() => undefined);
+            }
+            for (const url of before.filter((u) => !d.receipts.includes(u))) {
+              await expensesApi.removeReceipt(d.id, url).catch(() => undefined);
+            }
           } else {
             const newId = await expensesApi.addExpense(input);
             for (const url of d.receipts) await expensesApi.addReceipt(newId, g.id, url).catch(() => undefined);
@@ -920,7 +930,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patch({ expenses });
         await saveLocal({ expenses });
       }
-      patch({ draft: emptyDraft(), selectedExpense: null });
+      // Po EDITACI se vracíme na detail výdaje, takže si musíme nechat, který
+      // to je — jinak by `goBack()` skončil na obrazovce „Not found".
+      // Po vytvoření nového výdaje se vracíme do skupiny a výběr nedrží nic.
+      patch({ draft: emptyDraft(), selectedExpense: d.id || null });
       haptics.press();
       goBack();
     } catch {
