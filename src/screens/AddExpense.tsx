@@ -10,17 +10,17 @@
 //     svítí červeně. Rozdíl jedné nejmenší jednotky připadne plátci.
 
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import Screen from '../components/Screen';
-import { useUi, Card, Button, Field, Label, Segmented, Check, Avatar, Stepper, HardShadow, Row } from '../components/ui';
+import { useUi, Button, Field, Label, Segmented, Check, Chip, Avatar, Stepper, HardShadow } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { MascotStrip } from '../components/Mascot';
 import { useApp } from '../store';
 import { t, plural } from '../i18n';
 import { quipFor } from '../quips';
-import { parseAmount, splitEqual, splitShares, remainderOf, fmt, toInputText } from '../money';
+import { parseAmount, splitEqual, splitShares, remainderOf, fmt } from '../money';
 import { currency, decimalsOf } from '../currencies';
-import { CATEGORIES, category } from '../categories';
+import { CATEGORIES } from '../categories';
 import { initial, ME } from '../logic';
 import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from '../entitlements';
 import { SPACE, BORDER } from '../theme';
@@ -91,34 +91,47 @@ export default function AddExpense() {
         }
       />
 
-      {/* dvě poloviční karty: kdo platil / kategorie */}
-      <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
-        <Card style={{ flex: 1 }} padding={11}>
-          <Label>{t('PAID BY')}</Label>
-          <Pressable
-            onPress={() => {
-              const i = parts.indexOf(d.payer);
-              actions.setPayer(parts[(i + 1) % parts.length] || ME);
-            }}
-            style={{ minHeight: 32, justifyContent: 'center' }}
-          >
-            <Text style={[ty('rowTitle'), { color: c.text }]}>{d.payer === ME ? t('You') : d.payer}</Text>
-          </Pressable>
-        </Card>
-        <Card style={{ flex: 1 }} padding={11}>
-          <Label>{t('CATEGORY')}</Label>
-          <Pressable
-            onPress={() => {
-              const i = CATEGORIES.findIndex((x) => x.key === d.category);
-              actions.setDraft({ category: CATEGORIES[(i + 1) % CATEGORIES.length].key });
-            }}
-            style={{ minHeight: 32, justifyContent: 'center' }}
-          >
-            <Text style={[ty('rowTitle'), { color: c.text }]}>
-              {category(d.category).glyph} {t(category(d.category).label)}
-            </Text>
-          </Pressable>
-        </Card>
+      {/* Kdo platil a kategorie jako vodorovné lišty.
+          Původně to byly dvě poloviční karty, které při ťuknutí cyklovaly na
+          další položku — u osmi kategorií to znamenalo až sedm ťuknutí a
+          uživatel navíc nevidí, z čeho vybírá. Lišta ukáže všechno naráz
+          a vybere se jedním dotykem. */}
+      <View style={{ gap: 6 }}>
+        <Label>{t('PAID BY')}</Label>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ gap: SPACE.sm, paddingRight: SPACE.screen }}
+        >
+          {g.members.map((m) => (
+            <Chip
+              key={m}
+              label={m === ME ? t('You') : m}
+              active={d.payer === m}
+              onPress={() => actions.setPayer(m)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={{ gap: 6 }}>
+        <Label>{t('CATEGORY')}</Label>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ gap: SPACE.sm, paddingRight: SPACE.screen }}
+        >
+          {CATEGORIES.map((cat) => (
+            <Chip
+              key={cat.key}
+              label={cat.glyph + '  ' + t(cat.label)}
+              active={d.category === cat.key}
+              onPress={() => actions.setDraft({ category: cat.key })}
+            />
+          ))}
+        </ScrollView>
       </View>
 
       {/* 13 — způsob dělení */}
