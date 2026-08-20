@@ -70,8 +70,14 @@ Návrhový směr **„Hard Split"** (neo-brutalismus) podle
 - **Jazyk a měna jsou nezávislé.** Měna rozhoduje o formátu částky, jazyk
   o směru čtení, datu a skloňování. Ani jedno nepřebíjí druhé.
 - **Chyba pole se neříká toastem.** Červený okraj nikdy nestojí bez věty vedle.
-- Klávesnice: `Pressable onPress={Keyboard.dismiss}` obaluje obrazovku
-  (`components/Screen.tsx`), každý `ScrollView` má `keyboardShouldPersistTaps="handled"`.
+- **Klávesnice:** posouvatelné obrazovky ji zavírají samotným `ScrollView`
+  (`keyboardShouldPersistTaps="handled"` + `keyboardDismissMode`). Obalový
+  `Pressable onPress={Keyboard.dismiss}` je **jen** na obrazovkách bez posuvu
+  — kdyby obaloval scrollovatelný obsah, sebral by dotyk na prázdném místě
+  a listování by šlo až na několikátý pokus.
+- **Zaostřené pole se posune nad klávesnici:** `Field` volá `useEnsureVisible()`
+  z `components/keyboardScroll.ts`, `Screen` na něj odscrolluje. Kontext bydlí
+  ve vlastním souboru kvůli kruhovému importu `ui.tsx` ↔ `Screen.tsx`.
 
 ## Maskoti
 

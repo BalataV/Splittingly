@@ -88,7 +88,12 @@ export default function Screen({
   const body = scroll ? (
     <ScrollView
       ref={scrollRef}
+      // „handled" znamená: ťuknutí, které nezachytí žádný potomek, zavře
+      // klávesnici. Díky tomu NEPOTŘEBUJEME obalový Pressable — a ten by
+      // navíc bral ScrollView gesta (viz komentář u návratové hodnoty).
       keyboardShouldPersistTaps="handled"
+      // Zavření tažením. Na iOS klávesnice jede s prstem, na Androidu zmizí.
+      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       // iOS si při vyjeté klávesnici sám upraví vnitřní odsazení; bez toho
       // by spodek obsahu zůstal pod ní i po odscrollování.
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
@@ -106,10 +111,8 @@ export default function Screen({
     </View>
   );
 
-  return (
-    // Ťuknutí kamkoli mimo pole zavře klávesnici; potomci mají přednost.
-    <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1, backgroundColor: bg }}>
-      <KeyboardScrollContext.Provider value={ensureVisible}>
+  const inner = (
+    <KeyboardScrollContext.Provider value={ensureVisible}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           // iOS klávesnice plave nad obsahem → odsazujeme sami.
@@ -135,8 +138,21 @@ export default function Screen({
               </View>
             )}
           </View>
-        </KeyboardAvoidingView>
-      </KeyboardScrollContext.Provider>
+      </KeyboardAvoidingView>
+    </KeyboardScrollContext.Provider>
+  );
+
+  // POZOR na obalový Pressable: kdyby obaloval i posouvatelný obsah, sebral
+  // by ScrollView dotyk na prázdném místě a listování by šlo až na několikátý
+  // pokus (na tlačítku ano, vedle něj ne). Proto je jen na obrazovkách BEZ
+  // posuvu — tam se nemá co rozbít a klávesnici je pořád čím zavřít.
+  // Na posouvatelných obrazovkách to obstará samotný ScrollView přes
+  // `keyboardShouldPersistTaps` a `keyboardDismissMode`.
+  return scroll ? (
+    <View style={{ flex: 1, backgroundColor: bg }}>{inner}</View>
+  ) : (
+    <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1, backgroundColor: bg }}>
+      {inner}
     </Pressable>
   );
 }
