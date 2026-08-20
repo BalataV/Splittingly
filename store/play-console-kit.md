@@ -137,23 +137,52 @@ stažení aplikace.
 - Do you provide a way for users to request deletion? → **Yes**
 - Deletion URL ▶ VLOŽ: `https://splittingly.com/delete-account.html`
 
-**Datové typy:**
+### Krok 3 — Typy dat (zaškrtni přesně těchto 7)
 
-| Datový typ | Collected | Shared | Účel | Povinné? |
+| Kategorie | Položka |
+| --- | --- |
+| Osobní údaje | **Název**, **E-mailová adresa**, **ID uživatelů** |
+| Finanční údaje | **Jiné finanční údaje** *(částky výdajů a dluhy)* |
+| Fotky a videa | **Fotky** *(účtenky)* |
+| Aktivita aplikace | **Jiný obsah vytvářený uživateli** *(popisy, názvy skupin)* |
+| ID zařízení nebo jiná ID | **ID zařízení nebo jiná ID** *(push token, reklamní ID)* |
+
+**NEZAŠKRTÁVEJ:**
+
+- **Polohu** — appka ji nepoužívá vůbec (žádné `expo-location`, žádné oprávnění)
+- **Platební údaje** — kartu vidí Google Play, ne my
+- **Historii vyhledávání** — `recentSearches` zůstává v telefonu, neopustí zařízení
+- Zprávy, kontakty, kalendář, zvuk, soubory, prohlížení webu, zdraví
+- **Informace o výkonu aplikace** — nemáme Sentry ani Crashlytics
+
+### Krok 4 — Shromažďování a zpracování
+
+**„Jsou tato data zpracovávána dočasně?" → NE u všech sedmi.** Všechno se
+ukládá do databáze natrvalo; „dočasné" znamená pouze v paměti po dobu
+jednoho požadavku.
+
+| Položka | Shromažď. | Sdíleno | Nezbytné / volitelné | Účely |
 | --- | --- | --- | --- | --- |
-| Personal info → **Email address** | Ano | Ne | App functionality, Account management | Required |
-| Personal info → **Name** | Ano | Ne | App functionality | Optional |
-| Financial info → **Other financial info** *(částky výdajů)* | Ano | Ne | App functionality | Optional |
-| Photos and videos → **Photos** *(účtenky)* | Ano | Ne | App functionality | Optional |
-| App activity → **Other user-generated content** | Ano | Ne | App functionality | Optional |
-| Device or other IDs → **Device or other IDs** | Ano | **ANO** | App functionality, **Advertising or marketing** | Optional |
+| Název | ✅ | ✗ | **Nezbytné** | Funkce aplikace + Správa účtu |
+| E-mailová adresa | ✅ | ✗ | **Nezbytné** | Funkce aplikace + Správa účtu |
+| ID uživatelů | ✅ | ✗ | **Nezbytné** | Funkce aplikace + Správa účtu |
+| Jiné finanční údaje | ✅ | ✗ | Uživatelé mohou zvolit | Funkce aplikace |
+| Fotky | ✅ | ✗ | Uživatelé mohou zvolit | Funkce aplikace |
+| Jiný obsah vytvářený uživateli | ✅ | ✗ | Uživatelé mohou zvolit | Funkce aplikace |
+| ID zařízení nebo jiná ID | ✅ | **✅** | Uživatelé mohou zvolit | Funkce aplikace + **Reklama nebo marketing** |
 
-> ⚠️ **Poslední řádek je ten rozdíl.** AdMob používá reklamní identifikátor,
-> takže se sdílí s třetí stranou a musí být přiznaný. Všechno ostatní zůstává
-> nesdílené — reklama u nás nikdy nedostane text výdaje, částku, kategorii ani
-> název skupiny (viz `src/ads.ts` a zásady, sekce 4).
+**Proč zrovna takhle:**
 
-**NEZAŠKRTÁVEJ:** poloha, kontakty, SMS, zdraví, platební údaje, historie prohlížení.
+- **„Sdíleno" jen u ID zařízení.** Supabase je náš *zpracovatel*, ne třetí
+  strana — data ve skupinách se tedy nesdílí. AdMob třetí strana **je**.
+- **Název je „nezbytné"**, i když se dá při registraci nechat prázdný:
+  trigger `handle_new_user` v takovém případě odvodí jméno z e-mailu, takže
+  vždycky nějaké vznikne a uživatel to nemůže vypnout.
+- **Částky, fotky a popisy jsou volitelné** — účet může existovat bez jediného
+  výdaje.
+- **„Komunikace vývojáře" nikde**, ani u e-mailu. Ten účel je pro newslettery;
+  potvrzení registrace a reset hesla spadají pod **Správu účtu**.
+- **„Analytika" nikde** — žádnou telemetrii nesbíráme.
 
 ## B7 · Government apps → **No**
 
