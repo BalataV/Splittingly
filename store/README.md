@@ -6,6 +6,22 @@
 | `app-store-kit.md` | App Store Connect, pole po poli |
 | `compliance.md` | inventura proti Distribuční smlouvě Google Play |
 | `screenshots-guide.md` | jak nastřílet snímky obrazovky |
+| `play-icon-512.png` | ikona pro Play Console (hotová) |
+| `feature-graphic.png` | hlavní grafika 1024×500 (hotová) |
+| `feature-graphic.html` | zdroj hlavní grafiky — po úpravě znovu vyrenderuj |
+
+## Jak vyrenderovat hlavní grafiku znovu
+
+Zdroj je HTML, protože potřebuje skutečný Archivo Black. Po úpravě:
+
+```bash
+"C:/Program Files/Google/Chrome/Application/chrome.exe" --headless --disable-gpu ^
+  --hide-scrollbars --force-device-scale-factor=1 --window-size=1024,500 ^
+  --screenshot=store/feature-graphic.png --virtual-time-budget=5000 ^
+  store/feature-graphic.html
+```
+
+Ikony se generují z geometrie loga: `npm run icons`.
 
 ## Tři věci, ve kterých se Splittingly liší od Dotačníčku
 

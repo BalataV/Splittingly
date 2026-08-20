@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Splittingly — feature graphic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /*
+   * Hlavní grafika pro Google Play — přesně 1024×500.
+   *
+   * Vyrábí se jako HTML, protože potřebuje skutečný Archivo Black. Vykreslit
+   * písmo v generátoru PNG by znamenalo psát rasterizér fontu.
+   *
+   * Export: otevři v prohlížeči, nastav okno na 1024×500 a vyfoť. Nebo
+   * v DevTools → Device toolbar → 1024×500 → snímek. Ulož jako
+   * store/feature-graphic.png.
+   *
+   * POZOR na bezpečnou zónu: Google grafiku na některých místech ořezává
+   * po stranách. Nic důležitého nesmí být blíž než ~100 px od kraje —
+   * proto je motiv posunutý ke středu.
+   */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1024px; height: 500px; overflow: hidden;
+    background: #FFE500;
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex; align-items: center;
+    position: relative;
+  }
+
+  /* inkoustový pruh vpravo — nese ukázku výpočtu */
+  .right {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 430px;
+    background: #101010;
+    border-left: 6px solid #101010;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 46px 0 40px; gap: 9px;
+  }
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    background: #FAF7F0; border: 3px solid #101010; padding: 10px 13px;
+  }
+  .row.paid { background: #FFE500; }
+  .who { flex: 1; font-weight: 700; font-size: 16px; color: #101010; }
+  .amt {
+    flex: none; font-family: 'Archivo Black', sans-serif; font-size: 17px;
+    color: #101010; font-variant-numeric: tabular-nums;
+  }
+  .caption {
+    font-family: 'Archivo Black', sans-serif; font-size: 15px;
+    letter-spacing: -0.02em; color: #FFE500; text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* levá strana — značka a slib */
+  .left { padding: 0 30px 0 76px; width: 594px; }
+  .mark { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; }
+  .mark svg { display: block; }
+  .name {
+    font-family: 'Archivo Black', sans-serif; font-size: 34px;
+    letter-spacing: -0.02em; color: #101010;
+  }
+  h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 56px; line-height: 0.96; letter-spacing: -0.025em;
+    color: #101010; text-transform: uppercase;
+  }
+  .sub {
+    font-size: 19px; font-weight: 700; color: #101010;
+    margin-top: 18px; opacity: .78;
+  }
+</style>
+</head>
+<body>
+
+  <div class="left">
+    <div class="mark">
+      <svg width="70" height="70" viewBox="0 0 100 100">
+        <rect x="4" y="4" width="92" height="92" fill="#FFE500" stroke="#101010" stroke-width="7"/>
+        <polygon points="4,4 96,4 4,96" fill="#1F49FF"/>
+        <line x1="0" y1="62" x2="100" y2="38" stroke="#101010" stroke-width="9"/>
+      </svg>
+      <span class="name">SPLITTINGLY</span>
+    </div>
+
+    <h1>ONE BILL.<br />NO ARGUMENTS.</h1>
+    <p class="sub">Ten debts become one payment.</p>
+  </div>
+
+  <div class="right">
+    <div class="row paid"><span class="who">Mira → Tomáš</span><span class="amt">€15,60</span></div>
+    <div class="row"><span class="who">Kenji → Tomáš</span><span class="amt">€44,60</span></div>
+    <p class="caption">2 transfers settle everything</p>
+  </div>
+
+</body>
+</html>

@@ -143,4 +143,12 @@ write('android-icon-foreground.png', 1024, { inset: 0.25, transparent: true });
 write('android-icon-monochrome.png', 1024, { inset: 0.25, mono: true, transparent: true });
 write('splash-icon.png', 512, {});
 write('favicon.png', 196, {});
+
+// Play Console chce ikonu 512×512 zvlášť (1024 nepřijme).
+mkdirSync(join(OUT, '..', 'store'), { recursive: true });
+{
+  const png = encodePng(512, 512, drawIcon({ size: 512 }));
+  writeFileSync(join(OUT, '..', 'store', 'play-icon-512.png'), png);
+  console.log('store/play-icon-512.png  512×512  ' + (png.length / 1024).toFixed(1) + ' kB');
+}
 console.log('Hotovo.');
