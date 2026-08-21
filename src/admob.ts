@@ -15,33 +15,50 @@
 import { useSyncExternalStore } from 'react';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
-import mobileAds, { AdsConsent, AdsConsentStatus, TestIds } from 'react-native-google-mobile-ads';
+import type * as GoogleMobileAds from 'react-native-google-mobile-ads';
 
 const extra = (Constants.expoConfig?.extra || {}) as Record<string, string>;
 
 /**
- * Expo Go nemá nativní modul AdMob zabudovaný — volání SDK by appku
- * spadlo. V Expo Go proto vždycky zůstává starý prázdný rám, skutečná
+ * Expo Go nemá nativní modul AdMob zabudovaný — voláním SDK by appka
+ * spadla. V Expo Go proto vždycky zůstává starý prázdný rám, skutečná
  * reklama se ukáže až v dev buildu nebo v produkci.
  */
 export const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+/**
+ * `require`, NE `import` na vrcholu souboru — to je záměr, ne nedbalost.
+ * `import` se v JS vyhodnotí VŽDY, i kdyby byl opsaný do `if`, protože ho
+ * bundler zvedne (hoisting) nad zbytek modulu. Knihovna ale při pouhém
+ * importu sáhne do nativního registru (`TurboModuleRegistry.getEnforcing`)
+ * a v Expo Go, kde nativní modul chybí, appka na tomhle místě rovnou spadne
+ * s „RNGoogleMobileAdsModule could not be found" — dřív, než se stihne
+ * zeptat na `IS_EXPO_GO`. `require()` uvnitř `if` se vyhodnotí, jen když se
+ * na něj skutečně dojde, takže se dá podmínkou obejít.
+ */
+const admob: typeof GoogleMobileAds | null = IS_EXPO_GO
+  ? null
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  : (require('react-native-google-mobile-ads') as typeof GoogleMobileAds);
 
 function unitId(real: string | undefined, test: string): string {
   return real && real.trim() ? real : test;
 }
 
+const testBannerId = admob?.TestIds.BANNER ?? '';
+
 export const ADMOB_BANNER_ID = (Platform.select({
-  ios: unitId(extra.admobBannerIos, TestIds.BANNER),
-  android: unitId(extra.admobBannerAndroid, TestIds.BANNER),
-}) || TestIds.BANNER) as string;
+  ios: unitId(extra.admobBannerIos, testBannerId),
+  android: unitId(extra.admobBannerAndroid, testBannerId),
+}) || testBannerId) as string;
 
 // TestIds nemá zvlášť ID pro obdélník — testovací bannerová jednotka
 // obsluhuje libovolnou velikost, kterou si od ní vyžádáš (viz `BannerAdSize`
-// níž v `AdSlot.tsx`), takže se stejné testovací ID hodí i sem.
+// v `AdSlot.tsx`), takže se stejné testovací ID hodí i sem.
 export const ADMOB_RECTANGLE_ID = (Platform.select({
-  ios: unitId(extra.admobRectangleIos, TestIds.BANNER),
-  android: unitId(extra.admobRectangleAndroid, TestIds.BANNER),
-}) || TestIds.BANNER) as string;
+  ios: unitId(extra.admobRectangleIos, testBannerId),
+  android: unitId(extra.admobRectangleAndroid, testBannerId),
+}) || testBannerId) as string;
 
 // --------------------------------------------------------- souhlas + inicializace
 
@@ -82,22 +99,22 @@ export function useAdsReady(): boolean {
  * reklamy. Volá se jednou při startu appky (`App.tsx`), nikdy z obrazovky.
  */
 export async function initAds(): Promise<void> {
-  if (IS_EXPO_GO) return;
+  if (IS_EXPO_GO || !admob) return;
   try {
     if (Platform.OS === 'ios') {
       const ATT = await import('expo-tracking-transparency');
       await ATT.requestTrackingPermissionsAsync();
     }
 
-    const info = await AdsConsent.requestInfoUpdate();
-    if (info.isConsentFormAvailable && info.status === AdsConsentStatus.REQUIRED) {
-      await AdsConsent.loadAndShowConsentFormIfRequired();
+    const info = await admob.AdsConsent.requestInfoUpdate();
+    if (info.isConsentFormAvailable && info.status === admob.AdsConsentStatus.REQUIRED) {
+      await admob.AdsConsent.loadAndShowConsentFormIfRequired();
     }
-    const after = await AdsConsent.getConsentInfo();
+    const after = await admob.AdsConsent.getConsentInfo();
     // Uživatel v EU řekl ne — appka zůstává bez reklam, ne že by je vnutila.
     if (!after.canRequestAds) return;
 
-    await mobileAds().initialize();
+    await admob.default().initialize();
     setAdsReady(true);
   } catch {
     // Reklama je vedlejší příjem, ne kritická cesta — když souhlas nebo
