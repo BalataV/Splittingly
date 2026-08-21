@@ -15,21 +15,29 @@
 // znaky — přesně jak jsou v klíči.
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const [lang, valuesPath] = process.argv.slice(2);
+const args = process.argv.slice(2).filter((a) => a !== '--missing');
+const onlyMissing = process.argv.includes('--missing');
+const [lang, valuesPath] = args;
 if (!lang || !valuesPath) {
-  console.error('Použití: node scripts/i18n-build.mjs <kód jazyka> <soubor s překlady>');
+  console.error('Použití: node scripts/i18n-build.mjs [--missing] <kód jazyka> <soubor s překlady>');
+  console.error('  --missing: řádky se párují jen s klíči, které jazyk ještě NEMÁ,');
+  console.error('             a hotové překlady zůstanou. Pro doplňování po částech.');
   process.exit(1);
 }
 
 const here = new URL('./', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const target = join(here, '..', 'src', 'translations', `${lang}.json`);
 
-const keys = JSON.parse(execFileSync(process.execPath, [here + 'i18n-keys.mjs', '--json'], {
+const all = JSON.parse(execFileSync(process.execPath, [here + 'i18n-keys.mjs', '--json'], {
   encoding: 'utf8',
   stdio: ['ignore', 'pipe', 'ignore'],
 }));
+
+const existing = onlyMissing && existsSync(target) ? JSON.parse(readFileSync(target, 'utf8')) : {};
+const keys = onlyMissing ? all.filter((k) => !(k in existing)) : all;
 
 const lines = readFileSync(valuesPath, 'utf8').replace(/\r\n/g, '\n').split('\n');
 // Poslední prázdný řádek po koncovém \n není překlad.
@@ -41,7 +49,7 @@ if (lines.length !== keys.length) {
   process.exit(1);
 }
 
-const dict = {};
+const dict = onlyMissing ? { ...existing } : {};
 let filled = 0;
 keys.forEach((key, i) => {
   const value = lines[i].trim();
@@ -52,9 +60,9 @@ keys.forEach((key, i) => {
   filled += 1;
 });
 
-const dir = join(here, '..', 'src', 'translations');
-mkdirSync(dir, { recursive: true });
-const out = join(dir, `${lang}.json`);
-writeFileSync(out, JSON.stringify(dict, null, 2) + '\n', 'utf8');
+mkdirSync(join(here, '..', 'src', 'translations'), { recursive: true });
+const sorted = {};
+Object.keys(dict).sort().forEach((k) => { sorted[k] = dict[k]; });
+writeFileSync(target, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
 
-console.log(`${lang}: ${filled}/${keys.length} přeloženo → src/translations/${lang}.json`);
+console.log(`${lang}: +${filled}, celkem ${Object.keys(sorted).length}/${all.length} → src/translations/${lang}.json`);

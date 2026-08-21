@@ -136,10 +136,20 @@ for (const [file, field] of DATA_FIELDS) {
 // Akce v historii výdaje (`t(a.action)`) — hodnoty píše databáze, ne kód.
 ['created', 'edited', 'deleted'].forEach((a) => keys.add(a));
 
+// Zkratky měsíců z `fmtDate` v i18n.ts. Ten soubor se jinak přeskakuje
+// (jsou v něm slovníky, ne klíče), takže by se datum nikdy nepřeložilo
+// a u jinak hotového jazyka by v řádku výdaje svítilo anglické „Aug“.
+['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  .forEach((m) => keys.add(m));
+
 const sorted = [...keys].filter(Boolean).sort();
 if (process.argv.includes('--json')) {
+  // JSON drží skutečné znaky — tohle čtou ostatní skripty.
   process.stdout.write(JSON.stringify(sorted, null, 2) + '\n');
 } else {
-  process.stdout.write(sorted.join('\n') + '\n');
+  // Řádkový výpis je pro ČLOVĚKA, který podle něj píše překlady: zalomení
+  // uvnitř klíče se proto zapisuje jako `\n`, aby jeden klíč byl vždy
+  // právě jeden řádek. `i18n-build.mjs` to při načtení převede zpátky.
+  process.stdout.write(sorted.map((k) => k.replace(/\n/g, '\\n')).join('\n') + '\n');
 }
 process.stderr.write(`${sorted.length} klíčů\n`);
