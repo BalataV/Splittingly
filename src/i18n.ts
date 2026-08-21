@@ -98,174 +98,31 @@ export function fmtTime(iso: string): string {
 
 // ---------------------------------------------------------------- slovníky
 //
-// Ukázkové překlady záměrně obsahují DLOUHÉ varianty — na nich se pozná,
-// jestli tlačítko roste do výšky místo aby text uřízlo.
+// Překlady bydlí v `src/translations/<kód>.json`, ne tady v kódu. Důvody:
+//   • soubor se dá poslat překladateli tak, jak je — není v něm žádný kód,
+//   • klíče se generují ze zdrojáků (`scripts/i18n-keys.mjs`), takže se
+//     nemůžou rozejít s tím, co appka doopravdy volá,
+//   • `scripts/check-i18n.mjs` ohlídá překlepy v klíčích a placeholdery.
+//
+// PŘIDÁNÍ JAZYKA:
+//   1. node scripts/i18n-keys.mjs > /tmp/klice.txt
+//   2. přelož řádek po řádku do souboru se STEJNÝM počtem řádků
+//   3. node scripts/i18n-build.mjs <kód> /tmp/preklad.txt
+//   4. přidej `import` a řádek do `DICT` níž
+//   5. node scripts/check-i18n.mjs
 
 type Dict = Record<string, string>;
 
-const DE: Dict = {
-  'Overview': 'Übersicht',
-  'Groups': 'Gruppen',
-  'Activity': 'Aktivität',
-  'Stats': 'Statistik',
-  'You are owed': 'Dir wird geschuldet',
-  'You owe': 'Du schuldest',
-  'Add expense': 'Ausgabe hinzufügen',
-  'Settle up': 'Schulden begleichen',
-  'Confirm payment': 'Zahlung bestätigen',
-  'New expense': 'Neue Ausgabe',
-  'Split between': 'Aufteilen zwischen',
-  'Equal': 'Gleich',
-  'Shares': 'Anteile',
-  'Exact': 'Genau',
-  'Create group': 'Gruppe erstellen',
-  'Join with a code': 'Mit einem Code beitreten',
-  'Everyone is even.': 'Alle sind quitt.',
-  'Nothing to split yet.': 'Noch nichts aufzuteilen.',
-  'Language and currency are separate settings.': 'Sprache und Währung sind getrennte Einstellungen.',
-  'Remove the ads': 'Werbung entfernen',
-};
+import ar from './translations/ar.json';
+import cs from './translations/cs.json';
+import de from './translations/de.json';
+import es from './translations/es.json';
+import fi from './translations/fi.json';
+import ja from './translations/ja.json';
+import ru from './translations/ru.json';
+import th from './translations/th.json';
 
-const RU: Dict = {
-  'Overview': 'Обзор',
-  'Groups': 'Группы',
-  'Activity': 'Активность',
-  'Stats': 'Статистика',
-  'You are owed': 'Вам должны',
-  'You owe': 'Вы должны',
-  'Add expense': 'Добавить расход',
-  'Settle up': 'Рассчитаться',
-  'Confirm payment': 'Подтвердить платёж',
-  'New expense': 'Новый расход',
-  'Split between': 'Разделить между',
-  'Equal': 'Поровну',
-  'Shares': 'Доли',
-  'Exact': 'Точно',
-  'Create group': 'Создать группу',
-  'Join with a code': 'Присоединиться по коду',
-  'Everyone is even.': 'Все рассчитались.',
-  'Nothing to split yet.': 'Пока нечего делить.',
-  'Language and currency are separate settings.': 'Язык и валюта — независимые настройки.',
-  'Remove the ads': 'Убрать рекламу',
-};
-
-const FI: Dict = {
-  'Overview': 'Yleiskatsaus',
-  'Groups': 'Ryhmät',
-  'Activity': 'Tapahtumat',
-  'Stats': 'Tilastot',
-  'You are owed': 'Sinulle ollaan velkaa',
-  'You owe': 'Olet velkaa',
-  'Add expense': 'Lisää kulu',
-  'Settle up': 'Selvitä velat',
-  'Confirm payment': 'Vahvista maksusuoritus',
-  'New expense': 'Uusi kulu',
-  'Split between': 'Jaa henkilöiden kesken',
-  'Equal': 'Tasan',
-  'Shares': 'Osuudet',
-  'Exact': 'Tarkka',
-  'Create group': 'Luo ryhmä',
-  'Join with a code': 'Liity koodilla',
-  'Everyone is even.': 'Kaikki ovat tasoissa.',
-  'Nothing to split yet.': 'Ei vielä jaettavaa.',
-  'Language and currency are separate settings.': 'Kieli ja valuutta ovat erilliset asetukset.',
-  'Remove the ads': 'Poista mainokset',
-};
-
-const AR: Dict = {
-  'Overview': 'نظرة عامة',
-  'Groups': 'المجموعات',
-  'Activity': 'النشاط',
-  'Stats': 'الإحصائيات',
-  'You are owed': 'لك مستحقات',
-  'You owe': 'عليك',
-  'Add expense': 'إضافة مصروف',
-  'Settle up': 'تسوية الحساب',
-  'Confirm payment': 'تأكيد الدفع',
-  'New expense': 'مصروف جديد',
-  'Split between': 'التقسيم بين',
-  'Equal': 'بالتساوي',
-  'Shares': 'حصص',
-  'Exact': 'مبالغ محددة',
-  'Create group': 'إنشاء مجموعة',
-  'Join with a code': 'الانضمام برمز',
-  'Everyone is even.': 'الجميع متعادلون.',
-  'Nothing to split yet.': 'لا شيء للتقسيم بعد.',
-  'Language and currency are separate settings.': 'اللغة والعملة إعدادان منفصلان.',
-  'Remove the ads': 'إزالة الإعلانات',
-};
-
-const TH: Dict = {
-  'Overview': 'ภาพรวม',
-  'Groups': 'กลุ่ม',
-  'Activity': 'กิจกรรม',
-  'Stats': 'สถิติ',
-  'You are owed': 'คนอื่นเป็นหนี้คุณ',
-  'You owe': 'คุณเป็นหนี้',
-  'Add expense': 'เพิ่มค่าใช้จ่าย',
-  'Settle up': 'เคลียร์ยอด',
-  'Confirm payment': 'ยืนยันการชำระเงิน',
-  'New expense': 'ค่าใช้จ่ายใหม่',
-  'Equal': 'เท่ากัน',
-  'Shares': 'สัดส่วน',
-  'Exact': 'ระบุจำนวน',
-  'Create group': 'สร้างกลุ่ม',
-  'Everyone is even.': 'ทุกคนเคลียร์แล้ว',
-  'Remove the ads': 'ลบโฆษณา',
-};
-
-const JA: Dict = {
-  'Overview': '概要',
-  'Groups': 'グループ',
-  'Activity': 'アクティビティ',
-  'Stats': '統計',
-  'You are owed': '受け取り',
-  'You owe': '支払い',
-  'Add expense': '支出を追加',
-  'Settle up': '精算する',
-  'Confirm payment': '支払いを確認',
-  'New expense': '新しい支出',
-  'Equal': '均等',
-  'Shares': '比率',
-  'Exact': '金額指定',
-  'Create group': 'グループを作成',
-  'Everyone is even.': '全員清算済みです。',
-  'Remove the ads': '広告を削除',
-};
-
-const CS: Dict = {
-  'Overview': 'Přehled',
-  'Groups': 'Skupiny',
-  'Activity': 'Aktivita',
-  'Stats': 'Statistiky',
-  'You are owed': 'Máš dostat',
-  'You owe': 'Dlužíš',
-  'Add expense': 'Přidat výdaj',
-  'Settle up': 'Vyrovnat',
-  'Confirm payment': 'Potvrdit platbu',
-  'New expense': 'Nový výdaj',
-  'Split between': 'Rozdělit mezi',
-  'Equal': 'Rovným dílem',
-  'Shares': 'Podílem',
-  'Exact': 'Přesně',
-  'Create group': 'Založit skupinu',
-  'Join with a code': 'Připojit se kódem',
-  'Everyone is even.': 'Všichni jsou vyrovnaní.',
-  'Nothing to split yet.': 'Zatím není co dělit.',
-  'Language and currency are separate settings.': 'Jazyk a měna jsou oddělená nastavení.',
-  'Remove the ads': 'Odstranit reklamy',
-  // Množné číslo: čeština má tři tvary. Bez přípony = tvar pro jednotné číslo.
-  '{n} member': '{n} člen',
-  '{n} members#few': '{n} členové',
-  '{n} members#many': '{n} členů',
-  '{n} expense': '{n} výdaj',
-  '{n} expenses#few': '{n} výdaje',
-  '{n} expenses#many': '{n} výdajů',
-};
-
-const DICT: Record<string, Dict> = {
-  de: DE, ru: RU, fi: FI, ar: AR, th: TH, ja: JA, cs: CS,
-};
+const DICT: Record<string, Dict> = { ar, cs, de, es, fi, ja, ru, th };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
 export function translatedLanguages(): string[] {
@@ -275,9 +132,13 @@ export function translatedLanguages(): string[] {
 /**
  * Kolik klíčů má jazyk přeloženo. Slouží k rozlišení „hotový" od „rozdělaný".
  *
- * Referencí je nejbohatší slovník, ne skutečný počet klíčů v appce — ten
- * bychom museli udržovat ručně a rozešel by se s realitou hned při první
- * nové obrazovce.
+ * Referencí je NEJBOHATŠÍ slovník, ne pevné číslo. Skutečný počet klíčů v
+ * appce zná jen `scripts/i18n-keys.mjs` (čte zdrojáky) a natvrdo zapsaná
+ * konstanta by se rozešla s realitou při první nové obrazovce. Jakmile je
+ * aspoň jeden jazyk kompletní — a `es` je — je nejbohatší slovník správnou
+ * referencí a tenhle odhad odpovídá skutečnosti.
+ *
+ * Přesné číslo kdykoli: `node scripts/check-i18n.mjs`.
  */
 export function translationCoverage(lang: string): number {
   if (lang === 'en') return 1;
@@ -290,15 +151,17 @@ export function translationCoverage(lang: string): number {
 /**
  * Jazyky dost hotové na to, aby se nabídly SAMY podle nastavení telefonu.
  *
- * ZATÍM PRÁZDNÉ, a je to záměr. Všechny slovníky jsou ukázkové (~20 klíčů),
- * takže autodetekce by uživateli naservírovala rozhraní z poloviny česky
- * a z poloviny anglicky — což je horší než čistá angličtina.
+ * Sem patří jazyk, až když má přeloženo VŠECHNO. Poloviční slovník by
+ * uživateli naservíroval rozhraní zpola v jeho jazyce a zpola anglicky —
+ * a to je horší než čistá angličtina, protože to vypadá jako rozbitá appka,
+ * ne jako jazyk, který si vybral.
  *
- * Jakmile je nějaký jazyk dotažený, přidej ho sem. Ruční volbu v nastavení
- * to nijak neomezuje — tam si uživatel může vybrat kterýkoli z 50 jazyků
- * a u rozdělaných uvidí upozornění.
+ * Ruční volbu v nastavení to nijak neomezuje — tam si uživatel vybere
+ * kterýkoli z 50 jazyků a u rozdělaných uvidí upozornění „partly translated".
+ *
+ * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
-export const AUTO_DETECT_READY: string[] = [];
+export const AUTO_DETECT_READY: string[] = ['es'];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
 export function canAutoDetect(lang: string): boolean {

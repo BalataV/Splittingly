@@ -49,6 +49,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "check:money": "node scripts/check-money.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "i18n:keys": "node scripts/i18n-keys.mjs",
     "icons": "node scripts/make-icons.mjs"
   },
   "jest": {

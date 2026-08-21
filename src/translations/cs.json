@@ -1,0 +1,22 @@
+{
+  "Activity": "Aktivita",
+  "Add expense": "Přidat výdaj",
+  "Confirm payment": "Potvrdit platbu",
+  "Create group": "Založit skupinu",
+  "Equal": "Rovným dílem",
+  "Everyone is even.": "Všichni jsou vyrovnaní.",
+  "Exact": "Přesně",
+  "Join with a code": "Připojit se kódem",
+  "Overview": "Přehled",
+  "Remove the ads": "Odstranit reklamy",
+  "Settle up": "Vyrovnat",
+  "Shares": "Podílem",
+  "Stats": "Statistiky",
+  "You owe": "Dlužíš",
+  "{n} expense": "{n} výdaj",
+  "{n} expenses#few": "{n} výdaje",
+  "{n} expenses#many": "{n} výdajů",
+  "{n} member": "{n} člen",
+  "{n} members#few": "{n} členové",
+  "{n} members#many": "{n} členů"
+}

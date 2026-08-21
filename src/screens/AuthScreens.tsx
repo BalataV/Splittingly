@@ -61,8 +61,11 @@ export function Onboarding() {
         ))}
       </View>
 
-      <Text style={[ty('screenTitle'), { color: c.text, fontSize: 32, lineHeight: 32 }]}>{slide.head}</Text>
-      <Text style={[ty('bodySecondary'), { color: c.textMuted }]}>{slide.body}</Text>
+      {/* Přes t() — jinak zůstane úvod anglicky i v jazyce, který má
+          přeloženo všechno ostatní. Klíče bere `scripts/i18n-keys.mjs`
+          přímo ze `SLIDES` (viz DATA_FIELDS v tom skriptu). */}
+      <Text style={[ty('screenTitle'), { color: c.text, fontSize: 32, lineHeight: 32 }]}>{t(slide.head)}</Text>
+      <Text style={[ty('bodySecondary'), { color: c.textMuted }]}>{t(slide.body)}</Text>
 
       <View
         style={{
