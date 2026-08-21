@@ -4,19 +4,20 @@
 // nesmí zasáhnout okraj, částka ani dotykový cíl — proto se insety počítají
 // tady jednou a obrazovky je neřeší.
 //
-// KLÁVESNICE se řeší na třech úrovních, protože ani jedna sama nestačí:
+// KLÁVESNICE se řeší na čtyřech úrovních, protože ani jedna sama nestačí:
 //   1. `softwareKeyboardLayoutMode: 'resize'` (app.json) — Android okno zmenší,
 //      místo aby ho klávesnice překryla,
 //   2. `KeyboardAvoidingView` — vytlačí ukotvenou spodní akci nad klávesnici,
 //   3. `ensureVisible` — po zaostření pole na něj ScrollView odscrolluje.
+//   4. kompenzace při ZAVŘENÍ klávesnice (Android) — viz níž.
 //
 // Bez toho třetího kroku by uživatel u dlouhého formuláře (nový výdaj) psal
 // naslepo do pole schovaného pod klávesnicí.
 
-import React, { ReactNode, useRef, useCallback } from 'react';
+import React, { ReactNode, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, Keyboard, StyleProp, ViewStyle,
-  KeyboardAvoidingView, Platform, findNodeHandle,
+  KeyboardAvoidingView, Platform, findNodeHandle, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUi } from './ui';
@@ -44,6 +45,36 @@ export default function Screen({
   const bg = fill || c.bg;
 
   const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.current = e.nativeEvent.contentOffset.y;
+  }, []);
+
+  /**
+   * Android: `adjustResize` zmenší okno, když klávesnice vyjede, a zase ho
+   * zvětší, když zajede. Když byl seznam odscrollovaný blízko konce, ScrollView
+   * při tom zvětšení automaticky OŘÍZNE offset na nové (menší) maximum — a
+   * řádek, na který uživatel právě ťukl, „poskočí" jinam, i když on sám
+   * nikam nescrolloval. Kompenzujeme to tak, že po zavření klávesnice
+   * dorovnáme offset zpátky o výšku, kterou klávesnice zabírala.
+   *
+   * iOS klávesnice okno nezmenšuje (plave nad obsahem, řeší `KeyboardAvoidingView`
+   * výš), takže se ho tohle netýká.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    let openHeight = 0;
+    const onShow = Keyboard.addListener('keyboardDidShow', (e) => {
+      openHeight = e.endCoordinates?.height || 0;
+    });
+    const onHide = Keyboard.addListener('keyboardDidHide', () => {
+      if (openHeight > 0) {
+        scrollRef.current?.scrollTo({ y: scrollY.current + openHeight, animated: false });
+      }
+      openHeight = 0;
+    });
+    return () => { onShow.remove(); onHide.remove(); };
+  }, []);
 
   const ensureVisible = useCallback<EnsureVisible>((node) => {
     const scroller = scrollRef.current;
@@ -97,6 +128,8 @@ export default function Screen({
       // iOS si při vyjeté klávesnici sám upraví vnitřní odsazení; bez toho
       // by spodek obsahu zůstal pod ní i po odscrollování.
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       contentContainerStyle={[
         { paddingHorizontal: padded ? SPACE.screen : 0, paddingBottom: SPACE.xl, gap: SPACE.md },
         contentStyle,
