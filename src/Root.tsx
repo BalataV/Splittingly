@@ -212,7 +212,7 @@ function TabBar() {
             accessibilityLabel={t(tab.label)}
             style={{ flex: 1, alignItems: 'center', gap: 3, minHeight: 49, paddingHorizontal: 4 }}
           >
-            <Text style={{ fontSize: 19, color: active ? c.text : c.textMuted }}>{tab.glyph}</Text>
+            <Text style={{ fontSize: 24, color: active ? c.text : c.textMuted }}>{tab.glyph}</Text>
             {/* Popisek se ZALAMUJE, neuřezává — podlaha je 9,5 px (viz typography). */}
             <Text style={[ty('tabLabel'), { color: active ? c.text : c.textMuted, textAlign: 'center' }]}>
               {t(tab.label)}

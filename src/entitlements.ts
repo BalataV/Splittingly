@@ -48,6 +48,11 @@ export function canUsePeriod(isPro: boolean, period: StatsPeriod): boolean {
   return allowedPeriods(isPro).includes(period);
 }
 
+/** Koláčový graf rozpadu podle kategorie ve statistikách. */
+export function canUsePieChart(isPro: boolean): boolean {
+  return isPro;
+}
+
 /**
  * Barevná témata. „Dusk" je za Pro, nebo dočasně za odměněné video (7 dní).
  * Odměněná reklama je jediná, kterou si uživatel vybere sám.
@@ -78,6 +83,7 @@ export const PRO_BENEFITS = [
   'No banners, no native rows, no interstitials',
   'Unlimited receipt photos',
   'Full stats history — trip and all-time, not just this month',
+  'Pie chart breakdown by category',
   'All colour themes, including Dusk',
   'CSV and PDF export per group',
 ];

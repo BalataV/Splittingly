@@ -190,7 +190,7 @@ First release.
 | Product ID | `splittingly_pro` |
 | Price | Tier odpovídající **$4.99** |
 | Display Name | `Splittingly Pro` |
-| Description | `Removes all ads, lifts the receipt limit, unlocks the full stats history, every colour theme and CSV export. One payment, no subscription.` |
+| Description | `Removes all ads, lifts the receipt limit, unlocks the full stats history, a pie chart breakdown, every colour theme and CSV export. One payment, no subscription.` |
 
 > **Product ID musí přesně sedět** s `PRO_PRODUCT_ID` v `src/config.ts`.
 > Musí projít review **spolu s buildem**, ve kterém se dá koupit — samotný

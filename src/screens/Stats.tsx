@@ -11,13 +11,14 @@ import { useUi, Card, HardShadow, Chip, Label } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { MascotStrip } from '../components/Mascot';
 import { RectangleAd, ProStrip } from '../components/AdSlot';
+import { PieChart, LockedPieChart } from '../components/PieChart';
 import { useApp } from '../store';
 import { t } from '../i18n';
 import { quipFor } from '../quips';
 import { inPeriod, dominantCurrency, total, byCategory, bySpender, weeklyBars } from '../stats';
 import { category } from '../categories';
 import { showRectangle } from '../ads';
-import { canUsePeriod } from '../entitlements';
+import { canUsePeriod, canUsePieChart } from '../entitlements';
 import { PRO_PRICE_FALLBACK } from '../config';
 import { initial, ME } from '../logic';
 import { SPACE, BORDER } from '../theme';
@@ -95,6 +96,16 @@ export default function Stats() {
       {state.mascotsOn && <MascotStrip who="analyst" text={quipFor('stats', 'analyst', true) || ''} />}
 
       <Label>{t('BY CATEGORY')}</Label>
+
+      {/* Graf jen v Pro — data pod ním (řádky s procenty) jsou zdarma pro
+          všechny, graf je jen jiný tvar téhož. Zamčený stav appku neschovává,
+          jen barvu vymění za šedou, přesně jako zamčená období výš. */}
+      {cats.length > 0 && (
+        canUsePieChart(state.isPro)
+          ? <PieChart cats={cats} totalMinor={sum} currency={cur} />
+          : <LockedPieChart onUpgrade={() => actions.navigate('remove_ads')} />
+      )}
+
       <View style={{ gap: SPACE.md }}>
         {cats.map((cat) => {
           const def = category(cat.key);

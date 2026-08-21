@@ -306,8 +306,11 @@ export function Appearance() {
         ]}
       />
 
-      {/* Živý náhled na DLOUHÉM německém řetězci: tlačítko musí povyrůst,
-          ne uříznout. Tohle je test, ne dekorace. */}
+      {/* Živý náhled v AKTUÁLNÍM jazyce a měně appky — uživatel má vidět svůj
+          vlastní vzhled, ne vzorový (dřív tu bylo natvrdo německé „Zahlung
+          bestätigen", zvolené proto, že bývá dlouhé). Pravidlo, že text
+          nikdy neuřízne tlačítko, platí furt — jen se to teď ověřuje na
+          reálném textu uživatele, ne na vybrané ukázce. */}
       <Card fill={c.surfaceSunken}>
         <Label>{t('PREVIEW')}</Label>
         <View style={{ marginTop: SPACE.sm, backgroundColor: c.primary, borderWidth: BORDER.card, borderColor: c.border, padding: 14, alignItems: 'center' }}>
@@ -318,7 +321,7 @@ export function Appearance() {
             color: c.onPrimary,
             textAlign: 'center',
           }}>
-            Zahlung bestätigen · €64,20
+            {t('Confirm payment')} · {fmt(6420, state.currency)}
           </Text>
         </View>
         <Text style={[ty('caption'), { color: c.textMuted, marginTop: SPACE.sm }]}>

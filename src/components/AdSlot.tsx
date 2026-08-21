@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { BannerAd as GoogleBannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { GoogleBannerAd, BannerAdSize } from './GoogleAd';
 import { useUi } from './ui';
 import { AD_SIZES } from '../ads';
 import { ADMOB_BANNER_ID, ADMOB_RECTANGLE_ID, useAdsReady } from '../admob';
