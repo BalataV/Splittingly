@@ -161,7 +161,7 @@ export function translationCoverage(lang: string): number {
  *
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
-export const AUTO_DETECT_READY: string[] = ['es'];
+export const AUTO_DETECT_READY: string[] = ['cs', 'de', 'es'];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
 export function canAutoDetect(lang: string): boolean {
