@@ -289,10 +289,12 @@ export interface Actions {
   finishJoin: (opts: { claimName?: string; newName?: string }) => Promise<void>;
   leaveGroup: (id: string) => Promise<void>;
   shareInvite: (id: string) => Promise<void>;
+  exportGroup: (id: string) => Promise<void>;
 
   // výdaje
   startAddExpense: () => void;
   startEditExpense: (id: string) => void;
+  duplicateExpense: (id: string) => void;
   setDraft: (p: Partial<ExpenseDraft>) => void;
   setPayer: (name: string) => void;
   togglePart: (name: string) => void;

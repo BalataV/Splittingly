@@ -139,6 +139,10 @@ export default function ExpenseDetail() {
 
       <Rule style={{ marginTop: SPACE.lg }} />
 
+      {/* Nájem, týdenní nákup — cokoliv pravidelného. Otevře se jako nový
+          koncept k doladění, ne rovnou uložené (viz `duplicateExpense`). */}
+      <Button label={t('Duplicate expense')} kind="plain" offset={0} onPress={() => actions.duplicateExpense(e.id)} />
+
       {/* Destruktivní akce: červený okraj, červený text, průhledná výplň —
           nikdy plná červená plocha, aby se na ni netrefil palec omylem. */}
       <Pressable onPress={() => actions.patch({ dialog: 'delete_expense' })}>

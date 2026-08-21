@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as Localization from 'expo-localization';
 import * as Updates from 'expo-updates';
+import * as Sharing from 'expo-sharing';
 
 import { authApi, groupsApi, expensesApi, storageApi } from './api';
 import type { RawExpense } from './api/expenses';
@@ -29,7 +30,8 @@ import { ME, transfersFor } from './logic';
 import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
-import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from './entitlements';
+import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport } from './entitlements';
+import { exportGroupCsv, exportGroupPdf } from './export';
 import * as queue from './queue';
 import * as haptics from './haptics';
 import type {
@@ -751,6 +753,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await Share.share({ message: `Join "${g.name}" on Splittingly: ${url}`, url }).catch(() => undefined);
   };
 
+  /**
+   * Export skupiny do CSV nebo PDF. Volba jde přes systémový dialog, stejně
+   * jako u účtenky (foťák/galerie) — je to jediné rozhodnutí, netřeba pro
+   * něj stavět celou obrazovku.
+   *
+   * Limit se hlídá TADY, ne na tlačítku — bez Pro appka rovnou pošle na
+   * nabídku, přesně jako zamčená období ve statistikách nebo témata.
+   */
+  const exportGroup = async (id: string) => {
+    const s = stateRef.current;
+    if (!canExport(s.isPro)) { navigate('remove_ads'); return; }
+    const g = s.groups.find((x) => x.id === id);
+    if (!g) return;
+
+    Alert.alert(t('Export group'), undefined, [
+      { text: t('Export as CSV'), onPress: () => { runExport('csv', g); } },
+      { text: t('Export as PDF'), onPress: () => { runExport('pdf', g); } },
+      { text: t('Cancel'), style: 'cancel' },
+    ]);
+  };
+
+  const runExport = async (kind: 'csv' | 'pdf', g: Group) => {
+    try {
+      const expenses = stateRef.current.expenses[g.id] || [];
+      const payments = stateRef.current.payments[g.id] || [];
+      const file = kind === 'csv'
+        ? await exportGroupCsv(g, expenses, payments)
+        : await exportGroupPdf(g, expenses, payments);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, { mimeType: file.mimeType, dialogTitle: file.filename });
+      } else {
+        showToast(t('Sharing is not available on this device.'));
+      }
+    } catch {
+      showToast(t('Export failed. Try again.'));
+    }
+  };
+
   // ------------------------------------------------------------------ výdaje
 
   const startAddExpense = () => {
@@ -789,6 +830,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
         category: e.category, spentAt: e.spentAt, receipts: [...e.receipts],
       },
       selectedExpense: id,
+    });
+    navigate('add_expense');
+  };
+
+  /**
+   * Zopakuje výdaj — nájem, týdenní nákup, cokoliv pravidelného. Otevře se
+   * jako NOVÝ koncept (`draft.id = null`), ne rovnou uložený, protože částka
+   * se od minule může lišit a uživatel má šanci ji před uložením upravit.
+   *
+   * Účtenky se NEKOPÍRUJÍ — účtenka je důkaz konkrétní platby, kopie staré
+   * fotky k dnešnímu datu by byla nepravdivá.
+   */
+  const duplicateExpense = (id: string) => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!gid) return;
+    const e = (s.expenses[gid] || []).find((x) => x.id === id);
+    if (!e) return;
+    const dec = decimalsOf(e.currency);
+    patch({
+      draft: {
+        id: null, groupId: gid, desc: e.desc,
+        amountText: dec === 0 ? String(e.amountMinor) : (e.amountMinor / Math.pow(10, dec)).toFixed(dec),
+        currency: e.currency, payer: e.payer, parts: [...e.parts], splitType: e.splitType,
+        shares: Object.fromEntries(e.parts.map((p, i) => [p, e.shares?.[i] ?? 1])),
+        exactText: Object.fromEntries(e.parts.map((p, i) => [
+          p, e.exactMinor ? (dec === 0 ? String(e.exactMinor[i]) : (e.exactMinor[i] / Math.pow(10, dec)).toFixed(dec)) : '',
+        ])),
+        category: e.category, spentAt: new Date().toISOString(), receipts: [],
+      },
+      selectedExpense: null,
     });
     navigate('add_expense');
   };
@@ -1084,8 +1156,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTheme, setMode, setTextSize, setNotif,
     setPersonalisedAds, buyPro, restorePro, unlockThemeByReward,
     openGroup, createGroup, addDraftMember, removeDraftMember,
-    joinByCode, finishJoin, leaveGroup, shareInvite,
-    startAddExpense, startEditExpense, setDraft, setPayer, togglePart,
+    joinByCode, finishJoin, leaveGroup, shareInvite, exportGroup,
+    startAddExpense, startEditExpense, duplicateExpense, setDraft, setPayer, togglePart,
     setSplitType, setShare, setExact, attachReceipt, removeReceipt,
     saveExpense, deleteExpense, openExpense,
     startSettle, confirmSettle,

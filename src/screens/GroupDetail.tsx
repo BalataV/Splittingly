@@ -126,10 +126,14 @@ export default function GroupDetail() {
       )}
 
       <Rule style={{ marginTop: SPACE.lg }} />
-      <View style={{ flexDirection: 'row', gap: SPACE.sm }}>
+      <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
         <Button label={t('Invite')} kind="plain" offset={0} onPress={() => actions.shareInvite(g.id)} style={{ flex: 1 }} />
         <Button label={t('Stats')} kind="plain" offset={0} onPress={() => actions.navigate('stats')} style={{ flex: 1 }} />
         <Button label={t('Search')} kind="plain" offset={0} onPress={() => actions.navigate('search')} style={{ flex: 1 }} />
+        {/* Bez Pro appka rovnou pošle na nabídku (viz `exportGroup` ve
+            store.tsx) — tlačítko proto zůstává vidět i pro free účet,
+            nikdy se neschovává. */}
+        <Button label={t('Export')} kind="plain" offset={0} onPress={() => actions.exportGroup(g.id)} style={{ flex: 1 }} />
       </View>
     </Screen>
   );
