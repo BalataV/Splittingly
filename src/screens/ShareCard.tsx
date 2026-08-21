@@ -13,9 +13,10 @@ import * as Sharing from 'expo-sharing';
 import Screen from '../components/Screen';
 import { useUi, Button, Chip, HardShadow, Rule } from '../components/ui';
 import { Money } from '../components/Money';
-import Mascot from '../components/Mascot';
+import Mascot, { DualMascotStrip } from '../components/Mascot';
 import { useApp } from '../store';
 import { t } from '../i18n';
+import { quipFor } from '../quips';
 import { transfersFor, initial, ME } from '../logic';
 import { mayShowInterstitial, markInterstitialShown } from '../ads';
 import { SPACE, BORDER } from '../theme';
@@ -125,6 +126,15 @@ export default function ShareCard() {
           </View>
         </View>
       </HardShadow>
+
+      {/* Komentář MIMO zachycovanou kartu — do sdíleného obrázku se nedostane,
+          je to jen doprovod pro appku. Jedno z pěti míst, kde jsou spolu. */}
+      {state.mascotsOn && (
+        <DualMascotStrip
+          closer={quipFor('share', 'closer', true) || ''}
+          analyst={quipFor('share', 'analyst', true) || ''}
+        />
+      )}
 
       <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
         <Chip label={t('Yellow')} active={style === 'yellow'} onPress={() => setStyle('yellow')} />
