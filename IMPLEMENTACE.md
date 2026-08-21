@@ -21,7 +21,7 @@ kalendářně 2–4 týdny, protože se čeká na schválení a Google vyžaduje
 | Webové stránky | **hotovo** — složka `docs/` |
 | Klíče Supabase v `app.json` | **hotovo** — projekt `aqikqephinmelmrbsage`, ověřeno že RLS drží |
 | Doména splittingly.com | **koupená** — zbývá nasměrovat DNS (krok 5d) |
-| Reklamní SDK | **není — krok 12** (potřebuje vývojový build, ne Expo Go) |
+| Reklamní SDK | **zapojeno pro banner + obdélník** — krok 12, chybí jen reálné ID z AdMob konzole (zatím test) a nativní řádek v Aktivitě |
 | Nákup v aplikaci (Pro) | **není — krok 13** |
 | Překlady mimo en/de/ru/fi/ar/th/ja/cs | **nejsou — krok 16** |
 
@@ -519,48 +519,50 @@ Pro iOS doplň v `eas.json` → `submit.production.ios`:
 
 ---
 
-## Krok 12 · Reklama (až po prvním buildu)
+## Krok 12 · Reklama
 
-Reklamní SDK **neběží v Expo Go**. Až budeš mít vývojový build:
+**Kód je hotový** pro banner (320×50) a obdélník (300×250): `react-native-google-mobile-ads`
++ `expo-tracking-transparency` jsou nainstalované, appka řeší souhlas (EU
+UMP) a ATT (iOS) dřív, než AdMob vůbec inicializuje (`src/admob.ts`,
+`initAds()` volaná z `App.tsx`) a `src/components/AdSlot.tsx` táhne
+skutečné jednotky. Reklama **neběží v Expo Go** (chybí tam nativní modul) —
+appka to sama pozná (`IS_EXPO_GO`) a nechá viditelný placeholder, žádný pád.
+Nativní řádek v Aktivitě (`NativeAdRow`) je ZATÍM POŘÁD jen placeholder —
+vlastní `NativeAd` layout je samostatný, větší krok.
 
-```bash
-npx expo install react-native-google-mobile-ads
-eas build -p android --profile development
-```
+Než uvidíš první SKUTEČNOU reklamu, chybí už jen tvoje vlastní kroky:
 
-> ⚠️ **Na iOS musíš přidat ATT prompt, jinak porušuješ licenční smlouvu.**
-> §3.3.3(E) Apple Developer Program License Agreement: kdo používá Advertising
-> Identifier, **musí** před zobrazením reklamy zkontrolovat *Tracking
-> Preference* uživatele a respektovat ji. AdMob ho používá.
-> ```bash
-> npx expo install expo-tracking-transparency
-> ```
-> Prompt vyvolej **před** inicializací AdMob. Když uživatel odmítne (nebo
-> nechá `personalisedAds` vypnuté, což je náš výchozí stav), předej AdMobu
-> `requestNonPersonalizedAdsOnly: true`.
->
-> ⚠️ **Privacy manifest.** §3.3.3(B) vyžaduje, aby appka v metadatech uvedla
-> důvod použití u vyjmenovaných API, a aby každé běžně používané SDK třetí
-> strany bylo **podepsané dodavatelem** a neslo požadovaná metadata. Expo SDK 54
-> to pro vlastní moduly řeší; u `react-native-google-mobile-ads` ověř, že máš
-> verzi s `PrivacyInfo.xcprivacy`. Bez toho App Store build odmítne.
+1. **Založ appku v AdMob konzoli** na <https://admob.google.com> — zvlášť
+   pro Android, zvlášť pro iOS (accept AdSense/AdMob ToS, které jsi právě
+   odsouhlasil, je první krok k tomu).
+2. Vlož **App ID** obou appek do `app.json` → `extra.admobAndroidAppId` /
+   `admobIosAppId` **A** do `plugins` → `react-native-google-mobile-ads`
+   (obě místa musí sedět — JSON se nemůže odkazovat sám na sebe, viz
+   komentář v `src/admob.ts`). Teď tam běží Googlem vydané TESTOVACÍ App ID
+   — appka s nimi jede, jen nevydělává.
+3. V AdMob konzoli vytvoř **jednotky** (banner + obdélník) pro Android
+   i iOS a jejich ID vlož do `app.json` → `extra.admobBannerAndroid` /
+   `admobBannerIos` / `admobRectangleAndroid` / `admobRectangleIos`.
+4. Postav **vývojový nebo produkční build** — Expo Go reklamu nikdy
+   neukáže:
+   ```bash
+   eas build -p android --profile development
+   ```
+5. **Přepni deklaraci inzertního ID v Play Console.**
+   *Zásady → Obsah aplikace → Inzertní ID* → z **Ne** na **Ano**.
+   > ⚠️ Past, která se projeví tiše: bez přepnutí ti systém při čtení
+   > inzertního ID vrátí **samé nuly** místo identifikátoru. Reklamy poběží,
+   > ale bez správného ID — hůř placené, bez měření, a **nikde nevyskočí
+   > chyba**. Zjistíš to jen z toho, že příjem nedává smysl. Oprávnění
+   > `com.google.android.gms.permission.AD_ID` se do manifestu přidá samo
+   > (má ho AdMob SDK a Gradle ho sloučí); ruční je jen ta deklarace.
 
-> ⚠️ **A PŘEPNI DEKLARACI INZERTNÍHO ID V PLAY CONSOLE.**
-> *Zásady → Obsah aplikace → Inzertní ID* → z **Ne** na **Ano**.
->
-> Tohle je past, která se projeví tiše: bez přepnutí ti systém při čtení
-> inzertního ID vrátí **samé nuly** místo identifikátoru. Reklamy poběží,
-> ale bez správného ID — hůř placené, bez měření, a **nikde nevyskočí chyba**.
-> Zjistíš to jen z toho, že příjem nedává smysl.
->
-> Oprávnění `com.google.android.gms.permission.AD_ID` se do manifestu přidá
-> samo (má ho AdMob SDK a Gradle ho sloučí); ruční je jen ta deklarace.
-
-1. Založ účet na <https://admob.google.com>, vytvoř appku pro Android i iOS.
-2. ID appek vlož do `app.json` → `extra.admobAndroidAppId` / `admobIosAppId`
-   a přidej plugin `react-native-google-mobile-ads` podle jeho dokumentace.
-3. V `src/components/AdSlot.tsx` nahraď vnitřek rámů skutečným `<BannerAd/>`.
-   **Rámy a rozměry nech být** — přerušovaný šedý rám je sdělení, ne dekorace.
+> ⚠️ **Privacy manifest (iOS).** §3.3.3(B) Apple Developer Program License
+> Agreement vyžaduje, aby appka v metadatech uvedla důvod použití
+> u vyjmenovaných API a aby SDK třetí strany neslo požadovaná metadata.
+> Expo SDK 54 to řeší pro vlastní moduly; u `react-native-google-mobile-ads`
+> než odešleš do App Store, ověř v EAS build logu, že se `PrivacyInfo.xcprivacy`
+> zabalilo — bez něj Apple build rovnou odmítne.
 
 ### Pravidla, která už jsou v kódu (`src/ads.ts`) — neobcházej je
 

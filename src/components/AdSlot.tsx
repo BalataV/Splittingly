@@ -4,51 +4,48 @@
 // v appce se nevyskytuje, takže sám tvar čte jako „tohle nejsme my".
 // Nepoužívej ho na nic dalšího a nikdy ho neodstraňuj kvůli estetice.
 //
-// ⚠️ SDK: tady je zatím jen RÁM a rezervované místo. Skutečné bannery
-// (react-native-google-mobile-ads) potřebují vlastní vývojový build, ne
-// Expo Go — proto se doplňují až v kroku „dev build" (IMPLEMENTACE.md, 12).
-// Vnitřek se pak vymění za <BannerAd/>, rozměry a rámy zůstávají.
+// Banner a obdélník teď táhnou SKUTEČNÉ AdMob jednotky (`src/admob.ts`,
+// test ID dokud v `app.json` nejsou reálné). Placeholder zůstává, dokud
+// `useAdsReady()` neřekne, že appka smí reklamu ptát o výplň — buď proto,
+// že jsme v Expo Go (nativní modul tam chybí, appka by na jeho zavolání
+// spadla), nebo proto, že souhlas (EU) / ATT (iOS) ještě nedoběhly.
+//
+// Nativní řádek v aktivitě (`NativeAdRow` níž) je ZATÍM POŘÁD jen
+// placeholder — vlastní `NativeAd` layout je samostatný krok, ne součást
+// tohohle zapojení.
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { BannerAd as GoogleBannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useUi } from './ui';
 import { AD_SIZES } from '../ads';
+import { ADMOB_BANNER_ID, ADMOB_RECTANGLE_ID, useAdsReady } from '../admob';
 import { t } from '../i18n';
 import { SPACE, BORDER } from '../theme';
 
-function AdFrame({ w, h, children, onClose }: { w: number; h: number; children?: ReactNode; onClose?: () => void }) {
+function PlaceholderFrame({ w, h }: { w: number; h: number }) {
   const { c, ty } = useUi();
   return (
-    <View style={{ alignItems: 'center' }}>
-      <View
-        style={{
-          width: w,
-          height: h,
-          maxWidth: '100%',
-          backgroundColor: c.surfaceSunken,
-          borderWidth: BORDER.ad,
-          borderColor: c.adFrame,
-          borderStyle: 'dashed',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {children}
-        <View style={{ position: 'absolute', top: 4, left: 4, borderWidth: 2, borderColor: c.adFrame, paddingHorizontal: 4, paddingVertical: 1 }}>
-          <Text style={[ty('label'), { color: c.adText, fontSize: 9 }]}>{t('AD')}</Text>
-        </View>
-        {!!onClose && (
-          // Zavírací cíl musí mít 44×44 pt i když je vizuálně malý.
-          <Pressable
-            onPress={onClose}
-            hitSlop={14}
-            accessibilityLabel={t('Close ad')}
-            style={{ position: 'absolute', top: 2, right: 2, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Text style={{ color: c.adText, fontSize: 16 }}>✕</Text>
-          </Pressable>
-        )}
+    <View
+      style={{
+        width: w,
+        height: h,
+        maxWidth: '100%',
+        backgroundColor: c.surfaceSunken,
+        borderWidth: BORDER.ad,
+        borderColor: c.adFrame,
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+      }}
+    >
+      <View style={{ position: 'absolute', top: 4, left: 4, borderWidth: 2, borderColor: c.adFrame, paddingHorizontal: 4, paddingVertical: 1 }}>
+        <Text style={[ty('label'), { color: c.adText, fontSize: 9 }]}>{t('AD')}</Text>
       </View>
+      <Text style={[ty('caption'), { color: c.adText, textAlign: 'center', paddingHorizontal: 8 }]}>
+        {t('Ad space')}
+      </Text>
     </View>
   );
 }
@@ -60,21 +57,45 @@ function AdFrame({ w, h, children, onClose }: { w: number; h: number; children?:
  */
 export function BannerAd() {
   const { c } = useUi();
+  const ready = useAdsReady();
   return (
-    <View style={{ borderTopWidth: BORDER.card, borderTopColor: c.border, backgroundColor: c.bg, padding: SPACE.sm }}>
-      <AdFrame w={AD_SIZES.banner.w} h={AD_SIZES.banner.h} />
+    <View style={{ borderTopWidth: BORDER.card, borderTopColor: c.border, backgroundColor: c.bg, padding: SPACE.sm, alignItems: 'center' }}>
+      {ready ? (
+        <View style={{ borderWidth: BORDER.ad, borderColor: c.adFrame, borderStyle: 'dashed' }}>
+          <GoogleBannerAd unitId={ADMOB_BANNER_ID} size={BannerAdSize.BANNER} />
+        </View>
+      ) : (
+        <PlaceholderFrame w={AD_SIZES.banner.w} h={AD_SIZES.banner.h} />
+      )}
     </View>
   );
 }
 
 /**
  * Obdélník 300×250. Výhradně na ÚPLNÉM KONCI statistik, nikdy nad přehybem
- * a nikdy mezi dvěma datovými bloky. ✕ vede na nabídku Pro.
+ * a nikdy mezi dvěma datovými bloky.
+ *
+ * Odkaz na Pro sedí POD reklamou, nikdy na ní — dokud šlo o placeholder,
+ * bylo ✕ přímo na rámu, ale nad SKUTEČNOU reklamou by dotyk u jejího
+ * okraje AdMob počítal jako neplatné kliknutí (riziko postihu účtu).
  */
 export function RectangleAd({ onUpgrade }: { onUpgrade: () => void }) {
+  const { c, ty } = useUi();
+  const ready = useAdsReady();
   return (
-    <View style={{ marginTop: SPACE.xl }}>
-      <AdFrame w={AD_SIZES.rectangle.w} h={AD_SIZES.rectangle.h} onClose={onUpgrade} />
+    <View style={{ marginTop: SPACE.xl, alignItems: 'center', gap: SPACE.sm }}>
+      {ready ? (
+        <View style={{ borderWidth: BORDER.ad, borderColor: c.adFrame, borderStyle: 'dashed' }}>
+          <GoogleBannerAd unitId={ADMOB_RECTANGLE_ID} size={BannerAdSize.MEDIUM_RECTANGLE} />
+        </View>
+      ) : (
+        <PlaceholderFrame w={AD_SIZES.rectangle.w} h={AD_SIZES.rectangle.h} />
+      )}
+      <Pressable onPress={onUpgrade} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
+        <Text style={[ty('caption'), { color: c.adText, textDecorationLine: 'underline' }]}>
+          {t('Remove ads with Pro')}
+        </Text>
+      </Pressable>
     </View>
   );
 }

@@ -113,7 +113,12 @@ Grafika v `components/Mascot.tsx` je **placeholder** — viz IMPLEMENTACE.md, kr
   Supabase, datová vrstva, webové stránky, ikony, **klíče Supabase**
   (projekt `aqikqephinmelmrbsage`), **doména splittingly.com**, Google OAuth
   klient, model Pro (jednorázový nákup, `entitlements.ts`).
-- Chybí: reklamní SDK, skutečné IAP, publikace OAuth consent screenu
+- Reklamní SDK (`react-native-google-mobile-ads`) je zapojené pro banner
+  a obdélník, s EU souhlasem (UMP) a iOS ATT před inicializací (`src/admob.ts`).
+  Neběží v Expo Go — appka to sama pozná a nechá placeholder. Skutečná App ID
+  a jednotky z AdMob konzole ještě chybí (běží na Googlem vydaných testovacích),
+  stejně jako nativní řádek v Aktivitě. Viz IMPLEMENTACE.md krok 12.
+- Chybí: skutečné IAP, publikace OAuth consent screenu
   (je v režimu Testing → přihlásí se jen testeři), skutečná grafika maskotů,
   ikony kategorií, ~43 překladů.
 - Postup krok za krokem: **IMPLEMENTACE.md**.

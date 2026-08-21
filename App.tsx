@@ -16,6 +16,7 @@ import {
 import { AppProvider } from './src/store';
 import Root from './src/Root';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { initAds } from './src/admob';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -64,6 +65,12 @@ export default function App() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => undefined);
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    // Souhlas (EU) a ATT (iOS) se musí vyřešit dřív, než appka smí AdMob
+    // vůbec inicializovat — pořadí i důvod jsou v `src/admob.ts`.
+    initAds();
+  }, []);
 
   if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#FFE500' }} />;
 
