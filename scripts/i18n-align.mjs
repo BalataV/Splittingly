@@ -44,6 +44,17 @@ console.log(`klíčů: ${keys.length}, řádků: ${lines.length}, rozdíl: ${lin
 const ph = (s) => (s.match(/\{[a-zA-Z]+\}/g) || []).sort().join(',');
 const shout = (s) => s === s.toUpperCase() && /\p{Lu}/u.test(s);
 
+// Písma bez rozlišení velikosti (CJK, thajština, arabština, hebrejština…)
+// nemají VELKÁ písmena, takže test velikosti u nich nic neříká. A CJK
+// zapíše totéž na výrazně méně znaků, takže ani poměr délek neplatí.
+// Písma BEZ velkých a malých písmen. U nich `v === v.toUpperCase()` platí
+// vždycky, takže test velikosti nic neměří — a latinská zkratka uvnitř
+// („CSV“, „JPY, KRW“) ho navíc svede na scestí. Proto se u nich přeskočí.
+const CASELESS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Tamil}]/u;
+const hasCase = (s) => !CASELESS.test(s) && (s.match(/\p{Ll}|\p{Lu}/gu) || []).length >= 4;
+// CJK a thajština zapíšou totéž na výrazně méně znaků než latinka.
+const dense = (s) => CASELESS.test(s);
+
 let first = -1;
 for (let i = 0; i < Math.min(keys.length, lines.length); i += 1) {
   const k = keys[i];
@@ -52,11 +63,12 @@ for (let i = 0; i < Math.min(keys.length, lines.length); i += 1) {
   const v = lines[i].replace(/\\n/g, '\n');
   // Placeholder je nejtvrdší signál — ten se překladem nemění.
   let bad = ph(k) !== ph(v);
-  // Velikost písmen porovnávej jen u delších řetězců: u dvou písmen
-  // („AD“, „OR“) je to náhoda, ne signál.
-  if (!bad && k.length >= 4 && v.length >= 4) bad = shout(k) !== shout(v);
-  // Hrubý poměr délek. Jen u dlouhých klíčů, kde je rozdíl výmluvný.
-  if (!bad && k.length > 30) bad = v.length < k.length * 0.3 || v.length > k.length * 3;
+  // Velikost písmen porovnávej jen u delších řetězců (u „AD“ nebo „OR“ je
+  // to náhoda) a jen když překlad velikost vůbec rozlišuje.
+  if (!bad && k.length >= 4 && v.length >= 4 && hasCase(v)) bad = shout(k) !== shout(v);
+  // Hrubý poměr délek. Neplatí pro hustá písma — japonština řekne totéž
+  // na třetinu znaků a vypadala by jako chyba.
+  if (!bad && k.length > 30 && !dense(v)) bad = v.length < k.length * 0.3 || v.length > k.length * 3;
   if (bad) { first = i; break; }
 }
 
