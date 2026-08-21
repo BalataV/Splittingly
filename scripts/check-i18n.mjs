@@ -45,6 +45,19 @@ const placeholders = (s) => (s.match(/\{[a-zA-Z]+\}/g) || []).sort().join(',');
 let problems = 0;
 const rows = [];
 
+// Slovník může existovat na disku a přitom nebýt zapojený v `DICT` v i18n.ts —
+// pak je celý jazyk tiše mrtvý: soubor vypadá hotově, appka ho nikdy nenačte.
+// Přesně na tohle se přijde nejhůř, tak to hlídáme tady.
+const i18nSrc = readFileSync(join(here, '..', 'src', 'i18n.ts'), 'utf8');
+for (const lang of Object.keys(DICT)) {
+  const imported = new RegExp(`from '\\./translations/${lang}\\.json'`).test(i18nSrc);
+  const inDict = new RegExp(`\\b${lang}\\b`).test((i18nSrc.match(/const DICT[^;]*;/) || [''])[0]);
+  if (!imported || !inDict) {
+    console.error(`✗ ${lang}: slovník existuje, ale ${!imported ? 'není importovaný' : 'chybí v DICT'} v src/i18n.ts — appka ho nepoužije`);
+    problems += 1;
+  }
+}
+
 for (const [lang, dict] of Object.entries(DICT)) {
   const entries = Object.entries(dict);
   let translated = 0;

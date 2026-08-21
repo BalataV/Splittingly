@@ -118,11 +118,13 @@ import cs from './translations/cs.json';
 import de from './translations/de.json';
 import es from './translations/es.json';
 import fi from './translations/fi.json';
+import fr from './translations/fr.json';
+import it from './translations/it.json';
 import ja from './translations/ja.json';
 import ru from './translations/ru.json';
 import th from './translations/th.json';
 
-const DICT: Record<string, Dict> = { ar, cs, de, es, fi, ja, ru, th };
+const DICT: Record<string, Dict> = { ar, cs, de, es, fi, fr, it, ja, ru, th };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
 export function translatedLanguages(): string[] {
@@ -161,7 +163,7 @@ export function translationCoverage(lang: string): number {
  *
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
-export const AUTO_DETECT_READY: string[] = ['cs', 'de', 'es'];
+export const AUTO_DETECT_READY: string[] = ['cs', 'de', 'es', 'fr', 'it'];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
 export function canAutoDetect(lang: string): boolean {
