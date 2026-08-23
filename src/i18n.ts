@@ -114,8 +114,10 @@ export function fmtTime(iso: string): string {
 type Dict = Record<string, string>;
 
 import ar from './translations/ar.json';
+import bg from './translations/bg.json';
 import cs from './translations/cs.json';
 import de from './translations/de.json';
+import el from './translations/el.json';
 import es from './translations/es.json';
 import fi from './translations/fi.json';
 import fr from './translations/fr.json';
@@ -129,10 +131,13 @@ import pt from './translations/pt.json';
 import ro from './translations/ro.json';
 import ru from './translations/ru.json';
 import sk from './translations/sk.json';
+import sl from './translations/sl.json';
+import sr from './translations/sr.json';
 import th from './translations/th.json';
 
 const DICT: Record<string, Dict> = {
-  ar, cs, de, es, fi, fr, hr, hu, it, ja, nl, pl, pt, ro, ru, sk, th,
+  ar, bg, cs, de, el, es, fi, fr, hr, hu, it, ja,
+  nl, pl, pt, ro, ru, sk, sl, sr, th,
 };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
@@ -173,8 +178,8 @@ export function translationCoverage(lang: string): number {
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
 export const AUTO_DETECT_READY: string[] = [
-  'ar', 'cs', 'de', 'es', 'fi', 'fr', 'hr', 'hu', 'it', 'ja',
-  'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'th',
+  'ar', 'bg', 'cs', 'de', 'el', 'es', 'fi', 'fr', 'hr', 'hu', 'it',
+  'ja', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'th',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
