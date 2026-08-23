@@ -144,17 +144,21 @@ import el from './translations/el.json';
 import es from './translations/es.json';
 import et from './translations/et.json';
 import eu from './translations/eu.json';
+import fa from './translations/fa.json';
 import fi from './translations/fi.json';
 import fr from './translations/fr.json';
 import gl from './translations/gl.json';
+import he from './translations/he.json';
 import hr from './translations/hr.json';
 import hu from './translations/hu.json';
+import id from './translations/id.json';
 import is from './translations/is.json';
 import it from './translations/it.json';
 import ja from './translations/ja.json';
 import ko from './translations/ko.json';
 import lt from './translations/lt.json';
 import lv from './translations/lv.json';
+import ms from './translations/ms.json';
 import nb from './translations/nb.json';
 import nl from './translations/nl.json';
 import pl from './translations/pl.json';
@@ -175,8 +179,8 @@ import zhHans from './translations/zh-Hans.json';
 import zhHant from './translations/zh-Hant.json';
 
 const DICT: Record<string, Dict> = {
-  ar, bg, ca, cs, da, de, el, es, et, eu, fi, fr, gl, hr, hu, is, it,
-  ja, ko, lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th, tr, uk, vi,
+  ar, bg, ca, cs, da, de, el, es, et, eu, fa, fi, fr, gl, he, hr, hu, id, is,
+  it, ja, ko, lt, lv, ms, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th, tr, uk, vi,
   'zh-Hans': zhHans,
   'zh-Hant': zhHant,
 };
@@ -219,9 +223,10 @@ export function translationCoverage(lang: string): number {
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
 export const AUTO_DETECT_READY: string[] = [
-  'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'eu', 'fi', 'fr', 'gl',
-  'hr', 'hu', 'is', 'it', 'ja', 'ko', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro',
-  'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi', 'zh-Hans', 'zh-Hant',
+  'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'eu', 'fa', 'fi', 'fr',
+  'gl', 'he', 'hr', 'hu', 'id', 'is', 'it', 'ja', 'ko', 'lt', 'lv', 'ms', 'nb',
+  'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi',
+  'zh-Hans', 'zh-Hant',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
