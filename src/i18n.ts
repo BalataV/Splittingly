@@ -81,12 +81,31 @@ function pluralCategory(n: number): 'one' | 'few' | 'many' | 'other' {
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MDY_LANGS = ['en'];
 
+/**
+ * Jazyky, které píšou datum od NEJVĚTŠÍ složky: rok, měsíc, den.
+ *
+ * Bez toho by čínština dostala „23 8月 2026“ — složky ve špatném pořadí
+ * a rok utržený na konci. Pro čtenáře je to stejně rozbité, jako by
+ * angličtina dostala „2026 August 23“.
+ *
+ * Překlad měsíce si u těchhle jazyků nese i znak měsíce (`8月`, `8월`),
+ * takže se do vzorce vkládá tak, jak je — jen kolem něj chybí rok a den.
+ */
+const YMD_LANGS: Record<string, (y: number, mon: string, d: number) => string> = {
+  'zh-Hans': (y, mon, d) => `${y}年${mon}${d}日`,
+  'zh-Hant': (y, mon, d) => `${y}年${mon}${d}日`,
+  ja: (y, mon, d) => `${y}年${mon}${d}日`,
+  ko: (y, mon, d) => `${y}년 ${mon} ${d}일`,
+};
+
 export function fmtDate(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   const day = d.getDate();
   const mon = t(MONTHS_EN[d.getMonth()]);
   const year = d.getFullYear();
+  const ymd = YMD_LANGS[current];
+  if (ymd) return ymd(year, mon, day);
   return MDY_LANGS.includes(current) ? `${mon} ${day}, ${year}` : `${day} ${mon} ${year}`;
 }
 
@@ -133,6 +152,7 @@ import hu from './translations/hu.json';
 import is from './translations/is.json';
 import it from './translations/it.json';
 import ja from './translations/ja.json';
+import ko from './translations/ko.json';
 import lt from './translations/lt.json';
 import lv from './translations/lv.json';
 import nb from './translations/nb.json';
@@ -148,10 +168,17 @@ import sv from './translations/sv.json';
 import th from './translations/th.json';
 import tr from './translations/tr.json';
 import uk from './translations/uk.json';
+import vi from './translations/vi.json';
+// Kódy s pomlčkou nejdou použít jako identifikátor, proto `zhHans`/`zhHant`.
+// V `DICT` ale MUSÍ zůstat přesný kód z `languages.ts` — podle něj se hledá.
+import zhHans from './translations/zh-Hans.json';
+import zhHant from './translations/zh-Hant.json';
 
 const DICT: Record<string, Dict> = {
   ar, bg, ca, cs, da, de, el, es, et, eu, fi, fr, gl, hr, hu, is, it,
-  ja, lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th, tr, uk,
+  ja, ko, lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th, tr, uk, vi,
+  'zh-Hans': zhHans,
+  'zh-Hant': zhHant,
 };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
@@ -193,8 +220,8 @@ export function translationCoverage(lang: string): number {
  */
 export const AUTO_DETECT_READY: string[] = [
   'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'eu', 'fi', 'fr', 'gl',
-  'hr', 'hu', 'is', 'it', 'ja', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru',
-  'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk',
+  'hr', 'hu', 'is', 'it', 'ja', 'ko', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro',
+  'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi', 'zh-Hans', 'zh-Hant',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
