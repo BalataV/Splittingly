@@ -1,11 +1,13 @@
 // Překlady. Klíčem je ANGLICKÁ věta — angličtina se tedy vrací rovnou jako
 // klíč a chybějící překlad nikdy nerozbije UI (spadne zpátky do angličtiny).
 //
-// V repozitáři jsou hotové jen jazyky, na kterých se ověřuje layout:
+// Aktuální stav pokrytí vypíše `npm run check:i18n` — nespoléhej na číslo
+// v komentáři, ten zestárne dřív než slovníky.
+//
+// Mezi hotovými jsou schválně i ty, na kterých se ověřuje layout:
 //   de (+42 %), ru (+58 %), fi (+64 %) — délkové stresy z handoffu,
-//   ar (RTL), th (vysoké značky), ja (CJK), cs (tvůj jazyk).
-// Zbývajících ~43 se doplňuje překladem téhož slovníku; struktura se nemění.
-// Jak přidat jazyk → IMPLEMENTACE.md, krok 9.
+//   ar (RTL), th (vysoké značky), ja (CJK).
+// Jak přidat jazyk → postup je níž u `DICT`.
 
 import { language, isRTL } from './languages';
 import type { ScriptName } from './languages';
@@ -115,6 +117,7 @@ type Dict = Record<string, string>;
 
 import ar from './translations/ar.json';
 import bg from './translations/bg.json';
+import ca from './translations/ca.json';
 import cs from './translations/cs.json';
 import da from './translations/da.json';
 import de from './translations/de.json';
@@ -125,8 +128,11 @@ import fi from './translations/fi.json';
 import fr from './translations/fr.json';
 import hr from './translations/hr.json';
 import hu from './translations/hu.json';
+import is from './translations/is.json';
 import it from './translations/it.json';
 import ja from './translations/ja.json';
+import lt from './translations/lt.json';
+import lv from './translations/lv.json';
 import nb from './translations/nb.json';
 import nl from './translations/nl.json';
 import pl from './translations/pl.json';
@@ -140,8 +146,8 @@ import sv from './translations/sv.json';
 import th from './translations/th.json';
 
 const DICT: Record<string, Dict> = {
-  ar, bg, cs, da, de, el, es, et, fi, fr, hr, hu, it, ja,
-  nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th,
+  ar, bg, ca, cs, da, de, el, es, et, fi, fr, hr, hu, is, it, ja,
+  lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th,
 };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
@@ -182,8 +188,9 @@ export function translationCoverage(lang: string): number {
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
 export const AUTO_DETECT_READY: string[] = [
-  'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hr', 'hu', 'it',
-  'ja', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th',
+  'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hr', 'hu',
+  'is', 'it', 'ja', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl',
+  'sr', 'sv', 'th',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
