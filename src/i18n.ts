@@ -124,8 +124,10 @@ import de from './translations/de.json';
 import el from './translations/el.json';
 import es from './translations/es.json';
 import et from './translations/et.json';
+import eu from './translations/eu.json';
 import fi from './translations/fi.json';
 import fr from './translations/fr.json';
+import gl from './translations/gl.json';
 import hr from './translations/hr.json';
 import hu from './translations/hu.json';
 import is from './translations/is.json';
@@ -144,10 +146,12 @@ import sl from './translations/sl.json';
 import sr from './translations/sr.json';
 import sv from './translations/sv.json';
 import th from './translations/th.json';
+import tr from './translations/tr.json';
+import uk from './translations/uk.json';
 
 const DICT: Record<string, Dict> = {
-  ar, bg, ca, cs, da, de, el, es, et, fi, fr, hr, hu, is, it, ja,
-  lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th,
+  ar, bg, ca, cs, da, de, el, es, et, eu, fi, fr, gl, hr, hu, is, it,
+  ja, lt, lv, nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th, tr, uk,
 };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
@@ -188,9 +192,9 @@ export function translationCoverage(lang: string): number {
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
 export const AUTO_DETECT_READY: string[] = [
-  'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hr', 'hu',
-  'is', 'it', 'ja', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl',
-  'sr', 'sv', 'th',
+  'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'eu', 'fi', 'fr', 'gl',
+  'hr', 'hu', 'is', 'it', 'ja', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru',
+  'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */

@@ -42,7 +42,16 @@ if (lines.length && lines[lines.length - 1] === '') lines.pop();
 console.log(`klíčů: ${keys.length}, řádků: ${lines.length}, rozdíl: ${lines.length - keys.length}\n`);
 
 const ph = (s) => (s.match(/\{[a-zA-Z]+\}/g) || []).sort().join(',');
-const shout = (s) => s === s.toUpperCase() && /\p{Lu}/u.test(s);
+
+// Placeholdery se z porovnání velikosti VYŘADÍ. `{n}` a `{total}` jsou malými
+// písmeny vždycky, takže klíč jako `{n} OF {total} MATCH` by jinak nikdy
+// neprošel jako „psaný verzálkami“ a chybějící verzálky v překladu by
+// propadly bez povšimnutí.
+const noPh = (s) => s.replace(/\{[a-zA-Z]+\}/g, '');
+const shout = (s) => {
+  const t = noPh(s);
+  return t === t.toUpperCase() && /\p{Lu}/u.test(t);
+};
 
 // Písma bez rozlišení velikosti (CJK, thajština, arabština, hebrejština…)
 // nemají VELKÁ písmena, takže test velikosti u nich nic neříká. A CJK
