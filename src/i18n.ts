@@ -116,15 +116,18 @@ type Dict = Record<string, string>;
 import ar from './translations/ar.json';
 import bg from './translations/bg.json';
 import cs from './translations/cs.json';
+import da from './translations/da.json';
 import de from './translations/de.json';
 import el from './translations/el.json';
 import es from './translations/es.json';
+import et from './translations/et.json';
 import fi from './translations/fi.json';
 import fr from './translations/fr.json';
 import hr from './translations/hr.json';
 import hu from './translations/hu.json';
 import it from './translations/it.json';
 import ja from './translations/ja.json';
+import nb from './translations/nb.json';
 import nl from './translations/nl.json';
 import pl from './translations/pl.json';
 import pt from './translations/pt.json';
@@ -133,11 +136,12 @@ import ru from './translations/ru.json';
 import sk from './translations/sk.json';
 import sl from './translations/sl.json';
 import sr from './translations/sr.json';
+import sv from './translations/sv.json';
 import th from './translations/th.json';
 
 const DICT: Record<string, Dict> = {
-  ar, bg, cs, de, el, es, fi, fr, hr, hu, it, ja,
-  nl, pl, pt, ro, ru, sk, sl, sr, th,
+  ar, bg, cs, da, de, el, es, et, fi, fr, hr, hu, it, ja,
+  nb, nl, pl, pt, ro, ru, sk, sl, sr, sv, th,
 };
 
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
@@ -178,8 +182,8 @@ export function translationCoverage(lang: string): number {
  * Než sem jazyk přidáš, ověř `node scripts/check-i18n.mjs` — musí být na 100 %.
  */
 export const AUTO_DETECT_READY: string[] = [
-  'ar', 'bg', 'cs', 'de', 'el', 'es', 'fi', 'fr', 'hr', 'hu', 'it',
-  'ja', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'th',
+  'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hr', 'hu', 'it',
+  'ja', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th',
 ];
 
 /** Smí se tenhle jazyk nastavit automaticky podle telefonu? */
