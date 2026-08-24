@@ -30,6 +30,35 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const PRODUCT_ID = 'splittingly_pro';
 
+/**
+ * Klíče projektu.
+ *
+ * `SUPABASE_ANON_KEY` a `SUPABASE_SERVICE_ROLE_KEY` jsou v Dashboardu
+ * označené jako Deprecated — nahrazují je `SUPABASE_PUBLISHABLE_KEYS`
+ * a `SUPABASE_SECRET_KEYS`, což jsou JSON slovníky, ne holé řetězce.
+ * Zatím fungují obě sady, ale až ty staré zmizí, přestala by funkce
+ * ověřovat nákupy a Pro by se nikomu nezapnulo. Bereme napřed nové,
+ * staré zůstávají jako záloha.
+ */
+function projectKey(newName: string, oldName: string): string {
+  const raw = Deno.env.get(newName);
+  if (raw) {
+    try {
+      const dict = JSON.parse(raw);
+      // Slovník má podobu { "název": "klíč", … } — bereme první hodnotu.
+      const first = Object.values(dict).find((v) => typeof v === 'string');
+      if (typeof first === 'string' && first) return first;
+    } catch {
+      // Není to JSON? Pak je to rovnou klíč.
+      return raw;
+    }
+  }
+  return Deno.env.get(oldName) ?? '';
+}
+
+const ANON_KEY = () => projectKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_ANON_KEY');
+const SECRET_KEY = () => projectKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY');
+
 type Payload = {
   platform: 'ios' | 'android';
   productId: string;
@@ -199,7 +228,7 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization') ?? '';
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
+    ANON_KEY(),
     { global: { headers: { Authorization: auth } } },
   );
   const { data: userData } = await supabase.auth.getUser();
@@ -224,10 +253,7 @@ Deno.serve(async (req) => {
 
   // Zápis jde SERVISNÍM klíčem: profil si `is_pro` sám měnit nesmí,
   // jinak by na tomhle ověřování nezáleželo.
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, SECRET_KEY());
   const { error } = await admin
     .from('profiles')
     .update({ is_pro: true, pro_since: new Date().toISOString() })
