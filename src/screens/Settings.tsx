@@ -163,10 +163,27 @@ export function LanguagePicker() {
 
 // ----------------------------------------------------------------- 24 · měna
 
-export function CurrencyPicker() {
+/**
+ * Výběr měny ve dvou režimech.
+ *
+ * `display` (výchozí) mění MOJI zobrazovací měnu — nastavení profilu.
+ * `expense` mění měnu rozepsaného výdaje a nic v profilu nesahá.
+ *
+ * Bez toho rozlišení tu byla tichá záměna: klepnutí na kód měny u částky
+ * v „Nový výdaj" otevřelo tenhle seznam, ten ale uměl jen `setCurrency`,
+ * takže výdaj zůstal ve staré měně a místo něj se člověku přepsala
+ * zobrazovací měna celého účtu — změna, o kterou nežádal a která se
+ * neprojevila tam, kam se díval.
+ *
+ * Skupina může nést víc měn zároveň; `netFor` počítá každou zvlášť
+ * a `transfersFor` vrací převod pro každou měnu, takže je to podporovaný
+ * stav, ne obcházení modelu.
+ */
+export function CurrencyPicker({ target = 'display' }: { target?: 'display' | 'expense' }) {
   const { c, ty } = useUi();
   const { state, actions } = useApp();
   const [q, setQ] = useState('');
+  const forExpense = target === 'expense';
 
   const match = (code: string) => {
     const cur = currency(code);
@@ -179,12 +196,21 @@ export function CurrencyPicker() {
     .filter((code) => !state.favouriteCurrencies.includes(code))
     .filter(match);
 
+  const pick = (code: string) => {
+    if (forExpense) {
+      actions.setDraft({ currency: code });
+      actions.goBack();
+      return;
+    }
+    actions.setCurrency(code);
+  };
+
   const CurrencyRow = ({ code }: { code: string }) => {
     const cur = currency(code);
-    const selected = state.currency === code;
+    const selected = (forExpense ? state.draft.currency : state.currency) === code;
     const fav = state.favouriteCurrencies.includes(code);
     return (
-      <Row onPress={() => actions.setCurrency(code)}>
+      <Row onPress={() => pick(code)}>
         <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 15, color: c.text, width: 44 }}>{cur.code}</Text>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[ty('rowTitle'), { color: c.text }]}>{t(cur.name)}</Text>
@@ -198,8 +224,8 @@ export function CurrencyPicker() {
             <Text style={{ color: c.onPrimary, fontSize: 11 }}>✓</Text>
           </View>
         )}
-        {/* Hvězdička je samostatný cíl: řádek mění zobrazovací měnu,
-            hvězda jen to, jestli je měna nahoře v seznamu. */}
+        {/* Hvězdička je samostatný cíl: řádek vybírá měnu,
+            hvězda jen to, jestli je nahoře v seznamu. */}
         <Pressable
           onPress={() => actions.toggleFavouriteCurrency(code)}
           hitSlop={12}
@@ -219,7 +245,7 @@ export function CurrencyPicker() {
   };
 
   return (
-    <Screen title={t('CURRENCY')} onBack={actions.goBack}>
+    <Screen title={forExpense ? t('CURRENCY') : t('YOUR DISPLAY CURRENCY')} onBack={actions.goBack}>
       <Field value={q} onChangeText={setQ} placeholder={t('Search currencies')} autoCapitalize="characters" />
 
       {favourites.length > 0 && (

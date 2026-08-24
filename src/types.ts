@@ -20,7 +20,7 @@ export type ScreenName =
   | 'split_method' | 'expense_detail' | 'settle' | 'stats'
   | 'year_in_review' | 'activity' | 'search' | 'share_card'
   // nastavení (22–29)
-  | 'profile' | 'language' | 'currency' | 'appearance' | 'notifications'
+  | 'profile' | 'language' | 'currency' | 'expense_currency' | 'appearance' | 'notifications'
   | 'remove_ads' | 'privacy' | 'settings'
   // úvodní nastavení po první registraci
   | 'setup';

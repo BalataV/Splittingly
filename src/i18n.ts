@@ -209,8 +209,24 @@ export function translationCoverage(lang: string): number {
   if (lang === 'en') return 1;
   const dict = DICT[lang];
   if (!dict) return 0;
-  const richest = Math.max(...Object.values(DICT).map((d) => Object.keys(d).length));
-  return Object.keys(dict).length / richest;
+  const richest = Math.max(...Object.values(DICT).map(countBaseKeys));
+  return countBaseKeys(dict) / richest;
+}
+
+/**
+ * Klíče BEZ pádové přípony množného čísla.
+ *
+ * Slovanské jazyky mají navíc `…#few` a `…#many` — pro „2 výdaje" vs
+ * „5 výdajů". Angličtina ani čínština takový tvar nemají a nikdy mít
+ * nebudou, takže do jmenovatele nepatří: porovnávat čínštinu s češtinou
+ * přes celkový počet klíčů znamená trestat ji za tvar, který v jejím
+ * jazyce neexistuje.
+ *
+ * Bez tohohle vyšlo 41 hotových jazyků na 478/488 a v přepínači se
+ * u všech vypsalo „partly translated", i když jim nechyběl jediný řádek.
+ */
+function countBaseKeys(dict: Dict): number {
+  return Object.keys(dict).filter((k) => !/#(one|few|many|other)$/.test(k)).length;
 }
 
 /**

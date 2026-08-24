@@ -83,7 +83,7 @@ export default function AddExpense() {
               placeholder={decimalsOf(d.currency) === 0 ? '0' : '0' + cur.dec + '00'}
               style={{ flex: 1 }}
             />
-            <Pressable onPress={() => actions.navigate('currency')} hitSlop={10} style={{ paddingBottom: 14 }}>
+            <Pressable onPress={() => actions.navigate('expense_currency')} hitSlop={10} style={{ paddingBottom: 14 }}>
               <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 22, color: c.primary }}>{cur.code}</Text>
             </Pressable>
           </View>

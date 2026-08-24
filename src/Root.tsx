@@ -29,6 +29,7 @@ import Activity from './screens/Activity';
 import Search from './screens/Search';
 import ShareCard from './screens/ShareCard';
 import Setup from './screens/Setup';
+import { TabIcon, type TabIconName } from './components/TabIcon';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
 
 /**
@@ -92,6 +93,7 @@ function RootInner() {
   else if (sc === 'profile') screen = <Profile />;
   else if (sc === 'language') screen = <LanguagePicker />;
   else if (sc === 'currency') screen = <CurrencyPicker />;
+  else if (sc === 'expense_currency') screen = <CurrencyPicker target="expense" />;
   else if (sc === 'appearance') screen = <Appearance />;
   else if (sc === 'notifications') screen = <Notifications />;
   else if (sc === 'remove_ads') screen = <RemoveAds />;
@@ -178,11 +180,11 @@ export function AppMark({ size, ink, accent, primary }: { size: number; ink: str
 // „Groups" tu bývalo místo „Profile", ale vedlo na tutéž obrazovku jako
 // „Overview" — seznam skupin je na přehledu. Profil naopak visel jen pod
 // avatarem v rohu, kam většina lidí nesáhne. Tohle je užitečnější rozdělení.
-const TABS: { key: TabName; label: string; glyph: string }[] = [
-  { key: 'overview', label: 'Overview', glyph: '▣' },
-  { key: 'activity', label: 'Activity', glyph: '▤' },
-  { key: 'stats', label: 'Stats', glyph: '◔' },
-  { key: 'profile', label: 'Profile', glyph: '◎' },
+const TABS: { key: TabName; label: string; icon: TabIconName }[] = [
+  { key: 'overview', label: 'Overview', icon: 'overview' },
+  { key: 'activity', label: 'Activity', icon: 'activity' },
+  { key: 'stats', label: 'Stats', icon: 'stats' },
+  { key: 'profile', label: 'Profile', icon: 'profile' },
 ];
 
 function TabBar() {
@@ -212,7 +214,7 @@ function TabBar() {
             accessibilityLabel={t(tab.label)}
             style={{ flex: 1, alignItems: 'center', gap: 3, minHeight: 49, paddingHorizontal: 4 }}
           >
-            <Text style={{ fontSize: 24, color: active ? c.text : c.textMuted }}>{tab.glyph}</Text>
+            <TabIcon name={tab.icon} color={active ? c.text : c.textMuted} size={28} />
             {/* Popisek se ZALAMUJE, neuřezává — podlaha je 9,5 px (viz typography). */}
             <Text style={[ty('tabLabel'), { color: active ? c.text : c.textMuted, textAlign: 'center' }]}>
               {t(tab.label)}
