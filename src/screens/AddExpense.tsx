@@ -220,7 +220,7 @@ export default function AddExpense() {
         </View>
       )}
 
-      {d.splitType === 'exact' && remainder !== 0 && state.mascotsOn && (
+      {d.splitType === 'exact' && remainder !== 0 && (
         <MascotStrip who="analyst" text={quipFor('split_error', 'analyst', true) || ''} />
       )}
 

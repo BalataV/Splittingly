@@ -180,10 +180,17 @@ export function AppMark({ size, ink, accent, primary }: { size: number; ink: str
 // „Groups" tu bývalo místo „Profile", ale vedlo na tutéž obrazovku jako
 // „Overview" — seznam skupin je na přehledu. Profil naopak visel jen pod
 // avatarem v rohu, kam většina lidí nesáhne. Tohle je užitečnější rozdělení.
+// Statistiky tu bývaly čtvrtou záložkou, ale počítají se VŽDY pro jednu
+// skupinu (`Stats.tsx` bere `selectedGroup`). Jako globální záložka tedy
+// ukazovaly čísla té skupiny, kterou měl člověk naposledy otevřenou —
+// což vypadá jako přehled za všechno, ale není. Vstup je teď jediný
+// a jednoznačný: tlačítko „Stats" v detailu skupiny.
+//
+// Aktivita zůstává: ta se naopak skládá ze VŠECH skupin (`buildActivity`),
+// a z detailu jedné skupiny se k ní dostat nedá.
 const TABS: { key: TabName; label: string; icon: TabIconName }[] = [
   { key: 'overview', label: 'Overview', icon: 'overview' },
   { key: 'activity', label: 'Activity', icon: 'activity' },
-  { key: 'stats', label: 'Stats', icon: 'stats' },
   { key: 'profile', label: 'Profile', icon: 'profile' },
 ];
 

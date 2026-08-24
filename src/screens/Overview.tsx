@@ -12,7 +12,7 @@ import { Money, MoneySlot, balanceColor } from '../components/Money';
 import Mascot, { MascotStrip } from '../components/Mascot';
 import { useApp } from '../store';
 import { t, plural } from '../i18n';
-import { quipFor } from '../quips';
+import { quipFor, mascotVisible } from '../quips';
 import { totalOwe, totalOwed, hasAny, myNet, transfersFor, initial } from '../logic';
 import { fmtMoneyMap } from '../money';
 import { SPACE, BORDER } from '../theme';
@@ -58,9 +58,7 @@ export default function Overview() {
         </Row>
       )}
 
-      {state.mascotsOn && (
-        <MascotStrip who="closer" text={quipFor('overview', 'closer', true) || ''} />
-      )}
+      <MascotStrip who="closer" text={quipFor('overview', 'closer', true) || ''} />
 
       <Text style={[ty('label'), { color: c.textMuted, marginTop: SPACE.sm }]}>{t('YOUR GROUPS')}</Text>
 
@@ -120,23 +118,26 @@ export function EmptyState() {
         </Text>
       </View>
 
-      {/* Prázdný stav je jedno z pěti míst, kde vystupují OBA. */}
-      {state.mascotsOn && (
-        <View style={{ gap: SPACE.md }}>
+      {/* Prázdný stav je jedno z pěti míst, kde vystupují OBA. Každý ale
+          mizí sám za sebe — vypnutá postava nesmí po sobě nechat mezeru. */}
+      <View style={{ gap: SPACE.md }}>
+        {mascotVisible(state.notif, 'closer') && (
           <View style={{ flexDirection: 'row', gap: SPACE.md, alignItems: 'center' }}>
             <Mascot who="closer" size={66} variant="full" />
             <View style={{ flex: 1, backgroundColor: c.accent, borderWidth: BORDER.card, borderColor: c.border, padding: 10 }}>
               <Text style={[ty('caption'), { color: c.onAccent }]}>{quipFor('empty', 'closer', true)}</Text>
             </View>
           </View>
+        )}
+        {mascotVisible(state.notif, 'analyst') && (
           <View style={{ flexDirection: 'row-reverse', gap: SPACE.md, alignItems: 'center' }}>
             <Mascot who="analyst" size={66} variant="full" />
             <View style={{ flex: 1, backgroundColor: c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 10 }}>
               <Text style={[ty('caption'), { color: c.text }]}>{quipFor('empty', 'analyst', true)}</Text>
             </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
 
       <Button label={t('Create a group')} kind="accent" onPress={() => actions.navigate('create_group')} offset={5} />
       <Button label={t('Join with a code')} kind="plain" onPress={() => actions.navigate('join_group')} />

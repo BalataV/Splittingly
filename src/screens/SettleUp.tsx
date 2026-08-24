@@ -14,7 +14,7 @@ import { Money, ApproxMoney } from '../components/Money';
 import Mascot from '../components/Mascot';
 import { useApp } from '../store';
 import { t } from '../i18n';
-import { quipFor } from '../quips';
+import { quipFor, mascotVisible } from '../quips';
 import { initial, ME } from '../logic';
 import { fmt } from '../money';
 import { SPACE, BORDER } from '../theme';
@@ -131,23 +131,26 @@ function Settled() {
         </Text>
       </View>
 
-      {/* Oba maskoti, celá postava, střídavě po stranách. */}
-      {state.mascotsOn && (
-        <View style={{ gap: SPACE.md, marginTop: SPACE.lg }}>
+      {/* Oba maskoti, celá postava, střídavě po stranách. Vypnutá postava
+          zmizí sama za sebe, druhá zůstane na své straně. */}
+      <View style={{ gap: SPACE.md, marginTop: SPACE.lg }}>
+        {mascotVisible(state.notif, 'closer') && (
           <View style={{ flexDirection: 'row-reverse', gap: SPACE.md, alignItems: 'center' }}>
             <Mascot who="closer" size={72} variant="full" />
             <View style={{ flex: 1, backgroundColor: c.accent, borderWidth: BORDER.card, borderColor: c.border, padding: 11 }}>
               <Text style={[ty('caption'), { color: c.onAccent }]}>{quipFor('settled', 'closer', true)}</Text>
             </View>
           </View>
+        )}
+        {mascotVisible(state.notif, 'analyst') && (
           <View style={{ flexDirection: 'row', gap: SPACE.md, alignItems: 'center' }}>
             <Mascot who="analyst" size={72} variant="full" />
             <View style={{ flex: 1, backgroundColor: c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 11 }}>
               <Text style={[ty('caption'), { color: c.text }]}>{quipFor('settled', 'analyst', true)}</Text>
             </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Světlá varianta má patičku „BALANCE / 0.00" na plné zelené. */}
       {!c.isDark && (

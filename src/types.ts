@@ -25,7 +25,7 @@ export type ScreenName =
   // úvodní nastavení po první registraci
   | 'setup';
 
-export type TabName = 'overview' | 'activity' | 'stats' | 'profile';
+export type TabName = 'overview' | 'activity' | 'profile';
 
 export interface GroupMember {
   id: string;
@@ -205,7 +205,6 @@ export interface AppState {
   isPro: boolean;
   rewardTheme: ThemeName | null;
   rewardUntil: string | null;
-  mascotsOn: boolean;
 
   // formuláře
   authEmail: string;

@@ -81,12 +81,10 @@ export default function GroupDetail() {
       </HardShadow>
 
       {/* jediné místo v hlavním toku, kde mluví oba */}
-      {state.mascotsOn && (
-        <DualMascotStrip
-          closer={quipFor('group', 'closer', true) || ''}
-          analyst={quipFor('group', 'analyst', true) || ''}
-        />
-      )}
+      <DualMascotStrip
+        closer={quipFor('group', 'closer', true) || ''}
+        analyst={quipFor('group', 'analyst', true) || ''}
+      />
 
       <Text style={[ty('label'), { color: c.textMuted, marginTop: SPACE.sm }]}>{t('EXPENSES')}</Text>
 

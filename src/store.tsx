@@ -142,7 +142,6 @@ function makeInitialState(): AppState {
     isPro: false,
     rewardTheme: null,
     rewardUntil: null,
-    mascotsOn: true,
 
     authEmail: '',
     authPassword: '',
@@ -188,11 +187,12 @@ const BACK_MAP: Partial<Record<ScreenName, ScreenName>> = {
   create_group: 'overview', join_group: 'overview',
   group: 'overview', add_expense: 'group', split_method: 'add_expense',
   expense_detail: 'group', settle: 'group',
-  stats: 'overview', year_in_review: 'stats', activity: 'overview',
+  stats: 'group', year_in_review: 'stats', activity: 'overview',
   search: 'overview', share_card: 'group',
   profile: 'overview', language: 'profile', currency: 'profile',
   appearance: 'profile', notifications: 'profile', remove_ads: 'profile',
   privacy: 'profile', settings: 'profile',
+  expense_currency: 'add_expense',
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -228,7 +228,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setTab = (tab: TabName) => {
     const screen: ScreenName =
       tab === 'activity' ? 'activity'
-      : tab === 'stats' ? 'stats'
       : tab === 'profile' ? 'profile'
       : 'overview';
     setState((s) => ({ ...s, tab, screen, history: [] }));
@@ -268,14 +267,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       theme: state.theme, mode: state.mode, textSize: state.textSize,
       notif: state.notif, personalisedAds: state.personalisedAds,
       isPro: state.isPro, rewardTheme: state.rewardTheme, rewardUntil: state.rewardUntil,
-      mascotsOn: state.mascotsOn, recentSearches: state.recentSearches,
+      recentSearches: state.recentSearches,
     };
     AsyncStorage.setItem(STATE_KEY, JSON.stringify(prefs)).catch(() => undefined);
   }, [
     state.booting, state.lang, state.langChosen, state.currency,
     state.favouriteCurrencies, state.setupDone, state.theme, state.mode,
     state.textSize, state.notif, state.personalisedAds, state.isPro, state.rewardTheme,
-    state.rewardUntil, state.mascotsOn, state.recentSearches,
+    state.rewardUntil, state.recentSearches,
   ]);
 
   // Systémové „zpět" na Androidu.

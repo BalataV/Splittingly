@@ -176,9 +176,7 @@ function CurrencyStep({ query, setQuery }: { query: string; setQuery: (v: string
         })}
       </View>
 
-      {state.mascotsOn && (
-        <MascotStrip who="analyst" text={quipFor('welcome', 'analyst', true) || ''} />
-      )}
+      <MascotStrip who="analyst" text={quipFor('welcome', 'analyst', true) || ''} />
     </>
   );
 }

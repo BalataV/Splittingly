@@ -146,3 +146,23 @@ export function quipFor(situation: Situation, who: MascotName, enabled = true): 
 
 /** Obrazovky, kde se obě postavy potkávají. Nikde jinde nevystupují spolu. */
 export const DUAL_SITUATIONS: Situation[] = ['group', 'settled', 'year', 'share', 'empty'];
+
+/**
+ * Smí tahle postava teď mluvit?
+ *
+ * Jediné místo, kde se to rozhoduje. Dřív se každá obrazovka ptala na
+ * `state.mascotsOn` — jenže ten příznak neměl NIKDE setter, byl natvrdo
+ * `true` a nešel vypnout (a proto je dnes pryč). Přepínače v Notifikacích zapisovaly do
+ * `notif.closer` / `notif.analyst`, ale ty zase nikdo v rozhraní nečetl,
+ * takže se používaly jen pro push. Výsledkem bylo, že vypnutí postavy
+ * v nastavení nemělo na appku žádný viditelný vliv.
+ *
+ * `AGENTS.md` to popisuje jasně: „Vypínají se v Notifikacích bez ztráty
+ * funkční zprávy." Tohle je ta funkce, která to konečně plní.
+ */
+export function mascotVisible(
+  notif: { closer: boolean; analyst: boolean },
+  who: MascotName,
+): boolean {
+  return who === 'closer' ? notif.closer : notif.analyst;
+}

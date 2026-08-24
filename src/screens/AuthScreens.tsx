@@ -14,7 +14,7 @@ import { useUi, Button, Field, Label, Card, Check, Rule } from '../components/ui
 import Mascot, { MascotStrip } from '../components/Mascot';
 import { useApp } from '../store';
 import { t } from '../i18n';
-import { quipFor } from '../quips';
+import { quipFor, mascotVisible } from '../quips';
 import { SPACE, BORDER } from '../theme';
 
 // ---------------------------------------------------------------- 02 onboarding
@@ -82,7 +82,7 @@ export function Onboarding() {
         <Mascot who={slide.who} size={72} variant="full" />
         <View style={{ flex: 1, backgroundColor: c.surface, borderWidth: BORDER.small, borderColor: c.border, padding: 10 }}>
           <Text style={[ty('caption'), { color: c.text }]}>
-            {quipFor('welcome', slide.who, state.mascotsOn) || slide.body}
+            {quipFor('welcome', slide.who, mascotVisible(state.notif, slide.who)) || slide.body}
           </Text>
         </View>
       </View>
@@ -211,12 +211,10 @@ export function LogIn() {
       </View>
 
       {/* Maskot u hesla mluví AŽ po neúspěšném pokusu — jinak by to bylo drzé. */}
-      {state.mascotsOn && (
-        <MascotStrip
-          who={failed ? 'analyst' : 'closer'}
-          text={quipFor('login_failed', failed ? 'analyst' : 'closer', true) || ''}
-        />
-      )}
+      <MascotStrip
+        who={failed ? 'analyst' : 'closer'}
+        text={quipFor('login_failed', failed ? 'analyst' : 'closer', true) || ''}
+      />
     </Screen>
   );
 }
@@ -341,7 +339,7 @@ export function ConfirmEmail() {
 
       {!!state.authError && <Text style={[ty('caption'), { color: c.negative }]}>{state.authError}</Text>}
 
-      {state.mascotsOn && <MascotStrip who="closer" text={quipFor('confirm_email', 'closer', true) || ''} />}
+      <MascotStrip who="closer" text={quipFor('confirm_email', 'closer', true) || ''} />
     </Screen>
   );
 }

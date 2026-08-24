@@ -84,11 +84,13 @@ export function parseAmount(text: string, code: string): number {
   if (dec === 0) {
     // měna bez haléřů: desetinná část se zahazuje, ne zaokrouhluje nahoru
     const v = parseInt(whole, 10) || 0;
-    return neg ? -v : v;
+    return neg && v !== 0 ? -v : v;
   }
   frac = (frac + '0'.repeat(dec)).slice(0, dec);
   const v = (parseInt(whole, 10) || 0) * minorFactor(code) + (parseInt(frac, 10) || 0);
-  return neg ? -v : v;
+  // `neg ? -v : v` by ze samotného „-" udělalo -0: rovná se nule, ale
+  // Object.is(-0, 0) je false a 1/-0 je -Infinity. Nula nemá znaménko.
+  return neg && v !== 0 ? -v : v;
 }
 
 /** Minor units → text do vstupního pole ("1234" EUR → "12.34"). */

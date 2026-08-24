@@ -93,7 +93,7 @@ export default function Stats() {
         </View>
       </HardShadow>
 
-      {state.mascotsOn && <MascotStrip who="analyst" text={quipFor('stats', 'analyst', true) || ''} />}
+      <MascotStrip who="analyst" text={quipFor('stats', 'analyst', true) || ''} />
 
       <Label>{t('BY CATEGORY')}</Label>
 

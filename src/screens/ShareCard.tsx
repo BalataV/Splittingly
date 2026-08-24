@@ -129,12 +129,10 @@ export default function ShareCard() {
 
       {/* Komentář MIMO zachycovanou kartu — do sdíleného obrázku se nedostane,
           je to jen doprovod pro appku. Jedno z pěti míst, kde jsou spolu. */}
-      {state.mascotsOn && (
-        <DualMascotStrip
-          closer={quipFor('share', 'closer', true) || ''}
-          analyst={quipFor('share', 'analyst', true) || ''}
-        />
-      )}
+      <DualMascotStrip
+        closer={quipFor('share', 'closer', true) || ''}
+        analyst={quipFor('share', 'analyst', true) || ''}
+      />
 
       <View style={{ flexDirection: 'row', gap: SPACE.sm, flexWrap: 'wrap' }}>
         <Chip label={t('Yellow')} active={style === 'yellow'} onPress={() => setStyle('yellow')} />

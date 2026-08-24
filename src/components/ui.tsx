@@ -551,13 +551,31 @@ export function Field({
 
 // ------------------------------------------------------------------ stepper
 
-export function Stepper({ value, onChange, min = 0, max = 99 }: {
-  value: number; onChange: (v: number) => void; min?: number; max?: number;
+/**
+ * Krokovadlo.
+ *
+ * `wrap` přetáčí přes okraj místo zastavení — pro hodiny je to jediné
+ * rozumné chování: z 23:00 se musí dát dojít na 00:00 jedním klepnutím,
+ * ne třiadvaceti zpátky. U počtu podílů naopak přetáčení nedává smysl,
+ * proto je vypnuté ve výchozím stavu.
+ *
+ * `format` mění jen to, co se ukáže; počítá se pořád s číslem. Rámeček
+ * roste podle obsahu, aby se do něj vešlo „23:00" stejně jako „1".
+ */
+export function Stepper({ value, onChange, min = 0, max = 99, wrap = false, format }: {
+  value: number; onChange: (v: number) => void;
+  min?: number; max?: number; wrap?: boolean; format?: (v: number) => string;
 }) {
   const { c, ty } = useUi();
+  const step = (delta: number) => {
+    const raw = value + delta;
+    if (!wrap) return Math.min(max, Math.max(min, raw));
+    const span = max - min + 1;
+    return min + (((raw - min) % span) + span) % span;
+  };
   const btn = (glyph: string, delta: number, fill?: string) => (
     <Pressable
-      onPress={() => { haptics.tap(); onChange(Math.min(max, Math.max(min, value + delta))); }}
+      onPress={() => { haptics.tap(); onChange(step(delta)); }}
       accessibilityRole="button"
       accessibilityLabel={delta > 0 ? 'Increase' : 'Decrease'}
       style={{ width: 34, minHeight: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: fill || 'transparent' }}
@@ -569,10 +587,10 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: {
     <View style={{ flexDirection: 'row', borderWidth: BORDER.card, borderColor: c.border, alignItems: 'stretch' }}>
       {btn('−', -1)}
       <View style={{
-        width: 36, alignItems: 'center', justifyContent: 'center',
+        minWidth: 36, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center',
         borderLeftWidth: BORDER.small, borderRightWidth: BORDER.small, borderColor: c.border,
       }}>
-        <Text style={[ty('rowAmount'), TABULAR, { color: c.text }]}>{value}</Text>
+        <Text style={[ty('rowAmount'), TABULAR, { color: c.text }]}>{format ? format(value) : value}</Text>
       </View>
       {btn('+', 1, c.accent)}
     </View>

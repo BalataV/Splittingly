@@ -25,6 +25,8 @@ import { View, Text } from 'react-native';
 import Svg, { G, Path, Rect, Line, Polygon } from 'react-native-svg';
 import { useUi } from './ui';
 import type { MascotName } from '../types';
+import { useApp } from '../store';
+import { mascotVisible } from '../quips';
 
 interface MascotProps {
   who: MascotName;
@@ -134,10 +136,17 @@ function Analyst({ ink, paper, sw, full, negative, muted }: PartProps) {
 }
 
 /** Malý pruh s hláškou. Používá se všude, kde maskot jen prohodí větu. */
+/**
+ * Jeden pruh. Sám se schová, když je jeho postava vypnutá — díky tomu
+ * nemusí každá obrazovka tu podmínku opisovat a nemůže se stát, že se
+ * na jedné zapomene.
+ */
 export function MascotStrip({ who, text, fill }: { who: MascotName; text: string; fill?: string }) {
   const { c, ty } = useUi();
+  const { state } = useApp();
   const bg = fill || (who === 'closer' ? c.accent : c.surface);
   const fg = bg === c.accent ? c.onAccent : c.text;
+  if (!mascotVisible(state.notif, who)) return null;
   return (
     <View
       style={{
@@ -162,9 +171,19 @@ export function MascotStrip({ who, text, fill }: { who: MascotName; text: string
 /**
  * Dvojice pruhů vedle sebe — TADY se jejich komentáře potkávají.
  * Objevuje se jen na pěti obrazovkách (viz quips.ts), jinak by z toho byl gag.
+ *
+ * Když je jedna z postav v Notifikacích vypnutá, zbylá zabere celou šířku
+ * sama — půlka pruhu s prázdným místem vedle by vypadala jako chyba
+ * vykreslení, ne jako nastavení, které si člověk vybral.
  */
 export function DualMascotStrip({ closer, analyst }: { closer: string; analyst: string }) {
   const { c, ty } = useUi();
+  const { state } = useApp();
+  const showCloser = mascotVisible(state.notif, 'closer');
+  const showAnalyst = mascotVisible(state.notif, 'analyst');
+  if (!showCloser && !showAnalyst) return null;
+  if (!showAnalyst) return <MascotStrip who="closer" text={closer} />;
+  if (!showCloser) return <MascotStrip who="analyst" text={analyst} />;
   return (
     <View style={{ flexDirection: 'row', gap: 8 }}>
       <View style={{ flex: 1, backgroundColor: c.accent, borderWidth: 3, borderColor: c.border, padding: 9, gap: 6 }}>

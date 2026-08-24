@@ -87,7 +87,7 @@ export default function Search() {
         </Card>
       )}
 
-      {!!q && results.length > 0 && state.mascotsOn && (
+      {!!q && results.length > 0 && (
         <MascotStrip who="analyst" text={quipFor('search', 'analyst', true) || ''} />
       )}
     </Screen>

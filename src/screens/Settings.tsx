@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
 import Screen, { SectionTitle } from '../components/Screen';
-import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule } from '../components/ui';
+import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule, Stepper } from '../components/ui';
 import Mascot from '../components/Mascot';
 import { useApp } from '../store';
 import { t, translationCoverage } from '../i18n';
@@ -18,6 +18,9 @@ import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../co
 import { PRO_BENEFITS, canUseTheme } from '../entitlements';
 import { initial } from '../logic';
 import type { ThemeName, ModeName, TextSize } from '../types';
+
+/** Celá hodina ve 24h tvaru. Minuty se nenastavují, tak jsou vždy nuly. */
+const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 // -------------------------------------------------------------- 22 · profil
 
@@ -410,11 +413,38 @@ export function Notifications() {
         </Row>
       </View>
 
+      {/* Tichých hodin se dřív šlo jen dočíst — řádek neměl `onPress` ani
+          žádný ovládací prvek, takže klepnutí nedělalo nic. Dvě krokovadla
+          přetáčejí přes půlnoc, protože „od 23 do 8" je ten obvyklý případ.
+          Hodiny jsou schválně bez minut: interval ticha se nastavuje po
+          hodinách a kolečko s minutami by k němu nic nepřidalo. */}
       <Row>
-        <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>
-          {t('Quiet hours')} — {String(state.notif.quietFrom).padStart(2, '0')}:00 – {String(state.notif.quietTo).padStart(2, '0')}:00
-        </Text>
+        <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>{t('Quiet hours')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Stepper
+            value={state.notif.quietFrom}
+            onChange={(v) => actions.setNotif('quietFrom', v)}
+            min={0} max={23} wrap
+            format={hourLabel}
+          />
+          <Text style={[ty('rowTitle'), { color: c.textMuted }]}>–</Text>
+          <Stepper
+            value={state.notif.quietTo}
+            onChange={(v) => actions.setNotif('quietTo', v)}
+            min={0} max={23} wrap
+            format={hourLabel}
+          />
+        </View>
       </Row>
+
+      {/* Stejné „od" i „do" znamená, že se neztlumí nic — `inQuietHours()`
+          takový interval vrací jako prázdný. Ať to člověk pozná tady,
+          ne až z toho, že mu ve tři ráno pípne telefon. */}
+      {state.notif.quietFrom === state.notif.quietTo && (
+        <Text style={[ty('caption'), { color: c.textMuted }]}>
+          {t('Same hour on both sides means nothing is silenced.')}
+        </Text>
+      )}
 
       <Text style={[ty('caption'), { color: c.textMuted }]}>
         {t('Both characters can be switched off entirely without losing any functional notification.')}

@@ -73,12 +73,10 @@ export default function YearInReview() {
         ))}
       </View>
 
-      {state.mascotsOn && (
-        <DualMascotStrip
-          closer={quipFor('year', 'closer', true) || ''}
-          analyst={quipFor('year', 'analyst', true) || ''}
-        />
-      )}
+      <DualMascotStrip
+        closer={quipFor('year', 'closer', true) || ''}
+        analyst={quipFor('year', 'analyst', true) || ''}
+      />
     </Screen>
   );
 }

@@ -75,7 +75,7 @@ export default function CreateGroup() {
         {t('You can also send an invite link after the group exists.')}
       </Text>
 
-      {state.mascotsOn && <MascotStrip who="analyst" text={quipFor('welcome', 'analyst', true) || ''} />}
+      <MascotStrip who="analyst" text={quipFor('welcome', 'analyst', true) || ''} />
     </Screen>
   );
 }
