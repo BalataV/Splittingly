@@ -11,8 +11,9 @@ Doplněk k `play-console-kit.md`. Apple se ptá na jiné věci a v jiném pořad
 ## FÁZE 0 — Než založíš appku
 
 - [ ] Apple Developer členství aktivní (Team ID `5N974388GT`)
-- [ ] Bundle ID `com.balata.splittingly` v **Identifiers**, s odškrtnutým
-      **Sign In with Apple**
+- [ ] Bundle ID `com.balata.splittingly` v **Identifiers**, se zaškrtnutými
+      **Sign In with Apple** (Configure → *Enable as a primary App ID*),
+      **Associated Domains**, **Push Notifications** a **In-App Purchase**
 - [ ] `.ipa` build z EAS
 - [ ] Testovací účet pro recenzenty (stejný jako pro Google)
 
@@ -122,14 +123,14 @@ https://splittingly.com
 ```
 
 ### Screenshots
-- **6,7"** (1290×2796) — povinné, min. 3
-- **6,5"** (1242×2688) — povinné, min. 3
-- **iPad 13" (2064×2752) — POVINNÉ**, protože `supportsTablet: true`
+- **iPhone 6,5"** (1242×2688 nebo 1284×2778) — min. 3, na svisle i na šířku
+- **iPad: NEPOVINNÉ.** `supportsTablet` je od 2026‑08‑24 `false`, takže se
+  appka na iPad neinstaluje a Apple sadu nechce. Kdyby se to někdy vrátilo
+  na `true`, iPad screenshoty se stanou povinné a bez nich verzi neodešleš.
 
-> ⚠️ Zapnutím podpory iPadu jsi si přidal povinné iPad screenshoty. Bez nich
-> App Store Connect verzi nepustí k odeslání. Nafoť je v simulátoru iPadu,
-> nebo `supportsTablet` vrať na `false` — appka pak na iPadu poběží
-> v telefonním okně a screenshoty odpadnou.
+> Apple použije nahranou sadu pro VŠECHNY velikosti displeje i jazyky, takže
+> stačí jedna. Do instalačního listu se dostanou jen první tři — dej dopředu
+> ty, které ukazují dělení výdaje a vyrovnání, ne přihlašovací obrazovku.
 
 ### App Review Information ⚠️ **nejčastější důvod zamítnutí**
 
@@ -174,7 +175,7 @@ First release.
 • Receipt photos, categories, stats and a year in review
 • Live groups, invite by link or code, push notifications
 • Works offline — entries upload when you are back online
-• 50 languages, any currency, full light and dark modes
+• 45 languages, any currency, full light and dark modes
 ```
 
 ---
@@ -194,7 +195,14 @@ First release.
 
 > **Product ID musí přesně sedět** s `PRO_PRODUCT_ID` v `src/config.ts`.
 > Musí projít review **spolu s buildem**, ve kterém se dá koupit — samotný
-> produkt bez funkčního nákupu Apple zamítne.
+> produkt bez funkčního nákupu Apple zamítne. Konkrétně: první nákup
+> v aplikaci se odesílá jedině s novou verzí appky, ne samostatně.
+
+> ⚠️ Nákup neověřuje appka, ale Edge Funkce `verify-purchase`. Než pošleš
+> verzi ke kontrole, musí být nasazená a mít nastavená tajemství
+> `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`
+> a `APPLE_BUNDLE_ID` — jinak recenzent zaplatí, Pro se nezapne
+> a appku zamítne jako nefunkční.
 
 ---
 
