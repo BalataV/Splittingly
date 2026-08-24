@@ -31,6 +31,7 @@ import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
 import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport } from './entitlements';
+import { IAP_UNAVAILABLE, buyPro as iapBuyPro, restorePro as iapRestorePro, fetchProPrice } from './iap';
 import { exportGroupCsv, exportGroupPdf } from './export';
 import * as queue from './queue';
 import * as haptics from './haptics';
@@ -140,6 +141,7 @@ function makeInitialState(): AppState {
     },
     personalisedAds: false,
     isPro: false,
+    proPrice: null,
     rewardTheme: null,
     rewardUntil: null,
 
@@ -248,6 +250,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // poškozené předvolby nejsou důvod nespustit appku
       }
       patch({ appleAvailable: await authApi.isAppleAvailable().catch(() => false) });
+      // Cena Pro z obchodu. Ceník se načítá po síti, takže než dorazí,
+      // svítí záložní `PRO_PRICE_FALLBACK` z configu.
+      fetchProPrice().then((price) => { if (price) patch({ proPrice: price }); }).catch(() => undefined);
       await boot();
     })();
 
@@ -645,16 +650,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setPersonalisedAds = (v: boolean) => { patch({ personalisedAds: v }); saveProfile({ personalised_ads: v }); };
 
   /**
-   * Nákup Pro. Skutečné IAP (expo-in-app-purchases / RevenueCat) se doplní
-   * ve vývojovém buildu — v Expo Go neběží. Tady je zápis výsledku.
+   * Nákup Pro přes obchod.
+   *
+   * Zdejší kód `is_pro` NEZAPISUJE — dělá to až Edge Funkce
+   * `verify-purchase` po ověření účtenky u Googlu/Applu, a sloupec je
+   * proti zápisu z klienta zamčený (`revoke update` ve schématu).
+   * Stav si tady jen načteme zpátky z profilu, takže co appka ukazuje,
+   * je to, co říká server.
+   *
+   * Zrušený nákup není chyba a nic nehlásí: člověk klepl na „zpět"
+   * v dialogu obchodu a ví o tom líp než my.
    */
   const buyPro = async () => {
-    patch({ isPro: true });
-    saveProfile({ is_pro: true, pro_since: new Date().toISOString() });
-    haptics.success();
-    showToast('Pro is active. The ads are gone.');
+    if (IAP_UNAVAILABLE) { showToast('Purchases are not available in this build.'); return; }
+    patch({ busy: true });
+    try {
+      const res = await iapBuyPro();
+      if (res.ok) {
+        await refreshProFromProfile();
+        haptics.success();
+        showToast('Pro is active. The ads are gone.');
+        return;
+      }
+      if (res.reason === 'cancelled') return;
+      showToast(res.reason === 'unverified'
+        ? 'We could not confirm the purchase. Nothing was charged twice — try Restore.'
+        : 'The store did not respond. Try again in a moment.');
+    } finally {
+      patch({ busy: false });
+    }
   };
-  const restorePro = async () => { showToast('Nothing to restore on this account yet.'); };
+
+  /**
+   * Obnovení dřívějšího nákupu. Apple ho VYŽADUJE — bez něj se aplikace
+   * zamítá. Týká se nového telefonu i přeinstalované appky.
+   */
+  const restorePro = async () => {
+    if (IAP_UNAVAILABLE) { showToast('Purchases are not available in this build.'); return; }
+    patch({ busy: true });
+    try {
+      const restored = await iapRestorePro();
+      if (restored) {
+        await refreshProFromProfile();
+        haptics.success();
+        showToast('Pro is active. The ads are gone.');
+      } else {
+        showToast('Nothing to restore on this account yet.');
+      }
+    } finally {
+      patch({ busy: false });
+    }
+  };
+
+  /** Přečte `is_pro` zpátky z profilu — pravdu drží server, ne telefon. */
+  const refreshProFromProfile = async () => {
+    if (!CLOUD_MODE) { patch({ isPro: true }); return; }
+    try {
+      const profile = await authApi.fetchProfile();
+      if (profile) patch({ isPro: profile.isPro });
+    } catch {
+      // Ověření prošlo, jen se nepovedlo dočíst profil. Pro se ukáže
+      // po příštím startu; peníze se nikam neztratily.
+      patch({ isPro: true });
+    }
+  };
 
   const unlockThemeByReward = async (t: ThemeName) => {
     const until = new Date(Date.now() + 7 * 86400000).toISOString();

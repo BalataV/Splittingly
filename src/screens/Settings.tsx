@@ -78,7 +78,7 @@ export function Profile() {
         {/* Jedna ze tří povolených cest k Pro. */}
         <SettingRow
           label={state.isPro ? t('Splittingly Pro') : t('Remove the ads')}
-          value={state.isPro ? t('Active') : PRO_PRICE_FALLBACK}
+          value={state.isPro ? t('Active') : (state.proPrice ?? PRO_PRICE_FALLBACK)}
           onPress={() => actions.navigate('remove_ads')}
         />
         <SettingRow label={t('Privacy policy')} onPress={() => actions.navigate('privacy')} />
@@ -481,7 +481,7 @@ export function RemoveAds() {
       onBack={actions.goBack}
       footer={
         <View style={{ gap: 9 }}>
-          <Button label={t('Buy Pro — {price}', { price: PRO_PRICE_FALLBACK })} kind="accent" onPress={actions.buyPro} />
+          <Button label={t('Buy Pro — {price}', { price: state.proPrice ?? PRO_PRICE_FALLBACK })} kind="accent" onPress={actions.buyPro} />
           <Pressable onPress={actions.restorePro} style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={[ty('caption'), { color: c.textMuted, textAlign: 'center' }]}>{t('Restore a previous purchase')}</Text>
           </Pressable>
@@ -502,7 +502,7 @@ export function RemoveAds() {
             <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 20, color: c.onAccent, flex: 1 }}>
               {t('SPLITTINGLY PRO')}
             </Text>
-            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 24, color: c.onAccent }}>{PRO_PRICE_FALLBACK}</Text>
+            <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 24, color: c.onAccent }}>{state.proPrice ?? PRO_PRICE_FALLBACK}</Text>
           </View>
           <View style={{ height: BORDER.card, backgroundColor: c.onAccent }} />
           {benefits.map((b) => (

@@ -240,6 +240,18 @@ create policy "profiles_select"      on public.profiles for select using (true);
 create policy "profiles_insert_self" on public.profiles for insert with check (auth.uid() = id);
 create policy "profiles_update_self" on public.profiles for update using (auth.uid() = id);
 
+-- Pro si NIKDO nezapne sám.
+--
+-- Politika výš pouští uživatele na jeho vlastní řádek, jenže RLS pracuje
+-- po ŘÁDCÍCH, ne po sloupcích — bez tohohle by si kdokoli poslal
+-- `update profiles set is_pro = true` a Edge Funkce `verify-purchase`
+-- by byla jen ozdoba. Práva na sloupce jsou v Postgresu vedle RLS
+-- a platí zároveň s ní.
+--
+-- Zapisuje jedině servisní klíč po ověření účtenky u Googlu / Applu.
+revoke update (is_pro, pro_since) on public.profiles from authenticated;
+revoke update (is_pro, pro_since) on public.profiles from anon;
+
 drop policy if exists "groups_select_member" on public.groups;
 drop policy if exists "groups_insert_own"    on public.groups;
 drop policy if exists "groups_update_member" on public.groups;

@@ -203,6 +203,8 @@ export interface AppState {
   notif: NotifPrefs;
   personalisedAds: boolean;
   isPro: boolean;
+  /** Cena Pro tak, jak ji hlásí obchod (místní měna). `null` = ještě nenačteno. */
+  proPrice: string | null;
   rewardTheme: ThemeName | null;
   rewardUntil: string | null;
 

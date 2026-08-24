@@ -10,5 +10,7 @@
     "resolveJsonModule": true
   },
   "include": ["**/*.ts", "**/*.tsx", "App.tsx", "index.js"],
-  "exclude": ["node_modules"]
+  // Edge funkce běží na Denu (`Deno.serve`, `jsr:` importy), ne v Reactu
+  // Native. Do téhle kontroly nepatří — typy Dena tu nejsou a nikdy nebudou.
+  "exclude": ["node_modules", "supabase/functions"]
 }

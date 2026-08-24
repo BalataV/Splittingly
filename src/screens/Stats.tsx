@@ -154,7 +154,7 @@ export default function Stats() {
       )}
 
       {/* Tichá cesta k Pro. Jedna ze tří povolených. */}
-      {!state.isPro && <ProStrip price={PRO_PRICE_FALLBACK} onPress={() => actions.navigate('remove_ads')} />}
+      {!state.isPro && <ProStrip price={state.proPrice ?? PRO_PRICE_FALLBACK} onPress={() => actions.navigate('remove_ads')} />}
     </Screen>
   );
 }

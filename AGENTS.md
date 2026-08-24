@@ -34,7 +34,11 @@ Návrhový směr **„Hard Split"** (neo-brutalismus) podle
   plátce, nikdy to, co se dotkne ostatních členů skupiny.** Proto se nikdy
   neomezuje počet skupin, členů, výdajů, výpočet vyrovnání ani pozvánky.
   Pro je **jednorázový nákup, ne předplatné** — viz komentář v `config.ts`.
-- `src/quips.ts` — hlášky obou maskotů + pravidlo, kdy který mluví.
+- `src/quips.ts` — hlášky obou maskotů + pravidlo, kdy který mluví
+  a `mascotVisible()` — jediné místo, kde se rozhoduje, jestli smí být vidět.
+- `src/iap.ts` — ⭐ nákup Pro přes obchod. **`is_pro` sem nepatří:**
+  zapisuje ho jedině Edge Funkce `verify-purchase` po ověření účtenky
+  a sloupec je proti zápisu z klienta zamčený (`revoke update` ve schématu).
 - `src/api/` — datová vrstva nad Supabase.
 - `src/components/` — knihovna prvků, maskoti, reklamní plochy.
 - `src/screens/` — obrazovky 01–29 plus stavy.
@@ -118,7 +122,7 @@ Grafika v `components/Mascot.tsx` je **placeholder** — viz IMPLEMENTACE.md, kr
   Neběží v Expo Go — appka to sama pozná a nechá placeholder. Skutečná App ID
   a jednotky z AdMob konzole ještě chybí (běží na Googlem vydaných testovacích),
   stejně jako nativní řádek v Aktivitě. Viz IMPLEMENTACE.md krok 12.
-- Chybí: skutečné IAP, publikace OAuth consent screenu
+- Chybí: publikace OAuth consent screenu
   (je v režimu Testing → přihlásí se jen testeři), skutečná grafika maskotů,
   ikony kategorií, ~43 překladů.
 - Postup krok za krokem: **IMPLEMENTACE.md**.
