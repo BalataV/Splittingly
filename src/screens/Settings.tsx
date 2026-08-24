@@ -335,6 +335,37 @@ export function Appearance() {
         ]}
       />
 
+      {/* Zapnutí postav je rozhodnutí o VZHLEDU, ne o upozorněních: nejvíc
+          se projeví na obrazovkách, kde ty pruhy s hláškami stojí. Proto
+          bydlí tady, vedle tématu a velikosti písma.
+
+          Je to týž stav (`notif.closer` / `notif.analyst`), který zároveň
+          řídí, jestli postavy mluví i v push zprávách — vypnutí platí na
+          obě strany. Funkční oznámení („někdo vyrovnal", „nový výdaj")
+          se tím neztratí, ta se přepínají zvlášť v Notifikacích. */}
+      <Label>{t('FROM THE CAST')}</Label>
+      <View style={{ gap: 6 }}>
+        <Row>
+          <Mascot who="closer" size={28} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Closer')}</Text>
+            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Celebrations, big rounds')}</Text>
+          </View>
+          <Toggle value={state.notif.closer} onChange={(v) => actions.setNotif('closer', v)} label={t('The Closer')} />
+        </Row>
+        <Row>
+          <Mascot who="analyst" size={28} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Analyst')}</Text>
+            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Reminders, warnings')}</Text>
+          </View>
+          <Toggle value={state.notif.analyst} onChange={(v) => actions.setNotif('analyst', v)} label={t('The Analyst')} />
+        </Row>
+      </View>
+      <Text style={[ty('caption'), { color: c.textMuted }]}>
+        {t('Both characters can be switched off entirely without losing any functional notification.')}
+      </Text>
+
       {/* Živý náhled v AKTUÁLNÍM jazyce a měně appky — uživatel má vidět svůj
           vlastní vzhled, ne vzorový (dřív tu bylo natvrdo německé „Zahlung
           bestätigen", zvolené proto, že bývá dlouhé). Pravidlo, že text
@@ -393,49 +424,34 @@ export function Notifications() {
         ))}
       </View>
 
-      <Label>{t('FROM THE CAST')}</Label>
-      <View style={{ gap: 6 }}>
-        <Row>
-          <Mascot who="closer" size={28} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Closer')}</Text>
-            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Celebrations, big rounds')}</Text>
-          </View>
-          <Toggle value={state.notif.closer} onChange={(v) => actions.setNotif('closer', v)} label={t('The Closer')} />
-        </Row>
-        <Row>
-          <Mascot who="analyst" size={28} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[ty('rowTitle'), { color: c.text }]}>{t('The Analyst')}</Text>
-            <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Reminders, warnings')}</Text>
-          </View>
-          <Toggle value={state.notif.analyst} onChange={(v) => actions.setNotif('analyst', v)} label={t('The Analyst')} />
-        </Row>
-      </View>
-
       {/* Tichých hodin se dřív šlo jen dočíst — řádek neměl `onPress` ani
-          žádný ovládací prvek, takže klepnutí nedělalo nic. Dvě krokovadla
-          přetáčejí přes půlnoc, protože „od 23 do 8" je ten obvyklý případ.
-          Hodiny jsou schválně bez minut: interval ticha se nastavuje po
-          hodinách a kolečko s minutami by k němu nic nepřidalo. */}
-      <Row>
-        <Text style={[ty('rowTitle'), { color: c.text, flex: 1 }]}>{t('Quiet hours')}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Stepper
-            value={state.notif.quietFrom}
-            onChange={(v) => actions.setNotif('quietFrom', v)}
-            min={0} max={23} wrap
-            format={hourLabel}
-          />
-          <Text style={[ty('rowTitle'), { color: c.textMuted }]}>–</Text>
-          <Stepper
-            value={state.notif.quietTo}
-            onChange={(v) => actions.setNotif('quietTo', v)}
-            min={0} max={23} wrap
-            format={hourLabel}
-          />
-        </View>
-      </Row>
+          žádný ovládací prvek, takže klepnutí nedělalo nic.
+
+          Popisek je nad ovladači, ne vedle nich: dvě krokovadla zaberou
+          skoro tři sta bodů a na telefon už na text vedle nich zbyde
+          čtyřicet, do kterých se „Quiet hours" zalomí na tři řádky a řádek
+          naroste na 66 bodů. Jako nadpis sekce se přitom chová stejně jako
+          MODE nebo THEME o kus výš.
+
+          Hodiny jsou schválně bez minut: ticho se nastavuje po hodinách
+          a kolečko s minutami by k němu nic nepřidalo. Krokovadla přetáčejí
+          přes půlnoc, protože „od 23 do 8" je ten obvyklý případ. */}
+      <Label>{t('Quiet hours')}</Label>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACE.sm }}>
+        <Stepper
+          value={state.notif.quietFrom}
+          onChange={(v) => actions.setNotif('quietFrom', v)}
+          min={0} max={23} wrap
+          format={hourLabel}
+        />
+        <Text style={[ty('rowTitle'), { color: c.textMuted }]}>–</Text>
+        <Stepper
+          value={state.notif.quietTo}
+          onChange={(v) => actions.setNotif('quietTo', v)}
+          min={0} max={23} wrap
+          format={hourLabel}
+        />
+      </View>
 
       {/* Stejné „od" i „do" znamená, že se neztlumí nic — `inQuietHours()`
           takový interval vrací jako prázdný. Ať to člověk pozná tady,
@@ -445,10 +461,6 @@ export function Notifications() {
           {t('Same hour on both sides means nothing is silenced.')}
         </Text>
       )}
-
-      <Text style={[ty('caption'), { color: c.textMuted }]}>
-        {t('Both characters can be switched off entirely without losing any functional notification.')}
-      </Text>
     </Screen>
   );
 }
