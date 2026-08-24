@@ -151,4 +151,62 @@ mkdirSync(join(OUT, '..', 'store'), { recursive: true });
   writeFileSync(join(OUT, '..', 'store', 'play-icon-512.png'), png);
   console.log('store/play-icon-512.png  512×512  ' + (png.length / 1024).toFixed(1) + ' kB');
 }
+// ---------------------------------------------------------- web (docs/img)
+//
+// `og:image` v docs/index.html ukazovalo na `img/og.png`, který v repozitáři
+// NIKDY nebyl. Každé sdílení splittingly.com na Facebooku, LinkedInu nebo
+// ve WhatsAppu tak vyšlo bez náhledu — a 404 se u meta značky nikde
+// neohlásí, takže se na to nedá přijít jinak než pohledem.
+//
+// Kreslí se ze stejné geometrie jako ikona, takže se logo na webu nemůže
+// rozejít s tím v appce.
+
+/** Otevřený graf chce 1200×630. Logo doprostřed, zbytek inkoust. */
+function drawOg(w, h) {
+  const px = Buffer.alloc(w * h * 4);
+  for (let i = 0; i < w * h; i += 1) {
+    px[i * 4] = INK[0]; px[i * 4 + 1] = INK[1]; px[i * 4 + 2] = INK[2]; px[i * 4 + 3] = 255;
+  }
+  const size = Math.round(h * 0.62);
+  const logo = drawIcon({ size });
+  const ox = Math.round((w - size) / 2);
+  const oy = Math.round((h - size) / 2);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const src = (y * size + x) * 4;
+      const dst = ((oy + y) * w + ox + x) * 4;
+      px[dst] = logo[src]; px[dst + 1] = logo[src + 1];
+      px[dst + 2] = logo[src + 2]; px[dst + 3] = 255;
+    }
+  }
+  return px;
+}
+
+{
+  const dir = join(OUT, '..', 'docs', 'img');
+  mkdirSync(dir, { recursive: true });
+  const og = encodePng(1200, 630, drawOg(1200, 630));
+  writeFileSync(join(dir, 'og.png'), og);
+  console.log('docs/img/og.png  1200×630  ' + (og.length / 1024).toFixed(1) + ' kB');
+
+  // Web kreslí logo vektorem, aby bylo ostré v každé velikosti. Čísla jsou
+  // TÁŽ jako výš v `drawIcon`, jen přepsaná do SVG: rám 3,8 %, pás 2×4,5 %
+  // pod −38°, modrá nad ANTI-úhlopříčkou. Ten sedmistupňový rozdíl mezi
+  // pásem a barevným předělem je záměr — dělá žlutý klín vpravo nahoře
+  // a modrý vlevo dole.
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">',
+    '  <rect width="100" height="100" fill="#FFE500"/>',
+    '  <polygon points="0,0 100,0 0,100" fill="#1F49FF"/>',
+    '  <line x1="-13" y1="99.3" x2="113" y2="0.7" stroke="#101010" stroke-width="9"/>',
+    '  <rect x="1.9" y="1.9" width="96.2" height="96.2" fill="none" stroke="#101010" stroke-width="3.8"/>',
+    '</svg>',
+    '',
+  ].join(String.fromCharCode(10));
+  for (const name of ['app-icon.svg', 'favicon.svg']) {
+    writeFileSync(join(dir, name), svg, 'utf8');
+    console.log('docs/img/' + name);
+  }
+}
+
 console.log('Hotovo.');
