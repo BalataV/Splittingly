@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUi } from './ui';
 import { KeyboardScrollContext, type EnsureVisible } from './keyboardScroll';
 import { SPACE, BORDER } from '../theme';
+import { t } from '../i18n';
 
 interface ScreenProps {
   title?: string;
@@ -102,7 +103,7 @@ export default function Screen({
           {onBack ? (
             <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={[ty('rowTitle'), { color: c.text }]}>
-                {rtl ? '→ ' : '← '}{backLabel || 'Back'}
+                {rtl ? '→ ' : '← '}{backLabel || t('Back')}
               </Text>
             </Pressable>
           ) : <View />}
