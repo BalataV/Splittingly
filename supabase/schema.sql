@@ -245,12 +245,26 @@ create policy "profiles_update_self" on public.profiles for update using (auth.u
 -- Politika výš pouští uživatele na jeho vlastní řádek, jenže RLS pracuje
 -- po ŘÁDCÍCH, ne po sloupcích — bez tohohle by si kdokoli poslal
 -- `update profiles set is_pro = true` a Edge Funkce `verify-purchase`
--- by byla jen ozdoba. Práva na sloupce jsou v Postgresu vedle RLS
--- a platí zároveň s ní.
+-- by byla jen ozdoba.
 --
--- Zapisuje jedině servisní klíč po ověření účtenky u Googlu / Applu.
-revoke update (is_pro, pro_since) on public.profiles from authenticated;
-revoke update (is_pro, pro_since) on public.profiles from anon;
+-- ⚠️ Nestačí `revoke update (is_pro, pro_since)`. Postgres bere práva
+-- jako součet: kdo má UPDATE na CELOU tabulku, smí měnit každý sloupec
+-- a sloupcový revoke se na něm neprojeví. Supabase přitom roli
+-- `authenticated` tabulkové UPDATE ve výchozím stavu dává. Musí se tedy
+-- napřed sebrat celé a pak vrátit po sloupcích — bez těch dvou.
+--
+-- Zapisuje je jedině servisní klíč po ověření účtenky u Googlu / Applu.
+revoke update on public.profiles from authenticated, anon;
+grant update (
+  email, display_name, avatar_color,
+  lang, currency, theme, mode, text_size,
+  notif_expense, notif_settled, notif_edited, notif_weekly,
+  notif_closer, notif_analyst, quiet_from, quiet_to,
+  personalised_ads, reward_theme, reward_until
+) on public.profiles to authenticated;
+
+-- `id` a `created_at` schválně chybí taky: identita řádku a čas vzniku
+-- nejsou předvolby a klient nemá důvod je přepisovat.
 
 drop policy if exists "groups_select_member" on public.groups;
 drop policy if exists "groups_insert_own"    on public.groups;
