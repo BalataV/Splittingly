@@ -22,3 +22,8 @@ web-smoke/
 # nastaveni custom domain) a v docs/. Pages je nastavene na slozku /docs,
 # takze plati `docs/CNAME`; ten v koreni je necinny. Nemazat ho — GitHub si
 # ho spravuje sam a rucni zasah muze shodit custom domain.
+
+# Supabase CLI — mezipaměť po `link`. Drží project-ref a verze služeb,
+# nic tajného, ale do repozitáře nepatří.
+supabase/.temp/
+supabase/.branches/
