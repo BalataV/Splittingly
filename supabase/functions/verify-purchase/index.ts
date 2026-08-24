@@ -5,8 +5,13 @@
 // A hlavně: nákup na Androidu o sobě Applu nic neřekne, takže by se Pro
 // nepřeneslo na iPhone téhož člověka. Pravdu drží profil, ne telefon.
 //
-// Nasazení:
-//   supabase functions deploy verify-purchase
+// Nasazení (CLI je devDependency, globálně se instalovat nesmí):
+//   npx supabase login
+//   npx supabase link --project-ref aqikqephinmelmrbsage
+//   npm run fn:deploy
+//
+// Tajemství se dají nastavit i v Dashboardu (Edge Functions → Secrets)
+// a je to lepší cesta — soukromý klíč se pak neuloží do historie shellu.
 //
 //   # Android — servisní účet s právem "View financial data" v Play Console
 //   supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='{...celý JSON...}'
