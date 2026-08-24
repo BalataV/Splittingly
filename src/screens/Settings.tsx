@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
+import * as Application from 'expo-application';
 import Screen, { SectionTitle } from '../components/Screen';
 import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule, Stepper } from '../components/ui';
 import Mascot from '../components/Mascot';
@@ -18,6 +19,22 @@ import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../co
 import { PRO_BENEFITS, canUseTheme } from '../entitlements';
 import { initial } from '../logic';
 import type { ThemeName, ModeName, TextSize } from '../types';
+
+/**
+ * Verze a číslo buildu.
+ *
+ * Bez tohohle se nedá poznat, kterou instalaci člověk zrovna drží.
+ * `version` je pro všechny buildy stejná (1.0.0), takže ani systémový
+ * seznam aplikací nepomůže — jediné, co je odliší, je `versionCode`,
+ * a ten Android nikde neukazuje. Když pak přijde hlášení „stáhl jsem
+ * nový build a změny tam nejsou", jde to tímhle rozhodnout na jedno
+ * pohlednutí místo hádání.
+ *
+ * V Expo Go jsou obě hodnoty `null` — tam se prostě nic nevypíše.
+ */
+const BUILD_LABEL = [Application.nativeApplicationVersion, Application.nativeBuildVersion]
+  .filter(Boolean)
+  .join(' · ');
 
 /** Celá hodina ve 24h tvaru. Minuty se nenastavují, tak jsou vždy nuly. */
 const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
@@ -97,6 +114,12 @@ export function Profile() {
           <Text style={[ty('button'), { color: c.negative }]}>{t('Delete account')}</Text>
         </View>
       </Pressable>
+
+      {!!BUILD_LABEL && (
+        <Text style={[ty('caption'), { color: c.textMuted, textAlign: 'center', marginTop: SPACE.md }]}>
+          {BUILD_LABEL}
+        </Text>
+      )}
 
       {state.dialog === 'delete_account' && <DeleteAccountDialog />}
     </Screen>
