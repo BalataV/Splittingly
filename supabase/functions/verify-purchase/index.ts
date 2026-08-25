@@ -163,8 +163,18 @@ async function verifyApple(jws: string): Promise<boolean> {
 /** Přístupový token pro Play Developer API, podepsaný servisním účtem. */
 async function googleAccessToken(): Promise<string | null> {
   const raw = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-  if (!raw) return null;
-  const sa = JSON.parse(raw);
+  if (!raw) { console.error('google: chybí GOOGLE_SERVICE_ACCOUNT_JSON'); return null; }
+  let sa: { client_email?: string; private_key?: string };
+  try {
+    sa = JSON.parse(raw);
+  } catch (e) {
+    console.error('google: GOOGLE_SERVICE_ACCOUNT_JSON není platný JSON', String(e));
+    return null;
+  }
+  if (!sa.client_email || !sa.private_key) {
+    console.error('google: v JSONu chybí client_email nebo private_key');
+    return null;
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -198,7 +208,12 @@ async function googleAccessToken(): Promise<string | null> {
     }),
   });
   const json = await res.json();
-  return json?.access_token ?? null;
+  if (!json?.access_token) {
+    // Typicky `invalid_grant` (rozešly se hodiny nebo je klíč zneplatněný).
+    console.error('google: token se nepodařilo získat', res.status, JSON.stringify(json));
+    return null;
+  }
+  return json.access_token;
 }
 
 /**
@@ -207,14 +222,27 @@ async function googleAccessToken(): Promise<string | null> {
  */
 async function verifyGoogle(token: string): Promise<boolean> {
   const pkg = Deno.env.get('ANDROID_PACKAGE_NAME') ?? '';
+  if (!pkg) { console.error('google: chybí ANDROID_PACKAGE_NAME'); return false; }
   const access = await googleAccessToken();
-  if (!access || !pkg) return false;
+  if (!access) return false;
 
   const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}`
     + `/purchases/products/${PRODUCT_ID}/tokens/${encodeURIComponent(token)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${access}` } });
-  if (!res.ok) return false;
+
+  if (!res.ok) {
+    // Tělo chyby od Googlu je JEDINÉ místo, kde se pozná rozdíl mezi
+    // „API není v projektu zapnuté" (403), „servisní účet nemá práva"
+    // (401) a „takový nákup neznáme" (404). Bez něj se hádá naslepo.
+    console.error('google: purchases.products.get selhalo',
+      res.status, (await res.text()).slice(0, 500));
+    return false;
+  }
+
   const data = await res.json();
+  // 0 = zaplaceno, 1 = zrušeno, 2 = čeká na doplacení.
+  console.log('google: purchaseState', data?.purchaseState,
+    'acknowledgementState', data?.acknowledgementState);
   return data?.purchaseState === 0;
 }
 
@@ -245,11 +273,16 @@ Deno.serve(async (req) => {
     return Response.json({ isPro: false, error: 'unknown product' }, { status: 400 });
   }
 
+  console.log('overuji', payload.platform, payload.productId, 'uzivatel', user.id);
+
   const valid = payload.platform === 'ios'
     ? await verifyApple(payload.receipt)
     : await verifyGoogle(payload.receipt);
 
-  if (!valid) return Response.json({ isPro: false, error: 'invalid receipt' }, { status: 200 });
+  if (!valid) {
+    console.warn('overeni neproslo — Pro se NEzapina');
+    return Response.json({ isPro: false, error: 'invalid receipt' }, { status: 200 });
+  }
 
   // Zápis jde SERVISNÍM klíčem: profil si `is_pro` sám měnit nesmí,
   // jinak by na tomhle ověřování nezáleželo.
@@ -258,7 +291,11 @@ Deno.serve(async (req) => {
     .from('profiles')
     .update({ is_pro: true, pro_since: new Date().toISOString() })
     .eq('id', user.id);
-  if (error) return Response.json({ isPro: false, error: 'write failed' }, { status: 500 });
+  if (error) {
+    console.error('zapis is_pro selhal', JSON.stringify(error));
+    return Response.json({ isPro: false, error: 'write failed' }, { status: 500 });
+  }
 
+  console.log('Pro zapnuto pro', user.id);
   return Response.json({ isPro: true });
 });
