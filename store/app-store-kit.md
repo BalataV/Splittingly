@@ -70,14 +70,24 @@ Doplněk k `play-console-kit.md`. Apple se ptá na jiné věci a v jiném pořad
 
 **Data Types → zaškrtni a nastav:**
 
-| Typ | Linked to user | Used for tracking | Účely |
-| --- | --- | --- | --- |
-| **Contact Info → Email Address** | Ano | Ne | App Functionality |
-| **Contact Info → Name** | Ano | Ne | App Functionality |
-| **Financial Info → Other Financial Info** | Ano | Ne | App Functionality |
-| **User Content → Photos or Videos** | Ano | Ne | App Functionality |
-| **User Content → Other User Content** | Ano | Ne | App Functionality |
-| **Identifiers → Device ID** | Ne | **ANO** | **Third-Party Advertising** |
+| Typ | Co to u nás je | Linked | Tracking | Účely |
+| --- | --- | --- | --- | --- |
+| **Contact Info → Name** | `profiles.display_name` | Ano | Ne | App Functionality |
+| **Contact Info → Email Address** | `profiles.email` | Ano | Ne | App Functionality |
+| **Financial Info → Other Financial Info** | částky výdajů a dluhy | Ano | Ne | App Functionality |
+| **User Content → Photos or Videos** | fotky účtenek | Ano | Ne | App Functionality |
+| **User Content → Other User Content** | popisy výdajů, názvy skupin | Ano | Ne | App Functionality |
+| **Identifiers → User ID** | `profiles.id` | Ano | Ne | App Functionality |
+| **Identifiers → Device ID** | inzertní ID, push token | Ne | **ANO** | **Third-Party Advertising** |
+| **Purchases** | `is_pro`, `pro_since` | Ano | Ne | App Functionality |
+
+> `Financial Info → Payment Info` se NEZAŠKRTÁVÁ. Kartu zadává uživatel
+> v obchodě a appka se k ní nedostane — Apple takový případ v popisu
+> toho typu sám vyjímá.
+>
+> `User ID` a `Purchases` v tomhle seznamu dřív chyběly. Podhodnocené
+> prohlášení je důvod k zamítnutí i ke stažení appky; nadhodnocené jen
+> prodlouží štítek o řádek.
 
 **Otázka „Does your app use data for tracking?" → ANO**, jakmile zapneš AdMob.
 
