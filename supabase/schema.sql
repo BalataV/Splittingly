@@ -213,9 +213,27 @@ returns void language plpgsql security definer set search_path = public as $fn$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'NOT_SIGNED_IN'; end if;
+
+  -- Členství: jméno zůstává jako "former member", vazba na účet mizí.
   update public.group_members
      set user_id = null, left_at = now(), name = 'Former member ' || left(id::text, 4)
    where user_id = uid;
+
+  -- ⚠️ Na `auth.users` ukazuje ŠEST cizích klíčů a ani jeden nemá
+  -- `on delete`, takže se chovají jako NO ACTION. Dokud se autorství
+  -- neodpojí, `delete from auth.users` narazí na omezení a celá funkce
+  -- spadne — u kohokoli, kdo v appce cokoli udělal, tedy prakticky
+  -- u každého. Uživatel viděl jen „Could not delete the account".
+  --
+  -- Nulujeme, nemažeme: výdaje a platby musí ve skupině ZŮSTAT, jinak
+  -- se ostatním rozjedou bilance. Zobrazované jméno stejně nepochází
+  -- z `created_by`, ale z `group_members`.
+  update public.groups           set created_by = null where created_by = uid;
+  update public.expenses         set created_by = null where created_by = uid;
+  update public.expense_receipts set created_by = null where created_by = uid;
+  update public.expense_audit    set actor_id   = null where actor_id   = uid;
+  update public.payments         set created_by = null where created_by = uid;
+
   delete from public.push_tokens where user_id = uid;
   delete from public.profiles where id = uid;
   delete from auth.users where id = uid;
