@@ -56,7 +56,8 @@
     "i18n:keys": "node scripts/i18n-keys.mjs",
     "icons": "node scripts/make-icons.mjs",
     "fn:deploy": "supabase functions deploy verify-purchase --use-api",
-    "fn:list": "supabase functions list"
+    "fn:list": "supabase functions list",
+    "shot": "node scripts/store-screenshot.mjs"
   },
   "jest": {
     "preset": "jest-expo",
