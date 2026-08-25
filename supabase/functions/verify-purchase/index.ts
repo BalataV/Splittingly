@@ -13,6 +13,10 @@
 // Tajemství se dají nastavit i v Dashboardu (Edge Functions → Secrets)
 // a je to lepší cesta — soukromý klíč se pak neuloží do historie shellu.
 //
+// VÝPIS LOGŮ NENÍ V CLI. Verze 2.x zná jen list/delete/download/deploy/
+// new/serve. Logy se čtou v Dashboardu:
+//   Edge Functions → verify-purchase → záložka Logs
+//
 //   # Android — servisní účet s právem "View financial data" v Play Console
 //   supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='{...celý JSON...}'
 //   supabase secrets set ANDROID_PACKAGE_NAME='com.balata.splittingly'

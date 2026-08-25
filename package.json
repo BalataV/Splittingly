@@ -55,8 +55,8 @@
     "check:i18n": "node scripts/check-i18n.mjs && node scripts/i18n-audit-case.mjs && node scripts/i18n-audit-shape.mjs",
     "i18n:keys": "node scripts/i18n-keys.mjs",
     "icons": "node scripts/make-icons.mjs",
-    "fn:deploy": "supabase functions deploy verify-purchase",
-    "fn:logs": "supabase functions logs verify-purchase"
+    "fn:deploy": "supabase functions deploy verify-purchase --use-api",
+    "fn:list": "supabase functions list"
   },
   "jest": {
     "preset": "jest-expo",
