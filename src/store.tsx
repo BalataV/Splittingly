@@ -580,7 +580,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (CLOUD_MODE) await authApi.deleteAccount();
       await AsyncStorage.multiRemove([STATE_KEY, DATA_KEY]);
       setState({ ...makeInitialState(), booting: false, screen: 'onboarding' });
-    } catch {
+    } catch (e: any) {
+      // Smazání účtu je právo podle GDPR, ne drobnost — když selže, musí
+      // se dát zjistit PROČ. Uživateli zůstává srozumitelná věta, do logu
+      // jde kód a hláška z databáze.
+      console.error('delete_my_account selhalo:', e?.code || '', e?.message || String(e), e?.details || '');
       showToast('Could not delete the account. Try again.');
     } finally { patch({ busy: false, dialog: null }); }
   };

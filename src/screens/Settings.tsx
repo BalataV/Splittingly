@@ -3,13 +3,14 @@
 //
 // Reklama tu není nikde kromě jediného tichého řádku k Pro (obrazovka 22).
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, Linking } from 'react-native';
 import * as Application from 'expo-application';
 import Screen, { SectionTitle } from '../components/Screen';
 import { useUi, Card, Button, Field, Row, Label, Toggle, Segmented, Avatar, Rule, Stepper } from '../components/ui';
 import Mascot from '../components/Mascot';
 import { useApp } from '../store';
+import { useEnsureVisible } from '../components/keyboardScroll';
 import { t, translationCoverage } from '../i18n';
 import { LANGUAGES, searchLanguages, language } from '../languages';
 import { CURRENCIES, currency } from '../currencies';
@@ -628,8 +629,17 @@ export function DeleteAccountDialog() {
   const { state, actions } = useApp();
   const typed = state.deleteConfirmText.trim().toUpperCase() === 'DELETE';
 
+  // Dialog se rozbaluje POD tlačítkem, na konci posuvné obrazovky. Kdo ťukne
+  // na „Delete account" a zůstane, kde byl, nevidí, že se vůbec něco stalo —
+  // a hledá, proč tlačítko nereaguje. Po vykreslení proto obrazovce řekneme,
+  // ať na dialog odscrolluje. Stejný mechanismus používá `Field` při
+  // zaostření, jen se tu spouští jednou při otevření.
+  const boxRef = useRef<View>(null);
+  const ensureVisible = useEnsureVisible();
+  useEffect(() => { ensureVisible(boxRef); }, [ensureVisible]);
+
   return (
-    <View style={{ marginTop: SPACE.lg }}>
+    <View style={{ marginTop: SPACE.lg }} ref={boxRef} collapsable={false}>
       <View style={{ position: 'relative' }}>
         <View style={{ position: 'absolute', top: 7, left: 7, right: -7, bottom: -7, backgroundColor: c.shadow }} />
         <View style={{ backgroundColor: c.surface, borderWidth: BORDER.frame, borderColor: c.border, padding: 20, gap: SPACE.md }}>
