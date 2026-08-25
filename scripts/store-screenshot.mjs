@@ -16,9 +16,27 @@
 //
 // Výstup vedle vstupu, s příponou podle rozměru: vstup-1284x2778.png
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, extname, join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { basename, dirname, extname, join, isAbsolute, resolve } from 'node:path';
 import { PNG } from 'pngjs';
+
+/**
+ * Cesta k souboru tak, jak ji myslel člověk, ne jak ji vidí npm.
+ *
+ * `npm run` spouští skript VŽDY z kořene projektu, ať stojíš kdekoli.
+ * `npm run shot -- snimek.png` zadané ve `store/` tedy hledá soubor
+ * v kořeni a spadne na ENOENT s cestou, kterou nikdo nezadal. npm ale
+ * původní adresář předává v `INIT_CWD`, tak se podíváme i tam.
+ */
+function najdi(cesta) {
+  if (isAbsolute(cesta)) return cesta;
+  const odkudSpustil = process.env.INIT_CWD;
+  if (odkudSpustil) {
+    const podleUzivatele = resolve(odkudSpustil, cesta);
+    if (existsSync(podleUzivatele)) return podleUzivatele;
+  }
+  return resolve(process.cwd(), cesta);
+}
 
 /** Rozměry, které App Store Connect bere. Klíč = jak se na ně Apple odkazuje. */
 const ROZMERY = {
@@ -52,7 +70,12 @@ const bg = [
   parseInt(bgHex.slice(4, 6), 16),
 ];
 
-const src = PNG.sync.read(readFileSync(vstup));
+const cestaVstup = najdi(vstup);
+if (!existsSync(cestaVstup)) {
+  console.error(`Soubor nenalezen: ${cestaVstup}`);
+  process.exit(1);
+}
+const src = PNG.sync.read(readFileSync(cestaVstup));
 
 // Poměr, při kterém se obrázek celý vejde. Nikdy se neořezává — na snímku
 // nákupu musí zůstat vidět cena i tlačítko, jinak je recenzentovi k ničemu.
@@ -89,7 +112,7 @@ for (let y = 0; y < nH; y += 1) {
   }
 }
 
-const cil = join(dirname(vstup), `${basename(vstup, extname(vstup))}-${W}x${H}.png`);
+const cil = join(dirname(cestaVstup), `${basename(cestaVstup, extname(cestaVstup))}-${W}x${H}.png`);
 writeFileSync(cil, PNG.sync.write(out));
 
 console.log(`vstup   ${src.width}×${src.height}`);
