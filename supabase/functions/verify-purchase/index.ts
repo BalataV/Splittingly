@@ -179,6 +179,11 @@ async function googleAccessToken(): Promise<string | null> {
     console.error('google: v JSONu chybí client_email nebo private_key');
     return null;
   }
+  // Nejtišší možná záměna: klíč stažený z JINÉHO servisního účtu nebo
+  // z jiného projektu než toho, který je pozvaný v Play Console. Play
+  // pak vrátí 401 permissionDenied úplně stejně jako u chybějícího
+  // oprávnění a rozdíl nejde poznat odjinud než odsud.
+  console.log('google: podepisuji jako', sa.client_email);
 
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -230,6 +235,7 @@ async function verifyGoogle(token: string): Promise<boolean> {
   const access = await googleAccessToken();
   if (!access) return false;
 
+  console.log('google: ptam se na balicek', pkg, 'produkt', PRODUCT_ID);
   const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}`
     + `/purchases/products/${PRODUCT_ID}/tokens/${encodeURIComponent(token)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${access}` } });
