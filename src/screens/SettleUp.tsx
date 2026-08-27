@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import Screen from '../components/Screen';
 import { useUi, Card, Button, Field, Avatar, HardShadow, Label } from '../components/ui';
 import { Money, ApproxMoney } from '../components/Money';
@@ -17,6 +18,8 @@ import { t } from '../i18n';
 import { quipFor, mascotVisible } from '../quips';
 import { initial, ME } from '../logic';
 import { fmt } from '../money';
+import { canExport } from '../entitlements';
+import { settlementPdf } from '../export';
 import { SPACE, BORDER } from '../theme';
 import type { PayMethod } from '../types';
 
@@ -33,6 +36,30 @@ export default function SettleUp() {
 
   if (state.celebrate) return <Settled />;
   if (!tr) return <Screen title={t('SETTLE UP')} onBack={actions.goBack}><Text style={{ color: c.text }} /></Screen>;
+
+  const g = state.groups.find((x) => x.id === tr.groupId);
+
+  // Formátované PDF vyrovnání (Pro). Bez Pro vede tlačítko na nabídku,
+  // stejně jako běžný export jinde. Sdílení řešíme tady ve screenu jako
+  // `ShareCard` — `expo-sharing` pošle skutečný soubor na obou platformách.
+  const shareSettlement = async () => {
+    if (!canExport(state.isPro)) { actions.navigate('remove_ads'); return; }
+    if (!g) return;
+    try {
+      const expenses = state.expenses[g.id] || [];
+      const payments = state.payments[g.id] || [];
+      const file = await settlementPdf(g, expenses, payments);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, { mimeType: file.mimeType, dialogTitle: file.filename });
+      } else {
+        actions.showToast(t('Sharing is not available on this device.'));
+      }
+    } catch (e) {
+      // Nikdy netiš chybu: uživateli věta, do logu příčina.
+      console.error('[settlementPdf]', e);
+      actions.showToast(t('Export failed. Try again.'));
+    }
+  };
 
   return (
     <Screen
@@ -100,6 +127,15 @@ export default function SettleUp() {
           {t('Splittingly records the payment; it does not move money. Both of you get a notification and the group balance updates immediately.')}
         </Text>
       </Card>
+
+      {!!g && (
+        <Button
+          label={t('Share settlement (PDF)')}
+          kind="plain"
+          offset={0}
+          onPress={shareSettlement}
+        />
+      )}
     </Screen>
   );
 }

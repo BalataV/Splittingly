@@ -16,10 +16,10 @@ import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import { fmt } from './money';
 import { decimalsOf, minorFactor } from './currencies';
-import { fmtDate, t } from './i18n';
+import { fmtDate, t, currentRTL } from './i18n';
 import { category } from './categories';
 import { total, dominantCurrency, byCategory } from './stats';
-import { transfersFor, currenciesIn, ME } from './logic';
+import { transfersFor, currenciesIn, netFor, ME } from './logic';
 import type { Group, Expense, Payment } from './types';
 
 function displayName(name: string): string {
@@ -195,4 +195,96 @@ export async function exportGroupPdf(group: Group, expenses: Expense[], payments
   // mimo Severní Ameriku by dostala formát, který jim nesedí do tiskárny.
   const { uri } = await Print.printToFileAsync({ html, base64: false, width: 595, height: 842 });
   return { uri, mimeType: 'application/pdf', filename: `splittingly-${safeFilename(group.name)}.pdf` };
+}
+
+// ------------------------------------------------ PDF vyrovnání (Pro feature)
+//
+// Samostatný, jednostránkový doklad k proplacení: čisté bilance členů,
+// minimalizované převody a řádky na podpis. Kratší a formálnější než plný
+// export skupiny — nese jen to, co potřebuje účtárna nebo spolubydlící.
+//
+// RTL: `dir` na kořeni + logické zarovnání (`start`/`end`), aby arabština
+// a hebrejština nečetly zprava tabulku zarovnanou doleva. Šipku převodu
+// necháváme `→` jako všude v appce (obrazovky ji v RTL taky neotáčejí).
+
+function balanceLabel(net: number): string {
+  if (net > 0) return t('is owed');
+  if (net < 0) return t('owes');
+  return t('even');
+}
+
+function settlementBalanceRows(group: Group, expenses: Expense[], payments: Payment[], cur: string): string {
+  const net = netFor(group, expenses, payments, cur);
+  return group.members
+    .map((m) => {
+      const v = net[m] || 0;
+      return `<tr><td>${esc(displayName(m))}</td><td>${esc(balanceLabel(v))}</td><td class="num">${esc(fmt(Math.abs(v), cur))}</td></tr>`;
+    })
+    .join('');
+}
+
+export function buildSettlementPdfHtml(group: Group, expenses: Expense[], payments: Payment[]): string {
+  const currencies = currenciesIn(expenses, payments, group.currency);
+  const transfers = transfersFor(group, expenses, payments);
+  const multi = currencies.length > 1;
+
+  const balanceTables = currencies
+    .map((cur) => `${multi ? `<h3>${esc(cur)}</h3>` : ''}<table>
+      <thead><tr><th>${esc(t('Member'))}</th><th>${esc(t('Balance'))}</th><th class="num">${esc(t('Amount'))}</th></tr></thead>
+      <tbody>${settlementBalanceRows(group, expenses, payments, cur)}</tbody>
+    </table>`)
+    .join('');
+
+  const transferRows = transfers.length
+    ? transfers.map((tr) => `<tr><td>${esc(displayName(tr.from))} → ${esc(displayName(tr.to))}</td><td class="num">${esc(fmt(tr.amountMinor, tr.currency))}</td></tr>`).join('')
+    : `<tr><td colspan="2" class="muted">${esc(t('Everyone is even.'))}</td></tr>`;
+
+  const signatureRows = group.members
+    .map((m) => `<div class="sigrow"><span class="signame">${esc(displayName(m))}</span><span class="sigfield">${esc(t('Signed'))}: <span class="ln"></span></span><span class="sigfield">${esc(t('Date'))}: <span class="ln"></span></span></div>`)
+    .join('');
+
+  return `<!doctype html>
+<html dir="${currentRTL() ? 'rtl' : 'ltr'}">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #101010; padding: 28px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  .meta { color: #5F5F5F; font-size: 11px; margin-bottom: 20px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin: 24px 0 8px; border-bottom: 2px solid #101010; padding-bottom: 4px; }
+  h3 { font-size: 11px; margin: 14px 0 4px; color: #5F5F5F; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 4px; }
+  th { text-align: start; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.3px; color: #5F5F5F; padding: 4px 6px; border-bottom: 1px solid #ccc; }
+  td { padding: 5px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+  td.num, th.num { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .muted { color: #5F5F5F; }
+  .brand { display: inline-block; background: #FFE500; border: 2px solid #101010; padding: 2px 8px; font-weight: 700; font-size: 11px; margin-bottom: 10px; }
+  .sigrow { display: flex; gap: 18px; align-items: baseline; padding: 12px 0 2px; border-bottom: 1px solid #eee; font-size: 11px; }
+  .signame { min-width: 120px; font-weight: 700; }
+  .sigfield { color: #5F5F5F; }
+  .ln { display: inline-block; width: 130px; border-bottom: 1px solid #101010; }
+</style>
+</head>
+<body>
+  <div class="brand">SPLITTINGLY</div>
+  <h1>${esc(group.name)}</h1>
+  <div class="meta">${esc(t('Exported on {date}', { date: fmtDate(new Date().toISOString()) }))} · ${esc(group.currency)}</div>
+
+  <h2>${esc(t('BALANCES'))}</h2>
+  ${balanceTables}
+
+  <h2>${esc(t('OUTSTANDING TRANSFERS'))}</h2>
+  <table><tbody>${transferRows}</tbody></table>
+
+  <h2>${esc(t('SIGNATURES'))}</h2>
+  ${signatureRows}
+</body>
+</html>`;
+}
+
+export async function settlementPdf(group: Group, expenses: Expense[], payments: Payment[]): Promise<ExportedFile> {
+  const html = buildSettlementPdfHtml(group, expenses, payments);
+  const { uri } = await Print.printToFileAsync({ html, base64: false, width: 595, height: 842 });
+  return { uri, mimeType: 'application/pdf', filename: `splittingly-settlement-${safeFilename(group.name)}.pdf` };
 }
