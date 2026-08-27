@@ -236,9 +236,9 @@ async function verifyGoogle(token: string): Promise<boolean> {
   if (!access) return false;
 
   console.log('google: ptam se na balicek', pkg, 'produkt', PRODUCT_ID);
-  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}`
+  const base = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}`
     + `/purchases/products/${PRODUCT_ID}/tokens/${encodeURIComponent(token)}`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${access}` } });
+  const res = await fetch(base, { headers: { Authorization: `Bearer ${access}` } });
 
   if (!res.ok) {
     // Tělo chyby od Googlu je JEDINÉ místo, kde se pozná rozdíl mezi
@@ -253,7 +253,39 @@ async function verifyGoogle(token: string): Promise<boolean> {
   // 0 = zaplaceno, 1 = zrušeno, 2 = čeká na doplacení.
   console.log('google: purchaseState', data?.purchaseState,
     'acknowledgementState', data?.acknowledgementState);
-  return data?.purchaseState === 0;
+  if (data?.purchaseState !== 0) return false;
+
+  // Nákup je zaplacený. Teď ho MUSÍME potvrdit (acknowledge), jinak ho Play
+  // po lhůtě (ostré nákupy do tří dnů, testovací během hodiny) vrátí
+  // kupujícímu a Pro by zmizelo. Klient volá `finishTransaction`, ale na to
+  // se nedá spolehnout — když appku mezitím zavře, potvrzení musí dojít
+  // odsud. acknowledgementState: 0 = nepotvrzeno, 1 = potvrzeno.
+  if (data?.acknowledgementState === 0) {
+    const ackRes = await fetch(`${base}:acknowledge`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    if (ackRes.ok) {
+      console.log('google: nakup potvrzen (acknowledge', ackRes.status + ')');
+    } else {
+      const body = (await ackRes.text()).slice(0, 500);
+      // Když ho mezitím potvrdil jiný běh funkce nebo klient, Play vrátí 400
+      // „The purchase token was already acknowledged." — to není chyba, Pro
+      // se zapnout smí. Cokoli jiného je skutečné selhání a Pro nedáváme,
+      // ať se nákup nepotvrdí jen naoko.
+      if (ackRes.status === 400 && /already acknowledged/i.test(body)) {
+        console.log('google: nakup uz byl potvrzen driv, pokracuji');
+      } else {
+        console.error('google: acknowledge selhalo', ackRes.status, body);
+        return false;
+      }
+    }
+  } else {
+    console.log('google: nakup uz byl potvrzen (acknowledgementState=1)');
+  }
+
+  return true;
 }
 
 // ------------------------------------------------------------------ vstup

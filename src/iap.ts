@@ -41,7 +41,8 @@ async function connect(): Promise<boolean> {
     await iap.initConnection();
     connected = true;
     return true;
-  } catch {
+  } catch (e: any) {
+    console.error('[iap] spojení s obchodem se nepodařilo navázat —', e?.code || '(bez kódu)', e?.message || String(e));
     return false;
   }
 }
@@ -58,7 +59,8 @@ export async function fetchProPrice(): Promise<string | null> {
     const products = await iap.fetchProducts({ skus: [PRO_PRODUCT_ID], type: 'in-app' });
     const first = (products ?? [])[0] as { displayPrice?: string } | undefined;
     return first?.displayPrice ?? null;
-  } catch {
+  } catch (e: any) {
+    console.warn('[iap] cenu Pro z obchodu nelze načíst, použije se záložní —', e?.message || String(e));
     return null;
   }
 }
@@ -71,16 +73,20 @@ export type PurchaseResult =
  * Ověří účtenku na serveru a nechá si nastavit `is_pro`.
  *
  * Vrací `true` jen tehdy, když Edge Function řekla, že účtenka je platná.
- * Když ne, nákup se ZÁMĚRNĚ nedokončí (`finishTransaction` se nezavolá) —
- * obchod ho pak zopakuje při dalším startu a člověk o zaplacené peníze
- * nepřijde kvůli výpadku sítě.
+ * Když ne, `is_pro` se nezapíše — ale samotný nákup je v tu chvíli už
+ * dokončený (`finishTransaction` volá `buyPro()` zvlášť, hned po přijetí
+ * události). Neúspěch ověření se tedy dožene přes `restorePro()` při
+ * příštím startu; nesmí vést k tomu, že by obchod platbu vrátil.
  */
 async function verify(purchase: IapModule.Purchase): Promise<boolean> {
   // Verze 16 token sjednotila: na Androidu je to `purchaseToken` pro Play
   // Developer API, na iOSu podepsané JWS ze StoreKit 2. Server podle
   // `platform` pozná, co dostal, a ověří to jinou cestou.
   const receipt = purchase.purchaseToken;
-  if (!receipt) return false;
+  if (!receipt) {
+    console.error('[iap] verify: nákup nemá purchaseToken, nelze ověřit —', purchase.productId);
+    return false;
+  }
   try {
     const { data, error } = await supabase.functions.invoke('verify-purchase', {
       body: {
@@ -89,9 +95,17 @@ async function verify(purchase: IapModule.Purchase): Promise<boolean> {
         receipt,
       },
     });
-    if (error) return false;
-    return data?.isPro === true;
-  } catch {
+    if (error) {
+      console.error('[iap] verify: Edge funkce verify-purchase selhala —', error.message || String(error));
+      return false;
+    }
+    if (data?.isPro !== true) {
+      console.warn('[iap] verify: účtenka neověřena, Pro se nezapíná —', JSON.stringify(data));
+      return false;
+    }
+    return true;
+  } catch (e: any) {
+    console.error('[iap] verify: volání verify-purchase spadlo —', e?.message || String(e));
     return false;
   }
 }
@@ -99,10 +113,12 @@ async function verify(purchase: IapModule.Purchase): Promise<boolean> {
 /** Spustí nákup. Rozlišuje zrušení uživatelem od skutečné chyby. */
 export async function buyPro(): Promise<PurchaseResult> {
   if (!(await connect()) || !iap) return { ok: false, reason: 'unavailable' };
+
+  let purchase: IapModule.Purchase;
   try {
     // `requestPurchase` výsledek NEVRACÍ — ten přijde událostí. Návratovou
     // hodnotu použít nelze, i kdyby vypadala rozumně.
-    const purchase = await new Promise<IapModule.Purchase>((resolve, reject) => {
+    purchase = await new Promise<IapModule.Purchase>((resolve, reject) => {
       const done = iap.purchaseUpdatedListener((p) => { done.remove(); fail.remove(); resolve(p); });
       const fail = iap.purchaseErrorListener((e) => { done.remove(); fail.remove(); reject(e); });
       iap.requestPurchase({
@@ -113,18 +129,31 @@ export async function buyPro(): Promise<PurchaseResult> {
         type: 'in-app',
       }).catch(reject);
     });
-
-    if (!(await verify(purchase))) return { ok: false, reason: 'unverified' };
-
-    // Až TEĎ, po ověření. Non-consumable → `isConsumable: false`,
-    // jinak by ho Play nabídl ke koupi znovu.
-    await iap.finishTransaction({ purchase, isConsumable: false });
-    return { ok: true };
   } catch (e: any) {
     const code = e?.code || '';
     if (code === 'E_USER_CANCELLED' || code === 'E_USER_ERROR') return { ok: false, reason: 'cancelled' };
+    console.error('[iap] nákup se nezdařil —', code || '(bez kódu)', e?.message || String(e));
     return { ok: false, reason: 'failed' };
   }
+
+  // Nákup z `purchaseUpdatedListener` je AUTORITATIVNÍ — obchod už peníze
+  // strhl. `finishTransaction` (na Androidu = acknowledge) proto MUSÍ
+  // proběhnout hned, nezávisle na tom, jak dopadne naše serverové ověření.
+  // Nepotvrzený nákup obchod do tří dnů vrátí a uživatel by přišel o Pro
+  // i o peníze kvůli výpadku našeho serveru. Non-consumable →
+  // `isConsumable: false`, jinak by ho Play nabídl ke koupi znovu.
+  try {
+    await iap.finishTransaction({ purchase, isConsumable: false });
+  } catch (e: any) {
+    // I potvrzení může selhat (síť). Není to fatální: `restorePro()` ho
+    // při příštím startu dokončí i ověří. Do logu ale patří.
+    console.error('[iap] finishTransaction selhalo —', e?.code || '(bez kódu)', e?.message || String(e));
+  }
+
+  // Teprve teď ověření na serveru a zápis `is_pro`. Když neprojde, nákup je
+  // i tak bezpečně potvrzený a `restorePro()` ho příště dožene.
+  if (!(await verify(purchase))) return { ok: false, reason: 'unverified' };
+  return { ok: true };
 }
 
 /**
@@ -142,7 +171,8 @@ export async function restorePro(): Promise<boolean> {
       if (await verify(p)) return true;
     }
     return false;
-  } catch {
+  } catch (e: any) {
+    console.error('[iap] obnovení nákupu selhalo —', e?.code || '(bez kódu)', e?.message || String(e));
     return false;
   }
 }
