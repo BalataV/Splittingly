@@ -151,5 +151,8 @@ export function hasAny(map: MoneyMap): boolean {
 /** Iniciála pro avatar. „You" má vlastní značku, ať se neplete s cizím jménem. */
 export function initial(name: string): string {
   if (name === ME) return '★';
-  return name ? name.trim()[0].toUpperCase() : '?';
+  // `name.trim()[0]` je undefined u prázdného i mezerového jména → .toUpperCase()
+  // by spadlo. Avatar je na osmi obrazovkách, radši otazník než pád renderu.
+  const t = (name || '').trim();
+  return t ? t[0].toUpperCase() : '?';
 }
