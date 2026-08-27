@@ -24,7 +24,7 @@ export function currentRTL(): boolean { return isRTL(current); }
  * Placeholder nikdy nelep do věty ručně — jazyky mají různý slovosled.
  */
 export function t(en: string, vars?: Record<string, string | number>): string {
-  const dict = DICT[current];
+  const dict = dictFor(current);
   let out = dict && dict[en] ? dict[en] : en;
   if (vars) {
     Object.keys(vars).forEach((k) => {
@@ -50,7 +50,7 @@ export function t(en: string, vars?: Record<string, string | number>): string {
 export function plural(n: number, one: string, other: string, vars?: Record<string, string | number>): string {
   const v: Record<string, string | number> = { ...(vars || {}), n };
   const base = n === 1 ? one : other;
-  const dict = DICT[current];
+  const dict = dictFor(current);
   if (dict) {
     const withCat = dict[base + '#' + pluralCategory(n)];
     if (withCat) {
@@ -189,6 +189,22 @@ const DICT: Record<string, Dict> = {
   'zh-Hant': zhHant,
 };
 
+/**
+ * Slovník pro daný kód jazyka s náhradním řetězem.
+ *
+ * Regionální varianta bez vlastního slovníku spadne na ZÁKLADNÍ jazyk dřív
+ * než na angličtinu: `pt-BR` nemá překlad, ale `pt` je hotový, takže
+ * „Português (BR)" ukáže portugalštinu, ne rozhraní celé anglicky. Když ani
+ * základní jazyk slovník nemá (`mr`, `ta`, `ur`, `sw`), vrací `undefined` a
+ * volající použije anglický klíč.
+ */
+function dictFor(code: string): Dict | undefined {
+  if (DICT[code]) return DICT[code];
+  const base = code.split('-')[0];
+  if (base !== code && DICT[base]) return DICT[base];
+  return undefined;
+}
+
 /** Které jazyky vůbec mají slovník (ostatní běží celé v angličtině). */
 export function translatedLanguages(): string[] {
   return ['en', ...Object.keys(DICT)];
@@ -204,10 +220,13 @@ export function translatedLanguages(): string[] {
  * referencí a tenhle odhad odpovídá skutečnosti.
  *
  * Přesné číslo kdykoli: `node scripts/check-i18n.mjs`.
+ *
+ * Počítá se s náhradním řetězem (`dictFor`): `pt-BR` běží přes `pt`, takže
+ * vyjde 100 % a v přepínači se u něj neukáže žádné varování.
  */
 export function translationCoverage(lang: string): number {
   if (lang === 'en') return 1;
-  const dict = DICT[lang];
+  const dict = dictFor(lang);
   if (!dict) return 0;
   const richest = Math.max(...Object.values(DICT).map(countBaseKeys));
   return countBaseKeys(dict) / richest;

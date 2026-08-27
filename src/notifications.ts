@@ -69,7 +69,8 @@ export async function notifyGroup(groupId: string, title: string, body: string):
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(tokens.map((to) => ({ to, title, body, sound: null }))),
     });
-  } catch {
+  } catch (e) {
     // notifikace, která nedorazí, nesmí shodit uložení výdaje
+    console.warn('[notifications] odeslání push zprávy skupině selhalo:', String(e));
   }
 }

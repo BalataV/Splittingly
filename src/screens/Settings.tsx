@@ -162,11 +162,14 @@ export function LanguagePicker() {
                 <Text style={[ty('rowTitle'), { color: c.text }]}>{l.endonym}</Text>
                 <Text style={[ty('rowMeta'), { color: c.textMuted }]}>
                   {l.english}{l.rtl ? ' · RTL' : ''}
-                  {/* Rozpracovaný překlad se přizná dopředu. Uživatel má vědět,
-                      že uvidí půl rozhraní anglicky, dřív než přepne. */}
-                  {translationCoverage(l.code) < 1
-                    ? ' · ' + t('partly translated')
-                    : ''}
+                  {/* Stav překladu se přizná dopředu. 0 % = rozhraní celé
+                      anglicky (ani přes základní jazyk není slovník), mezi tím
+                      = rozpracované. Uživatel to má vědět dřív, než přepne. */}
+                  {translationCoverage(l.code) === 0
+                    ? ' · ' + t('English only')
+                    : translationCoverage(l.code) < 1
+                      ? ' · ' + t('partly translated')
+                      : ''}
                 </Text>
               </View>
               {selected && (

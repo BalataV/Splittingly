@@ -11,7 +11,7 @@ import Screen from '../components/Screen';
 import { useUi, Card, Button, Row, Avatar, HardShadow, Rule } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { DualMascotStrip } from '../components/Mascot';
-import { useApp } from '../store';
+import { useApp, CLOUD_MODE } from '../store';
 import { t, plural, fmtDate } from '../i18n';
 import { quipFor } from '../quips';
 import { transfersFor, initial, ME } from '../logic';
@@ -140,6 +140,11 @@ export default function GroupDetail() {
               nikdy se neschovává. */}
           <Button label={t('Export')} kind="plain" offset={0} onPress={() => actions.exportGroup(g.id)} style={{ flex: 1 }} />
         </View>
+        {/* Opakované výdaje žijí na serveru — v lokálním režimu vstup nedává
+            smysl. Bez Pro vede tlačítko na nabídku (řeší obrazovka Recurring). */}
+        {CLOUD_MODE && (
+          <Button label={t('Recurring')} kind="plain" offset={0} onPress={actions.openRecurring} />
+        )}
       </View>
     </Screen>
   );

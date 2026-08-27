@@ -83,7 +83,14 @@ export async function createGroup(
 /** Náhled skupiny podle kódu — kdo už uvnitř je (obrazovka 10). */
 export async function groupPreview(code: string): Promise<JoinPreview | null> {
   const { data, error } = await supabase.rpc('group_preview', { code: code.toUpperCase() });
-  if (error) throw new Error('GROUP_NOT_FOUND');
+  // Pozor: `group_preview` je čisté SQL a na neznámý kód vrací PRÁZDNÝ
+  // výsledek, ne chybu. `error` tady tedy znamená skutečné selhání (síť,
+  // RLS, DB) — ne „skupina neexistuje". Nezaměňovat, jinak člověk s
+  // výpadkem sítě dostane hlášku „no such group".
+  if (error) {
+    console.error('[api] group_preview selhalo —', error.code || '', error.message || String(error));
+    throw new Error('PREVIEW_FAILED');
+  }
   if (!data || !data.length) return null;
   return {
     code: code.toUpperCase(),

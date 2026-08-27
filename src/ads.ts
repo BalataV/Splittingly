@@ -27,7 +27,7 @@ const AD_FREE: ScreenName[] = [
   'group',                                                                     // sídlí tu akce „Settle up"
 ];
 
-/** Ukotvený banner 320×50 — jen tyhle čtyři obrazovky, vždy nad tab barem. */
+/** Ukotvený banner 320×50 — jen tyhle tři obrazovky, vždy nad tab barem. */
 const BANNER_SCREENS: ScreenName[] = ['overview', 'activity', 'stats'];
 
 /** Obdélník 300×250 — výhradně na konci statistik, nikdy mezi dva datové bloky. */

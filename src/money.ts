@@ -142,9 +142,18 @@ export function splitShares(totalMinor: number, shares: number[], payerIndex: nu
   const exact = shares.map((s) => (total * Math.max(0, s)) / sum);
   const floor = exact.map((v) => Math.floor(v));
   let rest = total - floor.reduce((a, b) => a + b, 0);
+  // Úplné pořadí: největší zbytek první; při shodě zbytku dostane jednotku
+  // plátce, jinak nižší index. Předchozí `|| (a.i === payerIndex ? -1 : 1)`
+  // nebylo tranzitivní — dva ne-plátci se shodným zbytkem vraceli 1 v obou
+  // směrech a výsledek pak záležel na řadicím algoritmu enginu.
   const order = exact
     .map((v, i) => ({ i, frac: v - Math.floor(v) }))
-    .sort((a, b) => (b.frac - a.frac) || (a.i === payerIndex ? -1 : 1));
+    .sort((a, b) => {
+      if (b.frac !== a.frac) return b.frac - a.frac;
+      if (a.i === payerIndex) return -1;
+      if (b.i === payerIndex) return 1;
+      return a.i - b.i;
+    });
   let k = 0;
   while (rest > 0 && order.length) {
     floor[order[k % order.length].i] += 1;

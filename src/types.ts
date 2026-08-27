@@ -4,6 +4,12 @@
 // v nejmenší jednotce měny (cent, haléř, jen). 12,34 € = 1234. ¥1000 = 1000.
 // Nikde v appce nesmí být částka jako `number` s desetinnou tečkou.
 
+// Opakované výdaje: doménové typy `RawRecurring` a `Cadence` bydlí v datové
+// vrstvě (`api/recurring.ts`, dodal backend). Import je type-only, takže
+// nevzniká běhový cyklus — jen se nedrží dvojí definice `Cadence`.
+import type { RawRecurring, Cadence } from './api/recurring';
+export type { RawRecurring, Cadence } from './api/recurring';
+
 export type SplitType = 'equal' | 'shares' | 'exact';
 export type ThemeName = 'acid' | 'mint' | 'neon' | 'dusk';
 export type ModeName = 'light' | 'dark' | 'system';
@@ -19,6 +25,7 @@ export type ScreenName =
   | 'overview' | 'create_group' | 'join_group' | 'group' | 'add_expense'
   | 'split_method' | 'expense_detail' | 'settle' | 'stats'
   | 'year_in_review' | 'activity' | 'search' | 'share_card'
+  | 'recurring' | 'recurring_form'
   // nastavení (22–29)
   | 'profile' | 'language' | 'currency' | 'expense_currency' | 'appearance' | 'notifications'
   | 'remove_ads' | 'privacy' | 'settings'
@@ -162,6 +169,26 @@ export interface SyncState {
   queued: number;
 }
 
+/**
+ * Rozepsaná šablona opakovaného výdaje. Pracuje se ZOBRAZOVANÝMI jmény
+ * („You" pro mě) jako `ExpenseDraft`; převod na `group_members.id` dělá až
+ * store při ukládání. Split je zatím vždy `equal`.
+ */
+export interface RecurringDraft {
+  id: string | null;         // vyplněno = editace
+  groupId: string | null;
+  desc: string;
+  amountText: string;
+  currency: string;
+  payer: string;             // zobrazované jméno
+  parts: string[];           // zobrazovaná jména účastníků
+  category: string;
+  cadence: Cadence;
+  intervalCount: number;     // „každých N" týdnů / měsíců / dní
+  anchorDay: number;         // den v měsíci (1–31), použije se jen u monthly
+  nextRunDate: string;       // YYYY-MM-DD — první výskyt
+}
+
 export interface AppState {
   // navigace
   screen: ScreenName;
@@ -237,10 +264,13 @@ export interface AppState {
 
   statsPeriod: StatsPeriod;
 
+  recurringDraft: RecurringDraft;
+
   // data
   groups: Group[];
   expenses: Record<string, Expense[]>;   // groupId → výdaje
   payments: Record<string, Payment[]>;   // groupId → platby
+  recurring: Record<string, RawRecurring[]>;  // groupId → šablony (i vypnuté)
   audit: Record<string, AuditEntry[]>;   // expenseId → historie
   fxRates: Record<string, number> | null;
   sync: SyncState;
@@ -312,6 +342,15 @@ export interface Actions {
   // vyrovnání
   startSettle: (t: Transfer) => void;
   confirmSettle: () => Promise<void>;
+
+  // opakované výdaje (Pro; jen v cloudovém režimu)
+  openRecurring: () => void;
+  startAddRecurring: () => void;
+  startEditRecurring: (id: string) => void;
+  setRecurringDraft: (p: Partial<RecurringDraft>) => void;
+  toggleRecurringPart: (name: string) => void;
+  saveRecurring: () => Promise<void>;
+  turnOffRecurring: (id: string) => Promise<void>;
 
   // data
   refreshAll: (force?: boolean) => Promise<void>;

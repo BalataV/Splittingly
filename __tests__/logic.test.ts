@@ -8,7 +8,7 @@
 // bilancí ve skupině musí být PŘESNĚ nula. Když není, někde se ztratil
 // nebo přibyl cent.
 
-import { netFor, transfersFor, isSettled, currenciesIn, ME } from '../src/logic';
+import { netFor, transfersFor, isSettled, currenciesIn, initial, ME } from '../src/logic';
 import type { Group, Expense, Payment } from '../src/types';
 
 const group = (members: string[], currency = 'EUR'): Group => ({
@@ -154,6 +154,33 @@ describe('isSettled', () => {
     const g = group([ME, 'Mira']);
     const e = [expense({ amountMinor: 1000, payer: ME, parts: [ME] })];
     expect(isSettled(g, e, [])).toBe(true);
+  });
+});
+
+describe('initial', () => {
+  it('vezme první písmeno jména velkým', () => {
+    expect(initial('Mira')).toBe('M');
+    expect(initial('tom')).toBe('T');
+  });
+
+  it('„You" má vlastní značku', () => {
+    expect(initial(ME)).toBe('★');
+  });
+
+  it('zvládne diakritiku', () => {
+    expect(initial('Álvaro')).toBe('Á');
+    expect(initial('Škoda')).toBe('Š');
+  });
+
+  it('prázdné, mezerové i chybějící jméno dá otazník, ne pád', () => {
+    expect(initial('')).toBe('?');
+    expect(initial('   ')).toBe('?');
+    expect(initial(undefined as unknown as string)).toBe('?');
+    expect(initial(null as unknown as string)).toBe('?');
+  });
+
+  it('ořízne okrajové mezery', () => {
+    expect(initial('  Mira  ')).toBe('M');
   });
 });
 

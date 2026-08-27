@@ -38,10 +38,6 @@ export default function CreateGroup() {
             </Pressable>
           );
         })}
-        {/* fotka jako obálka — přerušovaný okraj značí volitelnou možnost */}
-        <View style={{ width: 52, height: 52, borderWidth: BORDER.card, borderColor: c.border, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 20 }}>📷</Text>
-        </View>
       </View>
 
       <Label>{t('CURRENCY')}</Label>

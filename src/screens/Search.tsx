@@ -6,6 +6,7 @@ import { useUi, Field, Chip, Card, Row, Label } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { MascotStrip } from '../components/Mascot';
 import { useApp } from '../store';
+import { fmtMoneyMap } from '../money';
 import { t, fmtDate } from '../i18n';
 import { quipFor } from '../quips';
 import { category } from '../categories';
@@ -28,6 +29,8 @@ export default function Search() {
     : [];
 
   // Součet po měnách — nikdy jeden přepočtený součet napříč měnami.
+  // Formát řeší `fmtMoneyMap` z money.ts: měny bez haléřů (JPY), symboly
+  // i oddělovače. Ruční `/ 100` by u JPY ukázalo desetinu a zahodilo symbol.
   const totals: Record<string, number> = {};
   results.forEach(({ e }) => { totals[e.currency] = (totals[e.currency] || 0) + e.amountMinor; });
 
@@ -53,7 +56,7 @@ export default function Search() {
             {t('{n} RESULTS', { n: results.length })}
           </Text>
           <Text style={[ty('label'), { color: c.textMuted }]}>
-            {Object.keys(totals).map((k) => `${totals[k] / 100} ${k}`).join(' · ')}
+            {Object.keys(totals).length > 0 ? fmtMoneyMap(totals) : ''}
           </Text>
         </View>
       )}
