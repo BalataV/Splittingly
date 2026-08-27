@@ -83,6 +83,116 @@ export function weeklyBars(expenses: Expense[], currency: string): { day: string
   return out;
 }
 
+// --------------------------------------------------------------- spending trends
+//
+// Pro feature „spending trends" (batch 2). Jen výpočet — obrazovku staví
+// ui-a-lokalizace. Vše po měnách, nikdy jeden přepočtený součet. Hranice
+// měsíce v LOKÁLNÍM čase zařízení, stejně jako `weeklyBars` výše.
+
+export interface MonthlyTotal { month: string; totalMinor: number; }
+export interface CategoryDrift {
+  category: string;
+  currentMinor: number;
+  prevMinor: number;
+  deltaMinor: number;
+}
+export interface TrendSummary {
+  thisMonthMinor: number;
+  lastMonthMinor: number;
+  /** Procentní změna proti minulému měsíci; `null` když minulý měsíc byl 0. */
+  pctChange: number | null;
+}
+
+/** Klíč kalendářního měsíce v lokálním čase: `2026-08`. */
+function monthKey(d: Date): string {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+/**
+ * Součty výdajů po kalendářních měsících za posledních `monthsBack` měsíců
+ * (poslední prvek = aktuální, ještě neuzavřený měsíc). Souvislá řada:
+ * měsíc bez výdajů má `totalMinor: 0`. Jen daná měna.
+ */
+export function monthlyTotals(expenses: Expense[], currency: string, monthsBack: number): MonthlyTotal[] {
+  const n = Math.max(0, Math.floor(monthsBack));
+  if (n === 0) return [];
+  const now = new Date();
+  const buckets: MonthlyTotal[] = [];
+  const at: Record<string, number> = {};
+  for (let i = n - 1; i >= 0; i -= 1) {
+    // Date normalizuje záporný měsíc → přelom roku řeší sám.
+    const key = monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    at[key] = buckets.length;
+    buckets.push({ month: key, totalMinor: 0 });
+  }
+  expenses
+    .filter((e) => e.currency === currency)
+    .forEach((e) => {
+      const d = new Date(e.spentAt);
+      if (Number.isNaN(d.getTime())) return;
+      const idx = at[monthKey(d)];
+      if (idx !== undefined) buckets[idx].totalMinor += e.amountMinor;
+    });
+  return buckets;
+}
+
+/**
+ * Posun útraty po kategoriích: `monthsBack` uzavřených měsíců těsně před
+ * aktuálním měsícem („current") proti stejně dlouhému oknu před nimi
+ * („prev"). Pro `monthsBack = 1` je to „poslední dokončený měsíc vs.
+ * předchozí". Jen daná měna. Řazeno podle `abs(deltaMinor)` sestupně,
+ * při shodě podle názvu kategorie (deterministicky).
+ */
+export function categoryDrift(expenses: Expense[], currency: string, monthsBack: number): CategoryDrift[] {
+  const w = Math.max(1, Math.floor(monthsBack));
+  const now = new Date();
+  const currentEnd = new Date(now.getFullYear(), now.getMonth(), 1).getTime();       // začátek aktuálního měsíce, exkluzivně
+  const currentStart = new Date(now.getFullYear(), now.getMonth() - w, 1).getTime();
+  const prevStart = new Date(now.getFullYear(), now.getMonth() - 2 * w, 1).getTime();
+  const prevEnd = currentStart;
+
+  const cur: Record<string, number> = {};
+  const prev: Record<string, number> = {};
+  expenses
+    .filter((e) => e.currency === currency)
+    .forEach((e) => {
+      const t = new Date(e.spentAt).getTime();
+      if (Number.isNaN(t)) return;
+      if (t >= currentStart && t < currentEnd) cur[e.category] = (cur[e.category] || 0) + e.amountMinor;
+      else if (t >= prevStart && t < prevEnd) prev[e.category] = (prev[e.category] || 0) + e.amountMinor;
+    });
+
+  return Array.from(new Set([...Object.keys(cur), ...Object.keys(prev)]))
+    .map((category) => {
+      const currentMinor = cur[category] || 0;
+      const prevMinor = prev[category] || 0;
+      return { category, currentMinor, prevMinor, deltaMinor: currentMinor - prevMinor };
+    })
+    .sort((a, b) => (Math.abs(b.deltaMinor) - Math.abs(a.deltaMinor)) || a.category.localeCompare(b.category));
+}
+
+/** Tento měsíc vs. minulý (daná měna). `pctChange` je `null`, když minulý měsíc byl 0. */
+export function trendSummary(expenses: Expense[], currency: string): TrendSummary {
+  const now = new Date();
+  const thisKey = monthKey(new Date(now.getFullYear(), now.getMonth(), 1));
+  const lastKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  let thisMonthMinor = 0;
+  let lastMonthMinor = 0;
+  expenses
+    .filter((e) => e.currency === currency)
+    .forEach((e) => {
+      const d = new Date(e.spentAt);
+      if (Number.isNaN(d.getTime())) return;
+      const key = monthKey(d);
+      if (key === thisKey) thisMonthMinor += e.amountMinor;
+      else if (key === lastKey) lastMonthMinor += e.amountMinor;
+    });
+  const pctChange = lastMonthMinor === 0
+    ? null
+    : ((thisMonthMinor - lastMonthMinor) / lastMonthMinor) * 100;
+  return { thisMonthMinor, lastMonthMinor, pctChange };
+}
+
 /** Hravé superlativy do žebříčku (obrazovka 18). Text prochází přes t(). */
 export const SUPERLATIVES = [
   'Most generous payer',
