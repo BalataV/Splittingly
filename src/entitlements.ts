@@ -98,6 +98,28 @@ export function canUseTrends(isPro: boolean): boolean {
 }
 
 /**
+ * Domovský widget s přehledem bilance.
+ *
+ * POZNÁMKA K VYNUCENÍ: klientský gate jako `FREE_RECEIPTS_PER_EXPENSE`.
+ * Čistě záležitost zařízení plátce — widget zobrazuje jeho vlastní čísla
+ * a nikoho jiného ve skupině se nedotýká.
+ */
+export function canUseWidget(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
+ * Alternativní ikony aplikace.
+ *
+ * POZNÁMKA K VYNUCENÍ: klientský gate jako `FREE_RECEIPTS_PER_EXPENSE`.
+ * Čistě záležitost zařízení plátce — mění se ikona na jeho ploše, ostatní
+ * členové skupiny to nikde nevidí.
+ */
+export function canUseAltIcon(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
  * Zakládání vlastních kategorií skupiny. Default kategorie (`src/categories.ts`)
  * i custom kategorie od Pro členů vidí a používají všichni — omezené je jen
  * *vytvoření* nové.

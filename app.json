@@ -109,7 +109,8 @@
         {
           "userTrackingPermission": "Splittingly uses this to show you more relevant ads. You can still use every feature of the app if you say no."
         }
-      ]
+      ],
+      "./plugins/withAndroidWidget"
     ],
     "runtimeVersion": {
       "policy": "appVersion"

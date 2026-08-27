@@ -55,6 +55,7 @@
     "check:i18n": "node scripts/check-i18n.mjs && node scripts/i18n-audit-case.mjs && node scripts/i18n-audit-shape.mjs",
     "i18n:keys": "node scripts/i18n-keys.mjs",
     "icons": "node scripts/make-icons.mjs",
+    "icons:alt": "node scripts/make-alt-icons.mjs",
     "fn:deploy": "supabase functions deploy verify-purchase --use-api",
     "fn:list": "supabase functions list",
     "shot": "node scripts/store-screenshot.mjs"
