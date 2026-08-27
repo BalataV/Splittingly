@@ -87,6 +87,42 @@ export function canUseRecurring(isPro: boolean): boolean {
 }
 
 /**
+ * Trendy ve statistikách (vývoj útrat v čase, meziměsíční srovnání).
+ *
+ * POZNÁMKA K VYNUCENÍ: klientský gate jako `FREE_RECEIPTS_PER_EXPENSE`.
+ * Jde jen o zobrazení nad daty, která uživatel stejně vidí — obejití přes
+ * API nikoho nepoškodí, jen si plátce zpřehlední vlastní čísla.
+ */
+export function canUseTrends(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
+ * Zakládání vlastních kategorií skupiny. Default kategorie (`src/categories.ts`)
+ * i custom kategorie od Pro členů vidí a používají všichni — omezené je jen
+ * *vytvoření* nové.
+ *
+ * POZNÁMKA K VYNUCENÍ: klientský gate jako `FREE_RECEIPTS_PER_EXPENSE`. RLS
+ * pouští insert každému členovi skupiny. Kdo si pohraje s API, kategorii si
+ * založí i bez Pro — nikoho jiného to nepoškodí. Kdyby vadilo, přidej do
+ * `schema.sql` k politice `categories_insert` porovnání s `profiles.is_pro`.
+ */
+export function canUseCustomCategories(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
+ * Zamčení převodního kurzu na výdaji (`expenses.fx_rate` / `fx_ccy`).
+ *
+ * POZNÁMKA K VYNUCENÍ: klientský gate jako `FREE_RECEIPTS_PER_EXPENSE`.
+ * Kurz je jen doplňkové zobrazení — s penězi se počítá výhradně v měně
+ * výdaje. Obejití přes API nikoho jiného nepoškodí.
+ */
+export function canUseFxLock(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
  * Roční přehled a sdílecí kartička zůstávají ZDARMA i bez Pro.
  *
  * Je to jediná funkce, kterou uživatel dobrovolně ukáže dál — zamknout si ji

@@ -146,6 +146,34 @@ alter table public.expenses
   add column if not exists recurring_id uuid
     references public.recurring_expenses(id) on delete set null;
 
+-- Zamčený FX kurz na výdaji (Pro batch 2). Oboje nullable, plní se jen
+-- u Pro při zakládání. `fx_rate` = kolik jednotek `fx_ccy` za 1 jednotku
+-- `expenses.currency`, zafixováno v čase založení. Příklad: výdaj v EUR,
+-- `fx_ccy = 'CZK'`, `fx_rate = 25.30` → 1 EUR = 25.30 CZK. Slouží JEN
+-- k zobrazení v druhé měně — s penězi se dál počítá výhradně v `amount_minor`.
+alter table public.expenses
+  add column if not exists fx_rate numeric,
+  add column if not exists fx_ccy  text;
+comment on column public.expenses.fx_rate is
+  'Pro: zamčený převodní kurz v čase založení — kolik jednotek fx_ccy za 1 jednotku expenses.currency. Nullable.';
+comment on column public.expenses.fx_ccy is
+  'Pro: cílová měna zamčeného kurzu (ISO kód). Nullable. Nepočítá se z ní, jen zobrazuje.';
+
+-- Vlastní kategorie skupiny (Pro batch 2). Kategorie je SDÍLENÁ (výdaj s ní
+-- vidí celá skupina); vytvořit vlastní smí klientsky jen Pro, free má
+-- default kategorie z `src/categories.ts` a vidí custom od Pro členů.
+create table if not exists public.group_categories (
+  id         uuid primary key default gen_random_uuid(),
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  name       text not null,
+  -- FK rovnou s `on delete set null` → `delete_my_account()` ji neřeší ručně.
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+-- Jedno jméno na skupinu bez ohledu na velikost písmen („Food" == „food").
+create unique index if not exists group_categories_name_uniq
+  on public.group_categories (group_id, lower(name));
+
 -- Vyrovnání dluhu. Appka peníze NEPŘEVÁDÍ, jen zaznamenává, že k platbě došlo.
 create table if not exists public.payments (
   id           uuid primary key default gen_random_uuid(),
@@ -361,6 +389,7 @@ alter table public.expense_audit    enable row level security;
 alter table public.payments         enable row level security;
 alter table public.push_tokens      enable row level security;
 alter table public.recurring_expenses enable row level security;
+alter table public.group_categories enable row level security;
 
 drop policy if exists "profiles_select"      on public.profiles;
 drop policy if exists "profiles_insert_self" on public.profiles;
@@ -467,6 +496,16 @@ create policy "recurring_insert" on public.recurring_expenses for insert with ch
 create policy "recurring_update" on public.recurring_expenses for update using (public.is_group_member(group_id));
 create policy "recurring_delete" on public.recurring_expenses for delete using (public.is_group_member(group_id));
 
+-- Vlastní kategorie: stejný model jako `expenses` — vše jen členům skupiny.
+drop policy if exists "categories_select" on public.group_categories;
+drop policy if exists "categories_insert" on public.group_categories;
+drop policy if exists "categories_update" on public.group_categories;
+drop policy if exists "categories_delete" on public.group_categories;
+create policy "categories_select" on public.group_categories for select using (public.is_group_member(group_id));
+create policy "categories_insert" on public.group_categories for insert with check (public.is_group_member(group_id));
+create policy "categories_update" on public.group_categories for update using (public.is_group_member(group_id));
+create policy "categories_delete" on public.group_categories for delete using (public.is_group_member(group_id));
+
 -- --------------------------------------------------- ŽIVÁ SYNCHRONIZACE ---
 -- Realtime: změny ve skupině se objeví ostatním okamžitě, bez tahání za obrazovku.
 -- (Když už tabulka v publikaci je, Postgres zahlásí chybu — pak tenhle blok přeskoč.)
@@ -475,6 +514,7 @@ alter publication supabase_realtime add table public.payments;
 alter publication supabase_realtime add table public.group_members;
 alter publication supabase_realtime add table public.expense_receipts;
 alter publication supabase_realtime add table public.recurring_expenses;
+alter publication supabase_realtime add table public.group_categories;
 
 -- ------------------------------------------------------- ÚLOŽIŠTĚ FOTEK ---
 -- Bucket "receipts" vytvoř ručně: Storage → New bucket → název "receipts" → PUBLIC.
