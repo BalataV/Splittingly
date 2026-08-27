@@ -70,6 +70,23 @@ export function canExport(isPro: boolean): boolean {
 }
 
 /**
+ * Opakované výdaje — šablona, která sama vytváří výdaje podle rozvrhu
+ * (nájem, předplatné). Automatizace je perk plátce: free uživatel ten samý
+ * výdaj přidá ručně, takže se neomezuje nic, co se dotkne ostatních členů
+ * skupiny — jen se plátci ušetří klikání.
+ *
+ * POZNÁMKA K VYNUCENÍ: tenhle gate je KLIENTSKÝ, stejně jako
+ * `FREE_RECEIPTS_PER_EXPENSE`. RLS o Pro neví, takže kdo si pohraje s API,
+ * šablonu si založí i bez Pro. Vědomé rozhodnutí — cena za obcházení je pár
+ * automaticky přidaných výdajů ve vlastní skupině, ne únik dat. Kdyby to
+ * začalo vadit, přidej do `schema.sql` k politice `recurring_insert`
+ * porovnání s `profiles.is_pro`.
+ */
+export function canUseRecurring(isPro: boolean): boolean {
+  return isPro;
+}
+
+/**
  * Roční přehled a sdílecí kartička zůstávají ZDARMA i bez Pro.
  *
  * Je to jediná funkce, kterou uživatel dobrovolně ukáže dál — zamknout si ji
