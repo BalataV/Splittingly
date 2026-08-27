@@ -76,6 +76,26 @@ describe('splitShares', () => {
     expect(parts[0]).toBe(0);
     expect(parts.reduce((a, b) => a + b, 0)).toBe(1000);
   });
+
+  it('při shodných zbytcích dostane přebytkovou jednotku plátce', () => {
+    // 3001 na tři stejné podíly = 1000,333… každému; jedna jednotka navíc
+    expect(splitShares(3001, [1, 1, 1], 2)).toEqual([1000, 1000, 1001]);
+    expect(splitShares(3001, [1, 1, 1], 0)).toEqual([1001, 1000, 1000]);
+  });
+
+  it('shodné zbytky bez plátce v podílech → nižší index, deterministicky', () => {
+    // payerIndex mimo rozsah (plátce není účastník) → tie-break podle indexu
+    const a = splitShares(3002, [1, 1, 1], -1);
+    const b = splitShares(3002, [1, 1, 1], -1);
+    expect(a).toEqual([1001, 1001, 1000]);
+    expect(a).toEqual(b);
+    expect(a.reduce((x, y) => x + y, 0)).toBe(3002);
+  });
+
+  it('shodné zbytky: víc přebytkových jednotek jde plátci a pak po indexu', () => {
+    // 3002 na tři stejné → rest 2: plátce (index 1) a pak nejnižší index 0
+    expect(splitShares(3002, [1, 1, 1], 1)).toEqual([1001, 1001, 1000]);
+  });
 });
 
 describe('parseAmount ↔ toInputText', () => {
