@@ -1,4 +1,4 @@
-# E-mailové šablony
+npx eas-cli init --account balatav# E-mailové šablony
 
 Vloží se ručně: **Supabase → Authentication → Templates**. Editace šablon je
 odemčená až po zapnutí vlastního SMTP (Zoner), což už je hotové.

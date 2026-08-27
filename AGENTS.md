@@ -1,5 +1,9 @@
 # Splittingly — kontext aplikace
 
+> **Role agentů a jejich pravomoci → [`TEAM.md`](TEAM.md).**
+> Tenhle soubor popisuje produkt a konvence, `TEAM.md` kdo co dělá.
+> Při rozporu vyhrává tenhle soubor.
+
 Appka na dělení společných útrat ve skupině (spolubydlící, dovolená, rodina).
 Mezinárodní produkt: **všechny texty v UI jsou anglicky**, komentáře v kódu česky.
 Návrhový směr **„Hard Split"** (neo-brutalismus) podle
