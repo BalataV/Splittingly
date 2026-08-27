@@ -14,6 +14,9 @@ export async function savePushToken(token: string): Promise<void> {
 /** Tokeny ostatních členů dané skupiny (přes SECURITY DEFINER RPC). */
 export async function groupPushTokens(groupId: string): Promise<string[]> {
   const { data, error } = await supabase.rpc('group_push_tokens', { p_group_id: groupId });
-  if (error) return [];
+  if (error) {
+    console.warn('[api] group_push_tokens selhalo, notifikace se neodešlou —', error.code || '', error.message || String(error));
+    return [];
+  }
   return (data || []).map((r: any) => r.token).filter(Boolean);
 }

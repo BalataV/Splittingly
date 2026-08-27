@@ -82,8 +82,9 @@ function detectLang(): string {
       if (language(exact).code === exact && canAutoDetect(exact)) return exact;
       if (language(base).code === base && canAutoDetect(base)) return base;
     }
-  } catch {
+  } catch (e) {
     // detekce je pohodlí, ne požadavek
+    console.warn('[store] detekce jazyka telefonu selhala, používám en:', String(e));
   }
   return 'en';
 }
@@ -93,8 +94,9 @@ function detectCurrency(): string {
   try {
     const c = Localization.getLocales()[0]?.currencyCode;
     if (c) return c;
-  } catch {
+  } catch (e) {
     // nevadí
+    console.warn('[store] detekce měny telefonu selhala, používám EUR:', String(e));
   }
   return 'EUR';
 }
@@ -246,8 +248,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patch(saved);
           if (saved.lang) setLangGlobal(saved.lang);
         }
-      } catch {
+      } catch (e) {
         // poškozené předvolby nejsou důvod nespustit appku
+        console.warn('[store] načtení uložených předvoleb selhalo, spouštím s výchozími:', String(e));
       }
       patch({ appleAvailable: await authApi.isAppleAvailable().catch(() => false) });
       // Cena Pro z obchodu. Ceník se načítá po síti, takže než dorazí,
@@ -337,8 +340,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const raw = await AsyncStorage.getItem(DATA_KEY);
       if (raw) return JSON.parse(raw);
-    } catch {
+    } catch (e) {
       // nevadí
+      console.warn('[store] načtení lokálních dat selhalo, začínám s prázdnými:', String(e));
     }
     return { groups: [], expenses: {}, payments: {} };
   }
@@ -782,9 +786,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const preview = CLOUD_MODE ? await groupsApi.groupPreview(raw) : null;
       patch({ joinPreview: preview as JoinPreview | null });
       if (!preview) showToast('No group with that code.');
-    } catch {
-      showToast('No group with that code.');
+    } catch (e: any) {
       patch({ joinPreview: null });
+      if (e?.message === 'PREVIEW_FAILED') {
+        // Náhled se nedal ověřit (síť / server), NEznamená to, že kód je špatný.
+        console.warn('[store] ověření kódu skupiny selhalo:', String(e));
+        showToast('Could not check that code. Check your connection and try again.');
+      } else {
+        showToast('No group with that code.');
+      }
     } finally { patch({ busy: false }); }
   };
 

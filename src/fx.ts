@@ -21,8 +21,9 @@ export async function loadRates(base: string): Promise<Record<string, number> | 
       const c: FxCache = JSON.parse(raw);
       if (c.base === base && Date.now() - c.at < MAX_AGE_MS) return c.rates;
     }
-  } catch {
+  } catch (e) {
     // poškozená cache není důvod k pádu — načteme znovu
+    console.warn('[fx] čtení cache kurzů selhalo, načítám znovu:', String(e));
   }
   try {
     const res = await fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`);

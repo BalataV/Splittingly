@@ -62,8 +62,9 @@ export async function load(): Promise<QueuedOp[]> {
 async function save(ops: QueuedOp[]): Promise<void> {
   try {
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(ops));
-  } catch {
+  } catch (e) {
     // nevadí — přijde se na to při dalším pokusu
+    console.warn('[queue] uložení fronty operací selhalo:', String(e));
   }
 }
 
