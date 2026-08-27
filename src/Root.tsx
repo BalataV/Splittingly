@@ -28,6 +28,7 @@ import YearInReview from './screens/YearInReview';
 import Activity from './screens/Activity';
 import Search from './screens/Search';
 import ShareCard from './screens/ShareCard';
+import { Recurring, RecurringForm } from './screens/Recurring';
 import Setup from './screens/Setup';
 import { TabIcon, type TabIconName } from './components/TabIcon';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
@@ -49,7 +50,7 @@ const MAX_W = 600;
 const NO_CHROME: ScreenName[] = [
   'onboarding', 'signup', 'login', 'forgot', 'new_password', 'confirm_email',
   'add_expense', 'split_method', 'settle', 'create_group', 'join_group',
-  'share_card', 'year_in_review', 'remove_ads', 'setup',
+  'share_card', 'year_in_review', 'remove_ads', 'setup', 'recurring_form',
 ];
 
 export default function Root() {
@@ -90,6 +91,8 @@ function RootInner() {
   else if (sc === 'activity') screen = <Activity />;
   else if (sc === 'search') screen = <Search />;
   else if (sc === 'share_card') screen = <ShareCard />;
+  else if (sc === 'recurring') screen = <Recurring />;
+  else if (sc === 'recurring_form') screen = <RecurringForm />;
   else if (sc === 'profile') screen = <Profile />;
   else if (sc === 'language') screen = <LanguagePicker />;
   else if (sc === 'currency') screen = <CurrencyPicker />;

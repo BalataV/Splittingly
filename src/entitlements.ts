@@ -103,4 +103,5 @@ export const PRO_BENEFITS = [
   'Pie chart breakdown by category',
   'All colour themes, including Dusk',
   'CSV and PDF export per group',
+  'Recurring expenses — set up rent or a subscription once, it adds itself',
 ];

@@ -19,18 +19,19 @@ import * as Localization from 'expo-localization';
 import * as Updates from 'expo-updates';
 import * as Sharing from 'expo-sharing';
 
-import { authApi, groupsApi, expensesApi, storageApi } from './api';
+import { authApi, groupsApi, expensesApi, recurringApi, storageApi } from './api';
 import type { RawExpense } from './api/expenses';
+import type { RecurringInput } from './api/recurring';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { setLangGlobal, canAutoDetect, t } from './i18n';
+import { setLangGlobal, canAutoDetect, t, plural } from './i18n';
 import { language, isRTL } from './languages';
-import { parseAmount, splitEqual, splitShares, remainderOf } from './money';
+import { parseAmount, splitEqual, splitShares, remainderOf, toInputText } from './money';
 import { decimalsOf, FAVOURITE_CURRENCIES } from './currencies';
 import { ME, transfersFor } from './logic';
 import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
-import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport } from './entitlements';
+import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport, canUseRecurring } from './entitlements';
 import { IAP_UNAVAILABLE, buyPro as iapBuyPro, restorePro as iapRestorePro, fetchProPrice } from './iap';
 import { exportGroupCsv, exportGroupPdf } from './export';
 import * as queue from './queue';
@@ -38,7 +39,7 @@ import * as haptics from './haptics';
 import type {
   AppState, Actions, AppContextValue, Patch, Group, Expense, Payment,
   ScreenName, TabName, ThemeName, ModeName, TextSize, NotifPrefs, Transfer,
-  SplitType, ExpenseDraft, JoinPreview,
+  SplitType, ExpenseDraft, RecurringDraft, JoinPreview,
 } from './types';
 
 export const CLOUD_MODE = isSupabaseConfigured;
@@ -60,6 +61,22 @@ function emptyDraft(): ExpenseDraft {
     id: null, groupId: null, desc: '', amountText: '', currency: 'EUR',
     payer: ME, parts: [], splitType: 'equal', shares: {}, exactText: {},
     category: 'food', spentAt: new Date().toISOString(), receipts: [],
+  };
+}
+
+/** Dnešek jako YYYY-MM-DD (lokální čas) — výchozí první výskyt šablony. */
+function todayDate(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function emptyRecurringDraft(): RecurringDraft {
+  return {
+    id: null, groupId: null, desc: '', amountText: '', currency: 'EUR',
+    payer: ME, parts: [], category: 'home',
+    cadence: 'monthly', intervalCount: 1, anchorDay: new Date().getDate(),
+    nextRunDate: todayDate(),
   };
 }
 
@@ -165,6 +182,7 @@ function makeInitialState(): AppState {
     joinPreview: null,
 
     draft: emptyDraft(),
+    recurringDraft: emptyRecurringDraft(),
 
     settleMethod: 'cash',
     settleNote: '',
@@ -178,6 +196,7 @@ function makeInitialState(): AppState {
     groups: [],
     expenses: {},
     payments: {},
+    recurring: {},
     audit: {},
     fxRates: null,
     sync: { online: true, lastSyncedAt: null, queued: 0 },
@@ -197,6 +216,7 @@ const BACK_MAP: Partial<Record<ScreenName, ScreenName>> = {
   appearance: 'profile', notifications: 'profile', remove_ads: 'profile',
   privacy: 'profile', settings: 'profile',
   expense_currency: 'add_expense',
+  recurring: 'group', recurring_form: 'recurring',
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -732,7 +752,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ----------------------------------------------------------------- skupiny
 
-  const openGroup = (id: string) => { patch({ selectedGroup: id }); navigate('group'); if (CLOUD_MODE) refreshGroup(id); };
+  const openGroup = (id: string) => {
+    patch({ selectedGroup: id });
+    navigate('group');
+    if (CLOUD_MODE) { refreshGroup(id); maybeRunRecurring(id); }
+  };
+
+  /**
+   * Nechá server vytvořit výdaje ze zralých šablon. Idempotentní; voláme při
+   * otevření skupiny. Opakované výdaje NEJSOU kritická cesta — chyba se
+   * zaloguje a tiše se pokračuje, uživatel kvůli tomu neuvidí varování.
+   */
+  const maybeRunRecurring = async (groupId: string) => {
+    if (!CLOUD_MODE) return;
+    try {
+      const n = await recurringApi.runDueRecurring(groupId);
+      if (n > 0) {
+        await refreshGroup(groupId);
+        showToast(plural(n, '{n} recurring expense added', '{n} recurring expenses added'));
+      }
+    } catch (e) {
+      console.error('[recurring] runDueRecurring selhalo:', e);
+    }
+  };
 
   const addDraftMember = () => {
     const s = stateRef.current;
@@ -1207,6 +1249,152 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally { patch({ busy: false }); }
   };
 
+  // ------------------------------------------------- opakované výdaje (Pro)
+  //
+  // Jen v cloudovém režimu — šablona i generování žijí na serveru. V lokálním
+  // režimu se do téhle části uživatel vůbec nedostane (vstup je v detailu
+  // skupiny podmíněný `CLOUD_MODE`).
+
+  const openRecurring = () => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!gid) return;
+    navigate('recurring');
+    if (!CLOUD_MODE) return;
+    recurringApi.listRecurring(gid)
+      .then((rows) => patch((st) => ({ recurring: { ...st.recurring, [gid]: rows } })))
+      .catch((e) => {
+        console.error('[recurring] listRecurring selhalo:', e);
+        showToast(t('Could not update recurring expenses.'));
+      });
+  };
+
+  const startAddRecurring = () => {
+    const s = stateRef.current;
+    const g = s.groups.find((x) => x.id === s.selectedGroup);
+    if (!g) return;
+    patch({
+      recurringDraft: {
+        ...emptyRecurringDraft(),
+        groupId: g.id,
+        currency: g.currency,
+        payer: ME,
+        parts: [...g.members],
+      },
+    });
+    navigate('recurring_form');
+  };
+
+  const startEditRecurring = (id: string) => {
+    const s = stateRef.current;
+    const g = s.groups.find((x) => x.id === s.selectedGroup);
+    if (!g) return;
+    const r = (s.recurring[g.id] || []).find((x) => x.id === id);
+    if (!r) return;
+    const myReal = g.memberList.find((m) => m.userId === s.meUid)?.name || s.myName;
+    const display = (mid: string | null) => {
+      const nm = mid ? g.memberList.find((m) => m.id === mid)?.name : null;
+      return nm ? norm(nm, myReal) : ME;
+    };
+    const d = new Date(r.nextRun);
+    const p = (n: number) => String(n).padStart(2, '0');
+    patch({
+      recurringDraft: {
+        id: r.id,
+        groupId: g.id,
+        desc: r.desc,
+        amountText: toInputText(r.amountMinor, r.currency),
+        currency: r.currency,
+        payer: display(r.payerId),
+        parts: r.partIds.map(display),
+        category: r.category,
+        cadence: r.cadence,
+        intervalCount: r.intervalCount,
+        anchorDay: r.anchorDay ?? d.getDate(),
+        nextRunDate: isNaN(d.getTime()) ? todayDate() : `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+      },
+    });
+    navigate('recurring_form');
+  };
+
+  const setRecurringDraft = (p: Partial<RecurringDraft>) => {
+    patch((s) => ({ recurringDraft: { ...s.recurringDraft, ...p } }));
+  };
+
+  const toggleRecurringPart = (name: string) => {
+    patch((s) => {
+      const has = s.recurringDraft.parts.includes(name);
+      return {
+        recurringDraft: {
+          ...s.recurringDraft,
+          parts: has ? s.recurringDraft.parts.filter((n) => n !== name) : [...s.recurringDraft.parts, name],
+        },
+      };
+    });
+  };
+
+  const saveRecurring = async () => {
+    const s = stateRef.current;
+    const d = s.recurringDraft;
+    const g = s.groups.find((x) => x.id === d.groupId);
+    if (!g) return;
+    if (!CLOUD_MODE) { showToast(t('Recurring expenses need a Splittingly account.')); return; }
+    if (!canUseRecurring(s.isPro)) { navigate('remove_ads'); return; }
+
+    const amountMinor = parseAmount(d.amountText, d.currency);
+    if (amountMinor <= 0) { showToast(t('Enter an amount above zero.')); return; }
+    if (!d.parts.length) { showToast(t('Pick at least one person.')); return; }
+    const runDate = new Date(d.nextRunDate + 'T12:00:00');
+    if (isNaN(runDate.getTime())) { showToast(t('Enter a date as YYYY-MM-DD.')); return; }
+
+    const myReal = g.memberList.find((m) => m.userId === s.meUid)?.name || s.myName;
+    const idFor = (display: string) => {
+      const real = denorm(display, myReal);
+      return g.memberList.find((m) => m.name === real)?.id || null;
+    };
+
+    const input: RecurringInput = {
+      groupId: g.id,
+      payerId: idFor(d.payer),
+      partIds: d.parts.map(idFor).filter(Boolean) as string[],
+      amountMinor,
+      currency: d.currency,
+      desc: d.desc.trim() || 'Recurring expense',
+      category: d.category,
+      cadence: d.cadence,
+      intervalCount: Math.min(366, Math.max(1, Math.round(d.intervalCount))),
+      anchorDay: d.cadence === 'monthly' ? Math.min(31, Math.max(1, Math.round(d.anchorDay))) : null,
+      nextRun: runDate.toISOString(),
+    };
+
+    patch({ busy: true });
+    try {
+      if (d.id) await recurringApi.updateRecurring(d.id, input);
+      else await recurringApi.createRecurring(input);
+      const rows = await recurringApi.listRecurring(g.id);
+      patch((st) => ({ recurring: { ...st.recurring, [g.id]: rows }, recurringDraft: emptyRecurringDraft() }));
+      haptics.press();
+      goBack();
+    } catch (e) {
+      console.error('[recurring] uložení selhalo:', e);
+      showToast(t('Could not save the recurring expense.'));
+    } finally { patch({ busy: false }); }
+  };
+
+  const turnOffRecurring = async (id: string) => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!CLOUD_MODE || !gid) return;
+    try {
+      await recurringApi.deactivateRecurring(id);
+      const rows = await recurringApi.listRecurring(gid);
+      patch((st) => ({ recurring: { ...st.recurring, [gid]: rows } }));
+    } catch (e) {
+      console.error('[recurring] vypnutí selhalo:', e);
+      showToast(t('Could not update recurring expenses.'));
+    }
+  };
+
   // ----------------------------------------------------------------- hledání
 
   const runSearch = (q: string) => {
@@ -1233,6 +1421,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSplitType, setShare, setExact, attachReceipt, removeReceipt,
     saveExpense, deleteExpense, openExpense,
     startSettle, confirmSettle,
+    openRecurring, startAddRecurring, startEditRecurring, setRecurringDraft,
+    toggleRecurringPart, saveRecurring, turnOffRecurring,
     refreshAll, refreshGroup, runSearch,
   };
 
