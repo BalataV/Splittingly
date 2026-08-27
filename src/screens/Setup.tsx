@@ -66,7 +66,11 @@ export default function Setup() {
 function LanguageStep({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   const { c, ty } = useUi();
   const { state, actions } = useApp();
-  const list = searchLanguages(query).slice(0, 30);
+  // Bez dotazu ukážeme všech 50 (Screen scrolluje). Usekem na 30 se první
+  // obrazovka zastavila u islandštiny a japonština, čínština nebo arabština
+  // šly najít jen přes hledání — které uživatel v cizím UI nečeká.
+  const matches = searchLanguages(query);
+  const list = query ? matches.slice(0, 30) : matches;
 
   return (
     <>
@@ -79,13 +83,17 @@ function LanguageStep({ query, setQuery }: { query: string; setQuery: (v: string
       <View style={{ gap: 6 }}>
         {list.map((l) => {
           const selected = state.lang === l.code;
-          const partial = translationCoverage(l.code) < 1;
+          // 0 % = žádný slovník ani přes základní jazyk → rozhraní celé anglicky.
+          // Mezi tím = rozpracované. Obojí se přizná dřív, než uživatel přepne.
+          const coverage = translationCoverage(l.code);
           return (
             <Row key={l.code} onPress={() => actions.setLang(l.code)} fill={selected ? c.accent : undefined}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[ty('rowTitle'), { color: selected ? c.onAccent : c.text }]}>{l.endonym}</Text>
                 <Text style={[ty('rowMeta'), { color: selected ? c.onAccent : c.textMuted }]}>
-                  {l.english}{l.rtl ? ' · RTL' : ''}{partial ? ' · ' + t('partly translated') : ''}
+                  {l.english}{l.rtl ? ' · RTL' : ''}
+                  {coverage === 0 ? ' · ' + t('English only')
+                    : coverage < 1 ? ' · ' + t('partly translated') : ''}
                 </Text>
               </View>
               {selected && <Text style={{ color: c.onAccent, fontSize: 16 }}>✓</Text>}
