@@ -11,7 +11,7 @@
 // výpočetní vrstva je jméno-orientovaná, převod tam a zpět dělá `norm`/`denorm`.
 
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
-import { Appearance, BackHandler, Share, Platform, I18nManager, Alert } from 'react-native';
+import { Appearance, AppState as RNAppState, BackHandler, Share, Platform, I18nManager, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
@@ -19,21 +19,27 @@ import * as Localization from 'expo-localization';
 import * as Updates from 'expo-updates';
 import * as Sharing from 'expo-sharing';
 
-import { authApi, groupsApi, expensesApi, recurringApi, storageApi } from './api';
-import type { RawExpense } from './api/expenses';
+import { authApi, groupsApi, expensesApi, recurringApi, categoriesApi, storageApi } from './api';
+import type { RawExpense, ExpenseInput } from './api/expenses';
 import type { RecurringInput } from './api/recurring';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { setLangGlobal, canAutoDetect, t, plural } from './i18n';
 import { language, isRTL } from './languages';
-import { parseAmount, splitEqual, splitShares, remainderOf, toInputText } from './money';
+import { parseAmount, splitEqual, splitShares, remainderOf, toInputText, fmtMoneyMap, fmtSigned } from './money';
 import { decimalsOf, FAVOURITE_CURRENCIES } from './currencies';
-import { ME, transfersFor } from './logic';
+import { ME, transfersFor, totalOwe, totalOwed } from './logic';
 import { landingJoinUrl } from './config';
 import { loadRates } from './fx';
 import { registerForPush, notifyGroup, inQuietHours } from './notifications';
-import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport, canUseRecurring } from './entitlements';
+import {
+  canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canExport, canUseRecurring,
+  canUseWidget, canUseAltIcon, canUseCustomCategories, canUseFxLock,
+} from './entitlements';
 import { IAP_UNAVAILABLE, buyPro as iapBuyPro, restorePro as iapRestorePro, fetchProPrice } from './iap';
 import { exportGroupCsv, exportGroupPdf } from './export';
+import { writeWidgetSnapshot, buildWidgetSnapshot, emptySnapshot } from './widget';
+import * as applock from './applock';
+import * as appicon from './appicon';
 import * as queue from './queue';
 import * as haptics from './haptics';
 import type {
@@ -61,6 +67,7 @@ function emptyDraft(): ExpenseDraft {
     id: null, groupId: null, desc: '', amountText: '', currency: 'EUR',
     payer: ME, parts: [], splitType: 'equal', shares: {}, exactText: {},
     category: 'food', spentAt: new Date().toISOString(), receipts: [],
+    fxRate: null, fxCcy: null,
   };
 }
 
@@ -136,6 +143,7 @@ function makeInitialState(): AppState {
     celebrate: false,
     dialog: null,
     deleteConfirmText: '',
+    locked: false,
 
     meUid: null,
     myName: '',
@@ -163,6 +171,8 @@ function makeInitialState(): AppState {
     proPrice: null,
     rewardTheme: null,
     rewardUntil: null,
+    appLock: false,
+    appIcon: '',
 
     authEmail: '',
     authPassword: '',
@@ -197,6 +207,7 @@ function makeInitialState(): AppState {
     expenses: {},
     payments: {},
     recurring: {},
+    groupCategories: {},
     audit: {},
     fxRates: null,
     sync: { online: true, lastSyncedAt: null, queued: 0 },
@@ -217,6 +228,7 @@ const BACK_MAP: Partial<Record<ScreenName, ScreenName>> = {
   privacy: 'profile', settings: 'profile',
   expense_currency: 'add_expense',
   recurring: 'group', recurring_form: 'recurring',
+  trends: 'stats', group_categories: 'group',
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -261,10 +273,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
+      let savedAppLock = false;
       try {
         const raw = await AsyncStorage.getItem(STATE_KEY);
         if (raw) {
           const saved = JSON.parse(raw);
+          savedAppLock = saved.appLock === true;
           patch(saved);
           if (saved.lang) setLangGlobal(saved.lang);
         }
@@ -277,6 +291,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // svítí záložní `PRO_PRICE_FALLBACK` z configu.
       fetchProPrice().then((price) => { if (price) patch({ proPrice: price }); }).catch(() => undefined);
       await boot();
+      // Zámek aplikace platí i po studeném startu, ne jen po návratu z pozadí —
+      // ale jen když je vůbec kdo přihlášený (odhlášenému nemá co zamykat).
+      if (savedAppLock && stateRef.current.meUid) patch({ locked: true });
     })();
 
     const sub = Appearance.addChangeListener(({ colorScheme }) => {
@@ -296,13 +313,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notif: state.notif, personalisedAds: state.personalisedAds,
       isPro: state.isPro, rewardTheme: state.rewardTheme, rewardUntil: state.rewardUntil,
       recentSearches: state.recentSearches,
+      appLock: state.appLock, appIcon: state.appIcon,
     };
     AsyncStorage.setItem(STATE_KEY, JSON.stringify(prefs)).catch(() => undefined);
   }, [
     state.booting, state.lang, state.langChosen, state.currency,
     state.favouriteCurrencies, state.setupDone, state.theme, state.mode,
     state.textSize, state.notif, state.personalisedAds, state.isPro, state.rewardTheme,
-    state.rewardUntil, state.recentSearches,
+    state.rewardUntil, state.recentSearches, state.appLock, state.appIcon,
   ]);
 
   // Systémové „zpět" na Androidu.
@@ -312,6 +330,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Zámek aplikace: po skutečném odchodu na pozadí (`background`, ne přechodný
+  // `inactive` = přepínač appek / Control Center) se při návratu čeká na ověření.
+  useEffect(() => {
+    let wentBackground = false;
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        wentBackground = true;
+      } else if (next === 'active') {
+        if (wentBackground && stateRef.current.appLock && stateRef.current.meUid) patch({ locked: true });
+        wentBackground = false;
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Snímek pro domovský widget. Přepočítá se při každé změně bilancí, stavu
+  // Pro nebo přihlášení. Zápis je no-op, dokud nebude nativní most
+  // (`src/widget/index.ts`). `fmtMoneyMap`/`fmtSigned` se injektují — `src/widget`
+  // nesmí importovat `money.ts` (cyklus).
+  useEffect(() => {
+    if (state.booting) return;
+    const s = state;
+    const snap = (s.meUid && canUseWidget(s.isPro))
+      ? buildWidgetSnapshot({
+          oweMap: totalOwe(s.groups, s.expenses, s.payments),
+          owedMap: totalOwed(s.groups, s.expenses, s.payments),
+          groupCount: s.groups.length,
+          fmtMap: fmtMoneyMap,
+          fmtSigned,
+          signedOut: false,
+        })
+      : emptySnapshot('signedOut');
+    writeWidgetSnapshot(snap).catch((e) => console.warn('[widget] zápis snapshotu selhal:', String(e)));
+  }, [state.booting, state.groups, state.expenses, state.payments, state.isPro, state.meUid]);
 
   // ------------------------------------------------------------------- start
 
@@ -398,6 +452,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currency: raw.currency, payer, parts, splitType: raw.splitType,
       shares: raw.shares, exactMinor: raw.exactMinor, category: raw.category,
       spentAt: raw.spentAt, receipts: raw.receipts, editCount: raw.editCount, createdAt: raw.createdAt,
+      fxRate: raw.fxRate ?? null, fxCcy: raw.fxCcy ?? null,
     };
   }
 
@@ -750,12 +805,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showToast('Theme unlocked for seven days.');
   };
 
+  // ------------------------------------------------------- zámek aplikace
+  //
+  // Zámek je pohodlí, ne kryptografická hranice — nic se za ním neukládá.
+  // Ověření řeší biometrie / kód zařízení přes `expo-local-authentication`
+  // (zatím fasáda-stub v `src/applock.ts`, viz TODO tam). ŽÁDNÝ vlastní PIN
+  // ani heslo se nikam neukládá.
+
+  const setAppLock = async (on: boolean) => {
+    if (on) {
+      const ok = await applock.authenticate(t('Confirm your identity to turn on the app lock.'));
+      if (!ok) { showToast(t('Could not confirm. App lock stays off.')); return; }
+    }
+    patch({ appLock: on, locked: false });
+  };
+
+  const unlock = async () => {
+    const ok = await applock.authenticate(t('Unlock Splittingly'));
+    if (ok) patch({ locked: false });
+    else showToast(t('Could not verify. Try again.'));
+  };
+
+  // --------------------------------------------------- alternativní ikona
+
+  const setAppIcon = async (key: string) => {
+    // Reset na výchozí (`''`) je povolený vždy — i po vypršení Pro.
+    if (key && !canUseAltIcon(stateRef.current.isPro)) { navigate('remove_ads'); return; }
+    patch({ appIcon: key });
+    try {
+      await appicon.setIcon(key || null);
+    } catch (e) {
+      console.warn('[appicon] přepnutí ikony selhalo:', String(e));
+      showToast(t('Could not change the app icon.'));
+    }
+  };
+
   // ----------------------------------------------------------------- skupiny
 
   const openGroup = (id: string) => {
     patch({ selectedGroup: id });
     navigate('group');
-    if (CLOUD_MODE) { refreshGroup(id); maybeRunRecurring(id); }
+    if (CLOUD_MODE) { refreshGroup(id); maybeRunRecurring(id); loadGroupCategories(id); }
+  };
+
+  /**
+   * Načte vlastní kategorie skupiny (Pro). Jen CLOUD_MODE — v lokálním režimu
+   * žádné nejsou. Není kritická cesta: chyba jde do logu a tiše se pokračuje
+   * s výchozími kategoriemi.
+   */
+  const loadGroupCategories = async (groupId: string) => {
+    if (!CLOUD_MODE) return;
+    try {
+      const rows = await categoriesApi.listGroupCategories(groupId);
+      patch((st) => ({ groupCategories: { ...st.groupCategories, [groupId]: rows } }));
+    } catch (e) {
+      console.error('[categories] načtení selhalo:', e);
+    }
   };
 
   /**
@@ -942,6 +1047,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           p, e.exactMinor ? (dec === 0 ? String(e.exactMinor[i]) : (e.exactMinor[i] / Math.pow(10, dec)).toFixed(dec)) : '',
         ])),
         category: e.category, spentAt: e.spentAt, receipts: [...e.receipts],
+        fxRate: e.fxRate ?? null, fxCcy: e.fxCcy ?? null,
       },
       selectedExpense: id,
     });
@@ -954,7 +1060,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
    * se od minule může lišit a uživatel má šanci ji před uložením upravit.
    *
    * Účtenky se NEKOPÍRUJÍ — účtenka je důkaz konkrétní platby, kopie staré
-   * fotky k dnešnímu datu by byla nepravdivá.
+   * fotky k dnešnímu datu by byla nepravdivá. Ze stejného důvodu se nekopíruje
+   * ani zamčený FX kurz — patří k času původního výdaje, dneska už je starý.
    */
   const duplicateExpense = (id: string) => {
     const s = stateRef.current;
@@ -973,6 +1080,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           p, e.exactMinor ? (dec === 0 ? String(e.exactMinor[i]) : (e.exactMinor[i] / Math.pow(10, dec)).toFixed(dec)) : '',
         ])),
         category: e.category, spentAt: new Date().toISOString(), receipts: [],
+        fxRate: null, fxCcy: null,
       },
       selectedExpense: null,
     });
@@ -1063,6 +1171,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Zamčený FX kurz je perk plátce (Pro). Free uživatel ho neuloží; při
+    // EDITACI výdaje bez Pro se ale existující zámek nesmí přepsat, proto se
+    // pole do `ExpenseInput` posílá jen když ho appka opravdu spravuje.
+    const fxManaged = canUseFxLock(s.isPro);
+    const fxRate = fxManaged ? (d.fxRate ?? null) : null;
+    const fxCcy = fxManaged ? (d.fxCcy ?? null) : null;
+
     patch({ busy: true });
     try {
       if (CLOUD_MODE) {
@@ -1073,13 +1188,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const realName = (display: string) =>
           denorm(display, g.memberList.find((m) => m.userId === s.meUid)?.name || s.myName);
 
-        const input = {
+        const input: ExpenseInput = {
           groupId: g.id, desc: d.desc.trim() || 'Expense', amountMinor, currency: d.currency,
           payerId: idFor(d.payer), payerName: realName(d.payer),
           partIds: d.parts.map(idFor).filter(Boolean) as string[],
           partNames: d.parts.map(realName),
           splitType: d.splitType, shares, exactMinor,
           category: d.category, spentAt: d.spentAt,
+          // Když appka FX zámek nespravuje (free), pole se vynechají úplně —
+          // `addExpense` zapíše `null`, `updateExpense` je nechá být.
+          ...(fxManaged ? { fxRate, fxCcy } : {}),
         };
         try {
           if (d.id) {
@@ -1118,6 +1236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             currency: d.currency, payer: d.payer, parts: d.parts, splitType: d.splitType,
             shares, exactMinor, category: d.category, spentAt: d.spentAt,
             receipts: d.receipts, editCount: d.id ? 1 : 0, createdAt: new Date().toISOString(),
+            fxRate, fxCcy,
           };
           patch((st) => ({
             expenses: {
@@ -1136,6 +1255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           currency: d.currency, payer: d.payer, parts: d.parts, splitType: d.splitType,
           shares, exactMinor, category: d.category, spentAt: d.spentAt,
           receipts: d.receipts, editCount: d.id ? 1 : 0, createdAt: new Date().toISOString(),
+          fxRate, fxCcy,
         };
         const list = s.expenses[g.id] || [];
         const expenses = {
@@ -1395,6 +1515,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ------------------------------------------ vlastní kategorie skupiny (Pro)
+  //
+  // Kategorie je SDÍLENÁ — výdaj s ní vidí a používá celá skupina; omezené
+  // je jen VYTVOŘENÍ nové (`canUseCustomCategories`). Jen CLOUD_MODE, vždy
+  // nad `selectedGroup`. Po každém zápisu se seznam načte znovu z API.
+
+  const addGroupCategory = async (name: string) => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!CLOUD_MODE || !gid) return;
+    if (!canUseCustomCategories(s.isPro)) { navigate('remove_ads'); return; }
+    const clean = name.trim();
+    if (!clean) return;
+    try {
+      await categoriesApi.createGroupCategory(gid, clean);
+      await loadGroupCategories(gid);
+    } catch (e: any) {
+      console.error('[categories] vytvoření selhalo:', e);
+      showToast(e?.message === 'category already exists'
+        ? t('That category already exists.')
+        : t('Could not add the category.'));
+    }
+  };
+
+  const renameGroupCategory = async (id: string, name: string) => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!CLOUD_MODE || !gid) return;
+    const clean = name.trim();
+    if (!clean) return;
+    try {
+      await categoriesApi.renameGroupCategory(id, clean);
+      await loadGroupCategories(gid);
+    } catch (e: any) {
+      console.error('[categories] přejmenování selhalo:', e);
+      showToast(e?.message === 'category already exists'
+        ? t('That category already exists.')
+        : t('Could not rename the category.'));
+    }
+  };
+
+  const deleteGroupCategory = async (id: string) => {
+    const s = stateRef.current;
+    const gid = s.selectedGroup;
+    if (!CLOUD_MODE || !gid) return;
+    try {
+      await categoriesApi.deleteGroupCategory(id);
+      await loadGroupCategories(gid);
+    } catch (e) {
+      console.error('[categories] smazání selhalo:', e);
+      showToast(t('Could not delete the category.'));
+    }
+  };
+
   // ----------------------------------------------------------------- hledání
 
   const runSearch = (q: string) => {
@@ -1423,6 +1597,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     startSettle, confirmSettle,
     openRecurring, startAddRecurring, startEditRecurring, setRecurringDraft,
     toggleRecurringPart, saveRecurring, turnOffRecurring,
+    addGroupCategory, renameGroupCategory, deleteGroupCategory,
+    setAppLock, unlock, setAppIcon,
     refreshAll, refreshGroup, runSearch,
   };
 

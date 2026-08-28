@@ -10,6 +10,11 @@
 import type { RawRecurring, Cadence } from './api/recurring';
 export type { RawRecurring, Cadence } from './api/recurring';
 
+// Vlastní kategorie skupiny (Pro, batch 2) — stejný vzor jako `RawRecurring`:
+// tvar bydlí v datové vrstvě, sem se jen re-exportuje type-only.
+import type { RawGroupCategory } from './api/categories';
+export type { RawGroupCategory } from './api/categories';
+
 export type SplitType = 'equal' | 'shares' | 'exact';
 export type ThemeName = 'acid' | 'mint' | 'neon' | 'dusk';
 export type ModeName = 'light' | 'dark' | 'system';
@@ -26,6 +31,7 @@ export type ScreenName =
   | 'split_method' | 'expense_detail' | 'settle' | 'stats'
   | 'year_in_review' | 'activity' | 'search' | 'share_card'
   | 'recurring' | 'recurring_form'
+  | 'trends' | 'group_categories'        // Pro batch 2
   // nastavení (22–29)
   | 'profile' | 'language' | 'currency' | 'expense_currency' | 'appearance' | 'notifications'
   | 'remove_ads' | 'privacy' | 'settings'
@@ -69,6 +75,11 @@ export interface Expense {
   receipts: string[];      // veřejné URL účtenek
   editCount: number;
   createdAt: string;
+  // Pro: zamčený převodní kurz z času založení. `fxRate` = kolik jednotek
+  // `fxCcy` za 1 jednotku `currency`. JEN zobrazení — do dluhu nevstupuje.
+  // Volitelné: drtivá většina výdajů zámek nemá (jako `RawExpense.fxRate`).
+  fxRate?: number | null;
+  fxCcy?: string | null;
 }
 
 export interface Payment {
@@ -161,6 +172,9 @@ export interface ExpenseDraft {
   category: string;
   spentAt: string;
   receipts: string[];
+  // Pro: zamčený převodní kurz (viz `Expense.fxRate`). `null` = bez zámku.
+  fxRate: number | null;
+  fxCcy: string | null;
 }
 
 export interface SyncState {
@@ -207,6 +221,12 @@ export interface AppState {
   celebrate: boolean;        // právě vyrovnáno → obrazovka 16b
   dialog: null | 'delete_account' | 'delete_expense' | 'leave_group';
   deleteConfirmText: string;
+  /**
+   * Zámek aplikace je PRÁVĚ TEĎ aktivní a čeká na ověření. BĚHOVÝ stav —
+   * NEPERZISTUJE se (po studeném startu se stejně jde přes přihlášení).
+   * Zvedá ho `AppState` listener při návratu z pozadí, když `appLock`.
+   */
+  locked: boolean;
 
   // účet
   meUid: string | null;
@@ -234,6 +254,10 @@ export interface AppState {
   proPrice: string | null;
   rewardTheme: ThemeName | null;
   rewardUntil: string | null;
+  /** Uživatel zapnul zámek aplikace (biometrie / kód zařízení). PŘEDVOLBA — persistuje se. */
+  appLock: boolean;
+  /** Klíč alternativní ikony (`'AppIcon-Mint'` …) nebo `''` pro výchozí. PŘEDVOLBA. */
+  appIcon: string;
 
   // formuláře
   authEmail: string;
@@ -271,6 +295,7 @@ export interface AppState {
   expenses: Record<string, Expense[]>;   // groupId → výdaje
   payments: Record<string, Payment[]>;   // groupId → platby
   recurring: Record<string, RawRecurring[]>;  // groupId → šablony (i vypnuté)
+  groupCategories: Record<string, RawGroupCategory[]>;  // groupId → vlastní kategorie (Pro, jen CLOUD_MODE)
   audit: Record<string, AuditEntry[]>;   // expenseId → historie
   fxRates: Record<string, number> | null;
   sync: SyncState;
@@ -310,6 +335,12 @@ export interface Actions {
   buyPro: () => Promise<void>;
   restorePro: () => Promise<void>;
   unlockThemeByReward: (t: ThemeName) => Promise<void>;
+  /** Zapne/vypne zámek aplikace. Při zapínání si jedním ověřením potvrdí, že zařízení umí biometrii/kód. */
+  setAppLock: (on: boolean) => Promise<void>;
+  /** Volá `LockGate` overlay — ověří identitu a při úspěchu shodí `state.locked`. */
+  unlock: () => Promise<void>;
+  /** Přepne ikonu aplikace. `''` = zpět na výchozí (povoleno vždy, i po vypršení Pro). */
+  setAppIcon: (key: string) => Promise<void>;
 
   // skupiny
   openGroup: (id: string) => void;
@@ -352,6 +383,11 @@ export interface Actions {
   saveRecurring: () => Promise<void>;
   turnOffRecurring: (id: string) => Promise<void>;
 
+  // vlastní kategorie skupiny (Pro; jen v cloudovém režimu; vždy nad `selectedGroup`)
+  addGroupCategory: (name: string) => Promise<void>;
+  renameGroupCategory: (id: string, name: string) => Promise<void>;
+  deleteGroupCategory: (id: string) => Promise<void>;
+
   // data
   refreshAll: (force?: boolean) => Promise<void>;
   refreshGroup: (id: string) => Promise<void>;
@@ -362,3 +398,19 @@ export interface AppContextValue {
   state: AppState;
   actions: Actions;
 }
+
+// ===========================================================================
+// Pro batch 2 — typový povrch APLIKOVÁN (viz změny výše: `Expense.fxRate/fxCcy`,
+// `ExpenseDraft.fxRate/fxCcy`, `AppState.locked/appLock/appIcon/groupCategories`,
+// akce `setAppLock`/`unlock`/`setAppIcon`/`addGroupCategory`/`renameGroupCategory`/
+// `deleteGroupCategory`, `ScreenName += 'trends' | 'group_categories'`).
+// Store wiring: `src/store.tsx`. Guardované fasády nativní části:
+// `src/applock.ts` (biometrie) a `src/appicon.ts` (alt ikony) — zatím no-op
+// stuby (deps `expo-local-authentication` / `expo-alternate-app-icons` už
+// nainstalované, nativní napojení dělá vydani-a-provoz). Widget snapshot:
+// `useEffect` ve `store.tsx` →
+// `writeWidgetSnapshot` z `src/widget`. Merge kategorií: `mergedCategories()`
+// v `src/categories.ts`. `src/widget/` a `src/categories.ts` zůstávají LIST —
+// neimportují `store`/`logic`/`money` (cyklus); `fmtMoneyMap`/`fmtSigned` se
+// injektují.
+// ===========================================================================

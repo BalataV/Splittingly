@@ -4,7 +4,6 @@
 // ukáže dva bloky — nikdy jeden přepočtený součet.
 
 import { shareOf } from './money';
-import { CATEGORIES } from './categories';
 import type { Expense, StatsPeriod, Group } from './types';
 
 export interface CategoryTotal { key: string; amountMinor: number; pct: number; }
@@ -36,16 +35,23 @@ export function total(expenses: Expense[], currency: string): number {
   return expenses.filter((e) => e.currency === currency).reduce((a, e) => a + e.amountMinor, 0);
 }
 
+/**
+ * Rozpad útraty po kategoriích, jen daná měna. Data-driven: agreguje podle
+ * skutečných hodnot `expense.category`, ne podle pevného seznamu — jinak by
+ * vlastní kategorie skupiny (Pro) v koláči chyběly. Neznámý klíč vykreslí
+ * `category(key)` v `categories.ts` pod jeho názvem. Řazení: částka sestupně,
+ * při shodě podle klíče (deterministicky, ať pořadí nezávisí na pořadí dat).
+ */
 export function byCategory(expenses: Expense[], currency: string): CategoryTotal[] {
   const sums: Record<string, number> = {};
   expenses.filter((e) => e.currency === currency).forEach((e) => {
     sums[e.category] = (sums[e.category] || 0) + e.amountMinor;
   });
   const all = Object.values(sums).reduce((a, b) => a + b, 0) || 1;
-  return CATEGORIES
-    .map((c) => ({ key: c.key, amountMinor: sums[c.key] || 0, pct: Math.round(((sums[c.key] || 0) / all) * 100) }))
+  return Object.keys(sums)
+    .map((key) => ({ key, amountMinor: sums[key], pct: Math.round((sums[key] / all) * 100) }))
     .filter((c) => c.amountMinor > 0)
-    .sort((a, b) => b.amountMinor - a.amountMinor);
+    .sort((a, b) => (b.amountMinor - a.amountMinor) || a.key.localeCompare(b.key));
 }
 
 /** Kdo utrácí nejvíc — podle toho, kolik na koho PŘIPADLO, ne kolik zaplatil. */

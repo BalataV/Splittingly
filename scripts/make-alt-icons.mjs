@@ -72,27 +72,40 @@ function encodePng(w, h, pixels) {
 
 // --------------------------------------------------------------- kreslení
 // Shodné s drawIcon() v make-icons.mjs, jen barvy jsou parametr.
-function drawIcon(size, pal) {
+// `inset` = podíl plochy ponechaný jako okraj (Android adaptivní popředí se
+// ořezává do různých tvarů). `transparent` = mimo motiv průhledno (popředí),
+// jinak plná výplň (iOS ikona bez alfa vrstvy).
+function drawIcon(size, pal, { inset = 0, transparent = false } = {}) {
   const px = Buffer.alloc(size * size * 4);
-  const box = size;
+  const pad = Math.round(size * inset);
+  const box = size - pad * 2;
   const angle = (-38 * Math.PI) / 180;
   const nx = Math.sin(angle);
   const ny = -Math.cos(angle);
   const half = box * 0.045;
   const borderW = box * 0.038;
 
-  const put = (i, rgb) => {
-    px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = 255;
+  const put = (i, rgb, a = 255) => {
+    px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = a;
   };
 
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const i = (y * size + x) * 4;
-      const onBorder = x < borderW || y < borderW || x >= box - borderW || y >= box - borderW;
+      const lx = x - pad;
+      const ly = y - pad;
+
+      if (lx < 0 || ly < 0 || lx >= box || ly >= box) {
+        if (transparent) put(i, [0, 0, 0], 0);
+        else put(i, pal.fill);
+        continue;
+      }
+
+      const onBorder = lx < borderW || ly < borderW || lx >= box - borderW || ly >= box - borderW;
       if (onBorder) { put(i, pal.ink); continue; }
-      const dist = Math.abs((x - box / 2) * nx + (y - box / 2) * ny);
+      const dist = Math.abs((lx - box / 2) * nx + (ly - box / 2) * ny);
       if (dist < half) { put(i, pal.ink); continue; }
-      const upperLeft = x + y < box;
+      const upperLeft = lx + ly < box;
       put(i, upperLeft ? pal.wedge : pal.fill);
     }
   }
@@ -101,8 +114,15 @@ function drawIcon(size, pal) {
 
 console.log('assets/alt-icons/');
 for (const [name, pal] of Object.entries(PALETTES)) {
-  const png = encodePng(1024, 1024, drawIcon(1024, pal));
-  writeFileSync(join(OUT, name + '.png'), png);
-  console.log('  ' + name + '.png  1024×1024  ' + (png.length / 1024).toFixed(1) + ' kB');
+  // iOS: plná 1024² ikona bez alfa vrstvy.
+  const ios = encodePng(1024, 1024, drawIcon(1024, pal));
+  writeFileSync(join(OUT, name + '.png'), ios);
+  console.log('  ' + name + '.png  1024×1024  ' + (ios.length / 1024).toFixed(1) + ' kB');
+
+  // Android: průhledné popředí s 25% bezpečným okrajem (pozadí je plná
+  // barva z app.json → backgroundColor). Hustoty dogeneruje prebuild.
+  const fg = encodePng(1024, 1024, drawIcon(1024, pal, { inset: 0.25, transparent: true }));
+  writeFileSync(join(OUT, name + '-foreground.png'), fg);
+  console.log('  ' + name + '-foreground.png  1024×1024  ' + (fg.length / 1024).toFixed(1) + ' kB');
 }
 console.log('Hotovo.');

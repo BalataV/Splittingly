@@ -5,7 +5,7 @@
 // Den 15 v měsíci drží data bezpečně daleko od hranice měsíce i po převodu
 // přes ISO (UTC), takže se měsíc nezmění posunem časové zóny.
 
-import { monthlyTotals, categoryDrift, trendSummary } from '../src/stats';
+import { monthlyTotals, categoryDrift, trendSummary, byCategory } from '../src/stats';
 import type { Expense } from '../src/types';
 
 const mk = (o: Partial<Expense> & { amountMinor: number; spentAt: string }): Expense => ({
@@ -182,6 +182,60 @@ describe('categoryDrift', () => {
     ];
     const d = categoryDrift(e, 'EUR', 1);
     expect(d.map((x) => x.category)).toEqual(['Apple', 'Zebra']);
+  });
+});
+
+describe('byCategory', () => {
+  it('vlastní (custom) kategorie se objeví pod svým klíčem', () => {
+    const e = [
+      mk({ amountMinor: 3000, spentAt: agoIso(0), category: 'food' }),
+      mk({ amountMinor: 5000, spentAt: agoIso(0), category: 'Ski pass' }),
+    ];
+    const rows = byCategory(e, 'EUR');
+    const keys = rows.map((r) => r.key);
+    expect(keys).toContain('Ski pass');
+    expect(rows.find((r) => r.key === 'Ski pass')?.amountMinor).toBe(5000);
+  });
+
+  it('řadí podle částky sestupně, mixuje výchozí i custom', () => {
+    const e = [
+      mk({ amountMinor: 1000, spentAt: agoIso(0), category: 'food' }),
+      mk({ amountMinor: 8000, spentAt: agoIso(0), category: 'Ski pass' }),
+      mk({ amountMinor: 4000, spentAt: agoIso(0), category: 'transport' }),
+    ];
+    expect(byCategory(e, 'EUR').map((r) => r.key)).toEqual(['Ski pass', 'transport', 'food']);
+  });
+
+  it('procenta sedí na 100 (bez zaokrouhlovacího zbytku v tomto případě)', () => {
+    const e = [
+      mk({ amountMinor: 7500, spentAt: agoIso(0), category: 'Ski pass' }),
+      mk({ amountMinor: 2500, spentAt: agoIso(0), category: 'food' }),
+    ];
+    const rows = byCategory(e, 'EUR');
+    expect(rows.find((r) => r.key === 'Ski pass')?.pct).toBe(75);
+    expect(rows.find((r) => r.key === 'food')?.pct).toBe(25);
+  });
+
+  it('cizí měna se do rozpadu nezapočítá', () => {
+    const e = [
+      mk({ amountMinor: 1000, spentAt: agoIso(0), category: 'Ski pass', currency: 'EUR' }),
+      mk({ amountMinor: 9999, spentAt: agoIso(0), category: 'Ski pass', currency: 'USD' }),
+    ];
+    const rows = byCategory(e, 'EUR');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ key: 'Ski pass', amountMinor: 1000 });
+  });
+
+  it('shodná částka → deterministické pořadí podle klíče', () => {
+    const e = [
+      mk({ amountMinor: 1000, spentAt: agoIso(0), category: 'Zebra pass' }),
+      mk({ amountMinor: 1000, spentAt: agoIso(0), category: 'Apple pass' }),
+    ];
+    expect(byCategory(e, 'EUR').map((r) => r.key)).toEqual(['Apple pass', 'Zebra pass']);
+  });
+
+  it('prázdný vstup → prázdné pole', () => {
+    expect(byCategory([], 'EUR')).toEqual([]);
   });
 });
 

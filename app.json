@@ -11,10 +11,16 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.balata.splittingly",
+      "appleTeamId": "5N974388GT",
       "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:splittingly.com"
       ],
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.balata.splittingly"
+        ]
+      },
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true
       },
@@ -110,7 +116,42 @@
           "userTrackingPermission": "Splittingly uses this to show you more relevant ads. You can still use every feature of the app if you say no."
         }
       ],
-      "./plugins/withAndroidWidget"
+      "./plugins/withAndroidWidget",
+      [
+        "@bacons/apple-targets",
+        {
+          "appleTeamId": "5N974388GT"
+        }
+      ],
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Mint",
+            "ios": "./assets/alt-icons/mint.png",
+            "android": {
+              "foregroundImage": "./assets/alt-icons/mint-foreground.png",
+              "backgroundColor": "#00E5C0"
+            }
+          },
+          {
+            "name": "Neon",
+            "ios": "./assets/alt-icons/neon.png",
+            "android": {
+              "foregroundImage": "./assets/alt-icons/neon-foreground.png",
+              "backgroundColor": "#2B0A5E"
+            }
+          },
+          {
+            "name": "Dusk",
+            "ios": "./assets/alt-icons/dusk.png",
+            "android": {
+              "foregroundImage": "./assets/alt-icons/dusk-foreground.png",
+              "backgroundColor": "#4A2E8A"
+            }
+          }
+        ]
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"
