@@ -7,3 +7,7 @@ export function supportsAltIcons(): boolean {
 export async function setIcon(key: string | null): Promise<void> {
   void key;
 }
+
+export function currentIcon(): string {
+  return '';
+}

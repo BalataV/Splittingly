@@ -32,6 +32,7 @@ import { Recurring, RecurringForm } from './screens/Recurring';
 import Setup from './screens/Setup';
 import { TabIcon, type TabIconName } from './components/TabIcon';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
+import LockGate from './components/LockGate';
 
 /**
  * Maximální šířka obsahu.
@@ -68,6 +69,8 @@ function RootInner() {
   const { state } = useApp();
 
   if (state.booting) return <Splash />;
+  // Zámek nahrazuje CELOU appku — bez tab baru, banneru, čehokoli.
+  if (state.locked) return <LockGate />;
 
   const sc = state.screen;
   const chrome = !NO_CHROME.includes(sc);

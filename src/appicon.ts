@@ -1,21 +1,74 @@
 // Přepnutí ikony aplikace (Pro, batch 2).
 //
-// STAV: STUB. `expo-alternate-app-icons` UŽ je v `package.json` (přidal
-// vydani-a-provoz). Do zapojení nativní vrstvy no-op, aby `store.tsx` mohlo
-// akci `setAppIcon` volat už teď.
+// Napojeno na `expo-alternate-app-icons@8.0.0`. `require` je lazy a v
+// try/catch — stejně jako `src/admob.ts` a `src/applock.ts` — protože balík
+// při importu sahá do nativní vrstvy a v Expo Go / na webu by shodil celý
+// modul. Reálně se dá vyzkoušet až z dev/produkčního buildu; v Expo Go
+// `supportsAltIcons()` vrací `false` a picker se v Nastavení neukáže.
 //
-// TODO(vydani-a-provoz): `setIcon(key)` → API balíku (`setAlternateAppIcon`),
-//   `key === null` = zpět na výchozí. `supportsAltIcons()` z platformy.
-//   OVĚŘIT Android alias podporu v `expo-alternate-app-icons@8` — když
-//   chybí, doplnit lokální `plugins/withAndroidAltIcons.js` (viz rozhodnutí
-//   architekta #2). Guardovat `require` jako `src/admob.ts`.
+// Klíče ikon odpovídají `expo-alternate-app-icons` konfiguraci v `app.json`
+// (`AppIcon-Mint`, `AppIcon-Neon`, `AppIcon-Dusk`). Prázdný řetězec / `null`
+// = výchozí ikona.
 
-/** Umí tahle platforma/build přepínat ikonu za běhu? Zatím vždy `false`. */
-export function supportsAltIcons(): boolean {
-  return false;
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+type AltIcons = typeof import('expo-alternate-app-icons');
+
+let mod: AltIcons | null = null;
+let tried = false;
+
+function getModule(): AltIcons | null {
+  if (IS_EXPO_GO) return null;
+  if (tried) return mod;
+  tried = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    mod = require('expo-alternate-app-icons') as AltIcons;
+  } catch {
+    mod = null;
+  }
+  return mod;
 }
 
-/** Přepne ikonu na `key` (`null` = výchozí). Zatím no-op. */
+/** Umí tahle platforma/build přepínat ikonu za běhu? */
+export function supportsAltIcons(): boolean {
+  const m = getModule();
+  if (!m) return false;
+  try {
+    return m.supportsAlternateIcons === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Přepne ikonu na `key` (`''` nebo `null` = výchozí).
+ * Chybu (nepodporováno, neznámý klíč) jen zaloguje — přepnutí ikony je
+ * kosmetika, nesmí shodit tok v Nastavení.
+ */
 export async function setIcon(key: string | null): Promise<void> {
-  void key;
+  const m = getModule();
+  if (!m) return;
+  try {
+    if (!key) {
+      await m.resetAppIcon();
+    } else {
+      await m.setAlternateAppIcon(key as never);
+    }
+  } catch (e) {
+    console.warn('[appicon] přepnutí ikony selhalo:', String(e));
+  }
+}
+
+/** Název aktivní ikony (`''` = výchozí). */
+export function currentIcon(): string {
+  const m = getModule();
+  if (!m) return '';
+  try {
+    return m.getAppIconName() ?? '';
+  } catch {
+    return '';
+  }
 }
