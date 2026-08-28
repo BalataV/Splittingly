@@ -14,6 +14,10 @@ export interface RawExpense {
   desc: string;
   amountMinor: number;
   currency: string;
+  // Pro: zamčený FX kurz z času založení. `fxRate` = kolik jednotek `fxCcy`
+  // za 1 jednotku `currency`. Jen zobrazení — nepočítá se z něj.
+  fxRate?: number;
+  fxCcy?: string;
   payerId: string | null;
   partIds: string[];
   payerName: string;
@@ -29,7 +33,7 @@ export interface RawExpense {
 }
 
 const SELECT =
-  'id, group_id, description, amount_minor, currency, payer_id, part_ids, payer_name, part_names, ' +
+  'id, group_id, description, amount_minor, currency, fx_rate, fx_ccy, payer_id, part_ids, payer_name, part_names, ' +
   'split_type, shares, exact_minor, category, spent_at, edit_count, created_at, ' +
   'expense_receipts(url)';
 
@@ -40,6 +44,8 @@ function mapExpense(e: any): RawExpense {
     desc: e.description,
     amountMinor: Number(e.amount_minor) || 0,
     currency: e.currency || 'EUR',
+    fxRate: e.fx_rate != null ? Number(e.fx_rate) : undefined,
+    fxCcy: e.fx_ccy || undefined,
     payerId: e.payer_id || null,
     partIds: e.part_ids || [],
     payerName: e.payer_name,
@@ -95,6 +101,9 @@ export interface ExpenseInput {
   exactMinor: number[] | null;
   category: string;
   spentAt: string;
+  // Pro: zamčený FX kurz. Volitelné — plní je jen Pro při zakládání výdaje.
+  fxRate?: number | null;
+  fxCcy?: string | null;
 }
 
 export async function addExpense(input: ExpenseInput): Promise<string> {
@@ -115,6 +124,8 @@ export async function addExpense(input: ExpenseInput): Promise<string> {
       exact_minor: input.exactMinor,
       category: input.category,
       spent_at: input.spentAt,
+      fx_rate: input.fxRate ?? null,
+      fx_ccy: input.fxCcy ?? null,
       created_by: u.user?.id,
     })
     .select('id')
@@ -140,6 +151,10 @@ export async function updateExpense(id: string, input: ExpenseInput, changes: { 
       exact_minor: input.exactMinor,
       category: input.category,
       spent_at: input.spentAt,
+      // FX kurz se přepisuje jen když ho volající výslovně poslal — jinak
+      // by editace z ne-Pro cesty smazala zamčený kurz z původního založení.
+      ...(input.fxRate !== undefined ? { fx_rate: input.fxRate } : {}),
+      ...(input.fxCcy !== undefined ? { fx_ccy: input.fxCcy } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);

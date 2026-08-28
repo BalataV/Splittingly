@@ -8,7 +8,8 @@ import { ReceiptThumb } from '../components/Receipt';
 import { useApp, CLOUD_MODE } from '../store';
 import { expensesApi } from '../api';
 import { t, fmtDate, fmtTime } from '../i18n';
-import { shareOf } from '../money';
+import { shareOf, fmt } from '../money';
+import { decimalsOf } from '../currencies';
 import { category } from '../categories';
 import { initial, ME } from '../logic';
 import { SPACE, BORDER } from '../theme';
@@ -58,7 +59,20 @@ export default function ExpenseDetail() {
           </View>
 
           <Money amountMinor={e.amountMinor} currency={e.currency} role="sectionAmount" style={{ fontSize: 34, textAlign: 'left' }} />
-          <ApproxMoney amountMinor={e.amountMinor} currency={e.currency} style={{ marginTop: -6 }} />
+          {/* Zamčený kurz (Pro) přebíjí živý „≈" jen pro toho, kdo ho zamkl
+              (shoda s jeho zobrazovací měnou). Ostatní vidí dál živý přepočet. */}
+          {e.fxRate != null && e.fxCcy && state.currency === e.fxCcy ? (
+            <Text style={[ty('rowMeta'), { color: c.textMuted, marginTop: -6 }]}>
+              {t('≈ {amount} (locked rate)', {
+                amount: fmt(
+                  Math.round((e.amountMinor / Math.pow(10, decimalsOf(e.currency))) * e.fxRate * Math.pow(10, decimalsOf(e.fxCcy))),
+                  e.fxCcy,
+                ),
+              })}
+            </Text>
+          ) : (
+            <ApproxMoney amountMinor={e.amountMinor} currency={e.currency} style={{ marginTop: -6 }} />
+          )}
 
           <Text style={[ty('caption'), { color: c.textMuted }]}>
             {e.payer === ME ? t('Paid by you') : t('Paid by {who}', { who: e.payer })} · {

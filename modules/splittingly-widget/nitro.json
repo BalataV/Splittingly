@@ -1,0 +1,24 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": ["splittinglywidget"],
+  "ios": {
+    "iosModuleName": "NitroSplittinglyWidget"
+  },
+  "android": {
+    "androidNamespace": ["splittinglywidget"],
+    "androidCxxLibName": "NitroSplittinglyWidget"
+  },
+  "autolinking": {
+    "SplittinglyWidget": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridSplittinglyWidget"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridSplittinglyWidget"
+      }
+    }
+  },
+  "ignorePaths": ["**/node_modules"]
+}

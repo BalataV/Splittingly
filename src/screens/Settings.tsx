@@ -17,9 +17,19 @@ import { CURRENCIES, currency } from '../currencies';
 import { fmt } from '../money';
 import { THEMES, THEME_ORDER, AVATAR_COLORS, SPACE, BORDER, TEXT_SCALE } from '../theme';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, PRO_PRICE_FALLBACK } from '../config';
-import { PRO_BENEFITS, canUseTheme } from '../entitlements';
+import { PRO_BENEFITS, canUseTheme, canUseAltIcon } from '../entitlements';
 import { initial } from '../logic';
+import * as applock from '../applock';
+import * as appicon from '../appicon';
 import type { ThemeName, ModeName, TextSize } from '../types';
+
+/** Klíče alternativních ikon — musí sedět s `expo-alternate-app-icons` v app.json. */
+const APP_ICONS: { key: string; label: string; theme: ThemeName }[] = [
+  { key: '', label: 'Default', theme: 'acid' },
+  { key: 'AppIcon-Mint', label: 'Mint', theme: 'mint' },
+  { key: 'AppIcon-Neon', label: 'Neon', theme: 'neon' },
+  { key: 'AppIcon-Dusk', label: 'Dusk', theme: 'dusk' },
+];
 
 /**
  * Verze a číslo buildu.
@@ -302,6 +312,14 @@ export function CurrencyPicker({ target = 'display' }: { target?: 'display' | 'e
 export function Appearance() {
   const { c, ty } = useUi();
   const { state, actions } = useApp();
+  const [canLock, setCanLock] = useState(false);
+  const canSwitchIcon = appicon.supportsAltIcons();
+
+  useEffect(() => {
+    let alive = true;
+    applock.canAuthenticate().then((ok) => { if (alive) setCanLock(ok); });
+    return () => { alive = false; };
+  }, []);
 
   return (
     <Screen title={t('APPEARANCE')} onBack={actions.goBack}>
@@ -350,6 +368,53 @@ export function Appearance() {
           );
         })}
       </View>
+
+      {canSwitchIcon && (
+        <>
+          <Label>{t('APP ICON')}</Label>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm }}>
+            {APP_ICONS.map((ic) => {
+              const th = THEMES[ic.theme];
+              const selected = (state.appIcon || '') === ic.key;
+              const locked = ic.key !== '' && !canUseAltIcon(state.isPro);
+              return (
+                <Pressable key={ic.key || 'default'} onPress={() => actions.setAppIcon(ic.key)} style={{ width: '48%' }}>
+                  <View style={{ position: 'relative' }}>
+                    {selected && <View style={{ position: 'absolute', top: 4, left: 4, right: -4, bottom: -4, backgroundColor: c.shadow }} />}
+                    <View style={{ backgroundColor: locked ? c.surfaceSunken : c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 12, gap: SPACE.sm }}>
+                      <View style={{ width: 32, height: 32, backgroundColor: th.accent, borderWidth: 2, borderColor: c.border }} />
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={[ty('rowTitle'), { color: c.text }]}>{ic.key === '' ? t('Default') : ic.label}</Text>
+                        {locked && (
+                          <View style={{ backgroundColor: c.text, paddingHorizontal: 5, paddingVertical: 1 }}>
+                            <Text style={[ty('label'), { color: c.accent, fontSize: 9 }]}>PRO</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={[ty('caption'), { color: c.textMuted }]}>
+            {t('iOS shows a system alert when the icon changes.')}
+          </Text>
+        </>
+      )}
+
+      {canLock && (
+        <>
+          <Label>{t('SECURITY')}</Label>
+          <Row>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[ty('rowTitle'), { color: c.text }]}>{t('App lock')}</Text>
+              <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Ask for Face ID or your fingerprint when the app opens.')}</Text>
+            </View>
+            <Toggle value={state.appLock} onChange={(v) => actions.setAppLock(v)} label={t('App lock')} />
+          </Row>
+        </>
+      )}
 
       <Label>{t('TEXT SIZE')}</Label>
       <Segmented<TextSize>

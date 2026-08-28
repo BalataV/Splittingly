@@ -1,0 +1,59 @@
+// Gradle projekt Nitro modulu SplittinglyWidget. Expo autolinking ho zapojí
+// přes expo-module.config.json -> android.path.
+//
+// `nitrogen/generated/android/NitroSplittinglyWidget+autolinking.gradle`
+// vzniká z `npx nitrogen modules/splittingly-widget`. Dokud codegen
+// neproběhl, blok níž se přeskočí (guard `exists()`), takže konfigurace
+// nespadne — jen se nemá co sestavit.
+
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.6.0"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+
+def nitroAutolinking = file("../nitrogen/generated/android/NitroSplittinglyWidget+autolinking.gradle")
+if (nitroAutolinking.exists()) {
+  apply from: nitroAutolinking
+}
+
+android {
+  namespace "com.balata.splittinglywidget"
+  compileSdk safeExtGet("compileSdkVersion", 35)
+
+  defaultConfig {
+    minSdk safeExtGet("minSdkVersion", 24)
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  if (findProject(":react-native-nitro-modules") != null) {
+    implementation project(":react-native-nitro-modules")
+  }
+}
+
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}

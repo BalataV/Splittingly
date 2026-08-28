@@ -12,7 +12,7 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import Screen from '../components/Screen';
-import { useUi, Button, Field, Label, Segmented, Check, Chip, Avatar, Stepper, HardShadow } from '../components/ui';
+import { useUi, Button, Field, Label, Segmented, Check, Chip, Avatar, Stepper, HardShadow, Toggle, Row } from '../components/ui';
 import { Money, MoneySlot } from '../components/Money';
 import { MascotStrip } from '../components/Mascot';
 import { ReceiptThumb, ReceiptAdd } from '../components/Receipt';
@@ -21,9 +21,9 @@ import { t, plural } from '../i18n';
 import { quipFor } from '../quips';
 import { parseAmount, splitEqual, splitShares, remainderOf, fmt } from '../money';
 import { currency, decimalsOf } from '../currencies';
-import { CATEGORIES } from '../categories';
+import { mergedCategories } from '../categories';
 import { initial, ME } from '../logic';
-import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE } from '../entitlements';
+import { canAddReceipt, FREE_RECEIPTS_PER_EXPENSE, canUseFxLock } from '../entitlements';
 import { SPACE, BORDER } from '../theme';
 import type { SplitType } from '../types';
 
@@ -133,7 +133,7 @@ export default function AddExpense() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ gap: SPACE.sm, paddingRight: SPACE.screen }}
         >
-          {CATEGORIES.map((cat) => (
+          {mergedCategories(state.groupCategories[d.groupId ?? ''] ?? []).map((cat) => (
             <Chip
               key={cat.key}
               label={cat.glyph + '  ' + t(cat.label)}
@@ -260,6 +260,37 @@ export default function AddExpense() {
         <Text style={[ty('caption'), { color: c.textMuted }]}>
           {t('This group counts in {cur}. Your display currency is {mine}.', { cur: d.currency, mine: state.currency })}
         </Text>
+      )}
+
+      {/* Zamčený kurz (Pro): uloží dnešní přepočet na výdaj, ať „≈ ve tvé
+          měně" u tohohle výdaje nekolísá se dnem, kdy se na něj díváš.
+          Nevstupuje do dluhu — ten je dál v měně skupiny. */}
+      {d.currency !== state.currency && (
+        <>
+          <Row>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[ty('rowTitle'), { color: c.text }]}>{t('Lock exchange rate')}</Text>
+              <Text style={[ty('rowMeta'), { color: c.textMuted }]}>{t('Freeze today’s rate for this expense.')}</Text>
+            </View>
+            <Toggle
+              value={d.fxRate != null}
+              label={t('Lock exchange rate')}
+              onChange={(on) => {
+                if (!canUseFxLock(state.isPro)) { actions.navigate('remove_ads'); return; }
+                if (on && state.fxRates && state.fxRates[d.currency]) {
+                  actions.setDraft({ fxCcy: state.currency, fxRate: 1 / state.fxRates[d.currency] });
+                } else {
+                  actions.setDraft({ fxCcy: null, fxRate: null });
+                }
+              }}
+            />
+          </Row>
+          {d.fxRate != null && d.fxCcy && (
+            <Text style={[ty('caption'), { color: c.textMuted }]}>
+              {t('1 {a} = {rate} {b}', { a: d.currency, rate: d.fxRate.toFixed(4), b: d.fxCcy })}
+            </Text>
+          )}
+        </>
       )}
     </Screen>
   );

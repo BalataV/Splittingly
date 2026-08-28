@@ -25,6 +25,36 @@ export const CATEGORIES: CategoryDef[] = [
 const BY_KEY: Record<string, CategoryDef> = {};
 CATEGORIES.forEach((c) => { BY_KEY[c.key] = c; });
 
+/** Def pro vlastní kategorii skupiny: klíč = název, placeholder glyf/barva z „other". */
+function customDef(name: string): CategoryDef {
+  return { key: name, label: name, glyph: BY_KEY.other.glyph, color: BY_KEY.other.color };
+}
+
 export function category(key: string): CategoryDef {
-  return BY_KEY[key] || BY_KEY.other;
+  if (BY_KEY[key]) return BY_KEY[key];
+  // Neznámý klíč = vlastní kategorie skupiny (Pro). `expenses.category` je
+  // volný text, ne cizí klíč — vykreslíme název tak, jak je uložený, ne „Other".
+  const name = (key || '').trim();
+  return name ? customDef(name) : BY_KEY.other;
+}
+
+/**
+ * Výchozí kategorie + vlastní kategorie skupiny (Pro) v jednom seznamu pro
+ * pickery. Vlastní kategorie mají klíč rovný trimnutému názvu; duplicity
+ * (shoda s výchozím klíčem i mezi sebou) se zahodí. Řazení: výchozí první
+ * v pevném pořadí, pak vlastní tak, jak přišly z API (to řadí podle názvu).
+ *
+ * `src/categories.ts` zůstává LIST — proto se sem nepředává `RawGroupCategory`,
+ * jen `{ name }`. Volá ui-a-lokalizace z obrazovek, které mají `state.groupCategories`.
+ */
+export function mergedCategories(custom: { name: string }[] = []): CategoryDef[] {
+  const seen = new Set(CATEGORIES.map((c) => c.key));
+  const out: CategoryDef[] = [...CATEGORIES];
+  for (const c of custom) {
+    const name = c.name.trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    out.push(customDef(name));
+  }
+  return out;
 }

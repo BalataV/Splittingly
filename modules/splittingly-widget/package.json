@@ -1,0 +1,13 @@
+{
+  "name": "splittingly-widget",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nitro most JS -> sdílené úložiště pro home-screen widget",
+  "main": "index.ts",
+  "scripts": {
+    "nitrogen": "nitrogen ."
+  },
+  "peerDependencies": {
+    "react-native-nitro-modules": "0.36.5"
+  }
+}

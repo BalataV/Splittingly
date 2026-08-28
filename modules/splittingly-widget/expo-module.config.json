@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "podspecPaths": ["./NitroSplittinglyWidget.podspec"]
+  },
+  "android": {
+    "path": "./android",
+    "modules": []
+  }
+}

@@ -29,9 +29,12 @@ import Activity from './screens/Activity';
 import Search from './screens/Search';
 import ShareCard from './screens/ShareCard';
 import { Recurring, RecurringForm } from './screens/Recurring';
+import GroupCategories from './screens/GroupCategories';
+import Trends from './screens/Trends';
 import Setup from './screens/Setup';
 import { TabIcon, type TabIconName } from './components/TabIcon';
 import { Profile, LanguagePicker, CurrencyPicker, Appearance, Notifications, RemoveAds, Privacy } from './screens/Settings';
+import LockGate from './components/LockGate';
 
 /**
  * Maximální šířka obsahu.
@@ -68,6 +71,8 @@ function RootInner() {
   const { state } = useApp();
 
   if (state.booting) return <Splash />;
+  // Zámek nahrazuje CELOU appku — bez tab baru, banneru, čehokoli.
+  if (state.locked) return <LockGate />;
 
   const sc = state.screen;
   const chrome = !NO_CHROME.includes(sc);
@@ -93,6 +98,8 @@ function RootInner() {
   else if (sc === 'share_card') screen = <ShareCard />;
   else if (sc === 'recurring') screen = <Recurring />;
   else if (sc === 'recurring_form') screen = <RecurringForm />;
+  else if (sc === 'group_categories') screen = <GroupCategories />;
+  else if (sc === 'trends') screen = <Trends />;
   else if (sc === 'profile') screen = <Profile />;
   else if (sc === 'language') screen = <LanguagePicker />;
   else if (sc === 'currency') screen = <CurrencyPicker />;
