@@ -145,6 +145,11 @@ export default function GroupDetail() {
         {CLOUD_MODE && (
           <Button label={t('Recurring')} kind="plain" offset={0} onPress={actions.openRecurring} />
         )}
+        {/* Vlastní kategorie skupiny — server, jen cloudový režim. Bez Pro
+            vede „Add" na obrazovce dál na nabídku. */}
+        {CLOUD_MODE && (
+          <Button label={t('Categories')} kind="plain" offset={0} onPress={() => actions.navigate('group_categories')} />
+        )}
       </View>
     </Screen>
   );

@@ -66,6 +66,10 @@ export default function Stats() {
         })}
       </View>
 
+      {/* Měsíc-po-měsíci a rostoucí kategorie — Pro. Řádek je vidět i bez
+          Pro, obrazovka Trends si gate řeší sama (jako Export / Recurring). */}
+      <Chip label={t('Spending trends →')} onPress={() => actions.navigate('trends')} />
+
       {/* celkem + týdenní graf */}
       <HardShadow offset={5}>
         <View style={{ backgroundColor: c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 14, gap: SPACE.md }}>
