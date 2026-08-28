@@ -54,6 +54,8 @@
     "web": "expo start --web --port 8088",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "eas-build-post-install": "cd modules/splittingly-widget && npx --yes nitrogen",
+    "nitrogen": "cd modules/splittingly-widget && npx --yes nitrogen",
     "check:money": "node scripts/check-money.mjs",
     "check:i18n": "node scripts/check-i18n.mjs && node scripts/i18n-audit-case.mjs && node scripts/i18n-audit-shape.mjs",
     "i18n:keys": "node scripts/i18n-keys.mjs",

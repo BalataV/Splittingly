@@ -3,6 +3,10 @@ node_modules/
 dist/
 web-build/
 builds/
+
+# Nitro codegen — generuje se z *.nitro.ts při buildu
+# (`npm run nitrogen` lokálně, `eas-build-post-install` na EAS).
+modules/*/nitrogen/generated/
 *.jks
 *.p8
 *.p12
