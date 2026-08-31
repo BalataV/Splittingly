@@ -20,6 +20,7 @@ import { useApp } from '../store';
 import { t, plural } from '../i18n';
 import { quipFor } from '../quips';
 import { parseAmount, splitEqual, splitShares, remainderOf, fmt } from '../money';
+import { rateFor } from '../fx';
 import { currency, decimalsOf } from '../currencies';
 import { mergedCategories } from '../categories';
 import { initial, ME } from '../logic';
@@ -277,8 +278,9 @@ export default function AddExpense() {
               label={t('Lock exchange rate')}
               onChange={(on) => {
                 if (!canUseFxLock(state.isPro)) { actions.navigate('remove_ads'); return; }
-                if (on && state.fxRates && state.fxRates[d.currency]) {
-                  actions.setDraft({ fxCcy: state.currency, fxRate: 1 / state.fxRates[d.currency] });
+                const rate = on ? rateFor(state.fxRates, d.currency, state.currency) : null;
+                if (rate) {
+                  actions.setDraft({ fxCcy: state.currency, fxRate: rate });
                 } else {
                   actions.setDraft({ fxCcy: null, fxRate: null });
                 }

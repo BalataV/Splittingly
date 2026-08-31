@@ -23,6 +23,16 @@ function mapCategory(c: any): RawGroupCategory {
   return { id: c.id, groupId: c.group_id, name: c.name, createdAt: c.created_at };
 }
 
+// Založení i přejmenování může spadnout na unikát `(group_id, lower(name))`
+// → Postgres `unique_violation` (kód 23505). Překlopíme na hlášku, kterou
+// `store.tsx` mapuje na lokalizovaný toast; ostatní chyby probublají dál.
+const CATEGORY_EXISTS = 'category already exists';
+
+function throwCategoryError(error: { code?: string }): never {
+  if (error.code === '23505') throw new Error(CATEGORY_EXISTS);
+  throw error;
+}
+
 export async function listGroupCategories(groupId: string): Promise<RawGroupCategory[]> {
   const { data, error } = await supabase
     .from('group_categories')
@@ -40,11 +50,7 @@ export async function createGroupCategory(groupId: string, name: string): Promis
     .insert({ group_id: groupId, name: name.trim(), created_by: u.user?.id })
     .select('id')
     .single();
-  if (error) {
-    // Unikát `(group_id, lower(name))` → Postgres unique_violation.
-    if (error.code === '23505') throw new Error('category already exists');
-    throw error;
-  }
+  if (error) throwCategoryError(error);
   return data.id as string;
 }
 
@@ -53,10 +59,7 @@ export async function renameGroupCategory(id: string, name: string): Promise<voi
     .from('group_categories')
     .update({ name: name.trim() })
     .eq('id', id);
-  if (error) {
-    if (error.code === '23505') throw new Error('category already exists');
-    throw error;
-  }
+  if (error) throwCategoryError(error);
 }
 
 export async function deleteGroupCategory(id: string): Promise<void> {

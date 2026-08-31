@@ -5,7 +5,7 @@
 // Den 15 v měsíci drží data bezpečně daleko od hranice měsíce i po převodu
 // přes ISO (UTC), takže se měsíc nezmění posunem časové zóny.
 
-import { monthlyTotals, categoryDrift, trendSummary, byCategory } from '../src/stats';
+import { monthlyTotals, categoryDrift, trendSummary, byCategory, total } from '../src/stats';
 import type { Expense } from '../src/types';
 
 const mk = (o: Partial<Expense> & { amountMinor: number; spentAt: string }): Expense => ({
@@ -43,6 +43,30 @@ const nextKey = (key: string): string => {
   const [y, m] = key.split('-').map(Number);
   const d = new Date(y, m, 1); // m je 1-based → new Date(y, m) = následující měsíc
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+};
+
+/**
+ * Deterministický generátor pro vlastnostní testy: seedovaný LCG (žádná
+ * závislost na `Math.random`, ať test nebliká) → pseudonáhodné dávky výdajů
+ * v obou měnách, s různými kategoriemi, částkami i měsíci.
+ */
+const lcg = (seed: number) => () => {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return seed / 0x100000000;
+};
+const randomExpenses = (seed: number, count: number): Expense[] => {
+  const rnd = lcg(seed);
+  const cats = ['Food', 'Bar', 'Taxi', 'Ski pass', 'Home'];
+  const out: Expense[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(mk({
+      amountMinor: 1 + Math.floor(rnd() * 500000),
+      spentAt: agoIso(Math.floor(rnd() * 18), 1 + Math.floor(rnd() * 27)),
+      currency: rnd() < 0.75 ? 'EUR' : 'USD',
+      category: cats[Math.floor(rnd() * cats.length)],
+    }));
+  }
+  return out;
 };
 
 describe('monthlyTotals', () => {
@@ -111,6 +135,30 @@ describe('monthlyTotals', () => {
     ];
     const s = monthlyTotals(e, 'EUR', 2);
     expect(s.map((b) => b.totalMinor)).toEqual([0, 900]);
+  });
+
+  // Vlastnost: agregace po měsících nic nepřidá ani neztratí. Součet všech
+  // košů se musí rovnat součtu výdajů v dané měně, jejichž měsíc padne do okna
+  // — spočítáno nezávisle na implementaci (přes množinu klíčů oken).
+  it('součet košů = součet výdajů v okně (celočíselně, beze ztráty)', () => {
+    for (const seed of [1, 42, 777, 2024, 99999]) {
+      for (const months of [1, 3, 6, 12]) {
+        const e = randomExpenses(seed, 60);
+        const windowKeys = new Set(
+          Array.from({ length: months }, (_, i) => agoKey(months - 1 - i)),
+        );
+        const expected = e
+          .filter((x) => x.currency === 'EUR')
+          .filter((x) => {
+            const d = new Date(x.spentAt);
+            const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            return windowKeys.has(k);
+          })
+          .reduce((a, x) => a + x.amountMinor, 0);
+        const got = monthlyTotals(e, 'EUR', months).reduce((a, b) => a + b.totalMinor, 0);
+        expect(got).toBe(expected);
+      }
+    }
   });
 });
 
@@ -237,6 +285,22 @@ describe('byCategory', () => {
   it('prázdný vstup → prázdné pole', () => {
     expect(byCategory([], 'EUR')).toEqual([]);
   });
+
+  // Vlastnost: rozpad po kategoriích celek neztratí ani nezdvojí. Součet
+  // částek přes všechny řádky se rovná součtu výdajů v dané měně (`total`).
+  // A procenta se po zaokrouhlení drží u 100 v mezích ±1 na řádek.
+  it('součet částek po kategoriích = celek v dané měně; procenta ≈ 100', () => {
+    for (const seed of [3, 55, 808, 12321, 654321]) {
+      const e = randomExpenses(seed, 80);
+      const rows = byCategory(e, 'EUR');
+      const sumRows = rows.reduce((a, r) => a + r.amountMinor, 0);
+      expect(sumRows).toBe(total(e, 'EUR'));
+
+      const sumPct = rows.reduce((a, r) => a + r.pct, 0);
+      expect(rows.every((r) => Number.isInteger(r.pct))).toBe(true);
+      expect(Math.abs(sumPct - 100)).toBeLessThanOrEqual(rows.length);
+    }
+  });
 });
 
 describe('trendSummary', () => {
@@ -281,5 +345,17 @@ describe('trendSummary', () => {
     expect(trendSummary(e, 'EUR')).toEqual({
       thisMonthMinor: 1000, lastMonthMinor: 2000, pctChange: -50,
     });
+  });
+
+  // Vlastnost: `trendSummary` je jen pohled na poslední dva prvky měsíční
+  // řady — this/last měsíc musí přesně sedět na `monthlyTotals(_, _, 2)`.
+  it('this/last měsíc odpovídá posledním dvěma košům monthlyTotals', () => {
+    for (const seed of [8, 64, 909, 45654]) {
+      const e = randomExpenses(seed, 50);
+      const [last, current] = monthlyTotals(e, 'EUR', 2);
+      const s = trendSummary(e, 'EUR');
+      expect(s.thisMonthMinor).toBe(current.totalMinor);
+      expect(s.lastMonthMinor).toBe(last.totalMinor);
+    }
   });
 });

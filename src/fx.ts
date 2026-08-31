@@ -57,3 +57,15 @@ export function convert(
   const converted = (units / rFrom) * rTo;
   return Math.round(converted * Math.pow(10, toDecimals));
 }
+
+/**
+ * Kurz k zamknutí na výdaji (Pro): kolik jednotek `to` za 1 jednotku `from`.
+ * `rates` je mapa z `loadRates(to)` (`to` je base) — proto inverze.
+ * `null` znamená „nevím", stejně jako u `convert()`.
+ */
+export function rateFor(rates: Record<string, number> | null, from: string, to: string): number | null {
+  if (!rates) return null;
+  if (from === to) return 1;
+  const r = rates[from];
+  return r ? 1 / r : null;
+}

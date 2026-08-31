@@ -344,6 +344,8 @@ export function Appearance() {
             <Pressable
               key={key}
               onPress={() => (locked ? actions.navigate('remove_ads') : actions.setTheme(key as ThemeName))}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
               style={{ width: '48%' }}
             >
               <View style={{ position: 'relative' }}>
@@ -378,7 +380,13 @@ export function Appearance() {
               const selected = (state.appIcon || '') === ic.key;
               const locked = ic.key !== '' && !canUseAltIcon(state.isPro);
               return (
-                <Pressable key={ic.key || 'default'} onPress={() => actions.setAppIcon(ic.key)} style={{ width: '48%' }}>
+                <Pressable
+                  key={ic.key || 'default'}
+                  onPress={() => actions.setAppIcon(ic.key)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  style={{ width: '48%' }}
+                >
                   <View style={{ position: 'relative' }}>
                     {selected && <View style={{ position: 'absolute', top: 4, left: 4, right: -4, bottom: -4, backgroundColor: c.shadow }} />}
                     <View style={{ backgroundColor: locked ? c.surfaceSunken : c.surface, borderWidth: BORDER.card, borderColor: c.border, padding: 12, gap: SPACE.sm }}>

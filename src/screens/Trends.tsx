@@ -9,8 +9,8 @@
 import React, { useState } from 'react';
 import { View, Text } from 'react-native';
 import Screen from '../components/Screen';
-import { useUi, Card, HardShadow, Chip, Label } from '../components/ui';
-import { Money, MoneySlot } from '../components/Money';
+import { useUi, Button, Card, HardShadow, Chip, Label } from '../components/ui';
+import { Money } from '../components/Money';
 import { useApp } from '../store';
 import { t } from '../i18n';
 import { fmt } from '../money';
@@ -34,7 +34,7 @@ export default function Trends() {
       <Screen
         title={t('TRENDS')}
         onBack={actions.goBack}
-        footer={<Chip label={t('Unlock trends with Pro')} active onPress={() => actions.navigate('remove_ads')} />}
+        footer={<Button label={t('Unlock trends with Pro')} kind="accent" onPress={() => actions.navigate('remove_ads')} />}
       >
         <Card fill={c.accent}>
           <Text style={[ty('caption'), { color: c.onAccent }]}>

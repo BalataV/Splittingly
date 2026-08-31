@@ -169,6 +169,15 @@ export function remainderOf(totalMinor: number, exactMinor: number[]): number {
 }
 
 /**
+ * Přepočet částky napevno daným kurzem (Pro: zamčený FX kurz na výdaji).
+ * Na rozdíl od `fx.ts:convert()` nebere mapu kurzů, ale jeden konkrétní
+ * poměr — pro zobrazení už zamčeného kurzu, ne pro jeho dohledání.
+ */
+export function applyRate(amountMinor: number, fromDecimals: number, toDecimals: number, rate: number): number {
+  return Math.round((amountMinor / Math.pow(10, fromDecimals)) * rate * Math.pow(10, toDecimals));
+}
+
+/**
  * Podíl jednoho účastníka na výdaji. Jediné místo, kde se rozhoduje,
  * co který režim dělení znamená — obrazovky se na to jen ptají.
  */

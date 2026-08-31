@@ -114,31 +114,47 @@ function monthKey(d: Date): string {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
+/** Začátek kalendářního měsíce `back` měsíců zpět od `base` (lokální čas). */
+function monthStart(base: Date, back: number): Date {
+  // Date normalizuje záporný měsíc → přelom roku řeší sám.
+  return new Date(base.getFullYear(), base.getMonth() - back, 1);
+}
+
+/**
+ * Výdaje jen v dané měně a s platným datem, jako dvojice výdaj + `Date`.
+ * Sdílený předfiltr měsíčních agregací níž: currency filtr a NaN guard
+ * na jednom místě, ať je každá funkce neopakuje.
+ */
+function datedInCurrency(expenses: Expense[], currency: string): { e: Expense; d: Date }[] {
+  const out: { e: Expense; d: Date }[] = [];
+  for (const e of expenses) {
+    if (e.currency !== currency) continue;
+    const d = new Date(e.spentAt);
+    if (!Number.isNaN(d.getTime())) out.push({ e, d });
+  }
+  return out;
+}
+
 /**
  * Součty výdajů po kalendářních měsících za posledních `monthsBack` měsíců
  * (poslední prvek = aktuální, ještě neuzavřený měsíc). Souvislá řada:
  * měsíc bez výdajů má `totalMinor: 0`. Jen daná měna.
  */
 export function monthlyTotals(expenses: Expense[], currency: string, monthsBack: number): MonthlyTotal[] {
-  const n = Math.max(0, Math.floor(monthsBack));
-  if (n === 0) return [];
+  const months = Math.max(0, Math.floor(monthsBack));
+  if (months === 0) return [];
   const now = new Date();
   const buckets: MonthlyTotal[] = [];
-  const at: Record<string, number> = {};
-  for (let i = n - 1; i >= 0; i -= 1) {
-    // Date normalizuje záporný měsíc → přelom roku řeší sám.
-    const key = monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1));
-    at[key] = buckets.length;
+  const idxByMonth: Record<string, number> = {};
+  for (let i = months - 1; i >= 0; i -= 1) {
+    const key = monthKey(monthStart(now, i));
+    idxByMonth[key] = buckets.length;
     buckets.push({ month: key, totalMinor: 0 });
   }
-  expenses
-    .filter((e) => e.currency === currency)
-    .forEach((e) => {
-      const d = new Date(e.spentAt);
-      if (Number.isNaN(d.getTime())) return;
-      const idx = at[monthKey(d)];
-      if (idx !== undefined) buckets[idx].totalMinor += e.amountMinor;
-    });
+  for (const { e, d } of datedInCurrency(expenses, currency)) {
+    const idx = idxByMonth[monthKey(d)];
+    if (idx !== undefined) buckets[idx].totalMinor += e.amountMinor;
+  }
   return buckets;
 }
 
@@ -150,28 +166,25 @@ export function monthlyTotals(expenses: Expense[], currency: string, monthsBack:
  * při shodě podle názvu kategorie (deterministicky).
  */
 export function categoryDrift(expenses: Expense[], currency: string, monthsBack: number): CategoryDrift[] {
-  const w = Math.max(1, Math.floor(monthsBack));
+  const windowMonths = Math.max(1, Math.floor(monthsBack));
   const now = new Date();
-  const currentEnd = new Date(now.getFullYear(), now.getMonth(), 1).getTime();       // začátek aktuálního měsíce, exkluzivně
-  const currentStart = new Date(now.getFullYear(), now.getMonth() - w, 1).getTime();
-  const prevStart = new Date(now.getFullYear(), now.getMonth() - 2 * w, 1).getTime();
+  const currentEnd = monthStart(now, 0).getTime();               // začátek aktuálního měsíce, exkluzivně
+  const currentStart = monthStart(now, windowMonths).getTime();
   const prevEnd = currentStart;
+  const prevStart = monthStart(now, 2 * windowMonths).getTime();
 
-  const cur: Record<string, number> = {};
-  const prev: Record<string, number> = {};
-  expenses
-    .filter((e) => e.currency === currency)
-    .forEach((e) => {
-      const t = new Date(e.spentAt).getTime();
-      if (Number.isNaN(t)) return;
-      if (t >= currentStart && t < currentEnd) cur[e.category] = (cur[e.category] || 0) + e.amountMinor;
-      else if (t >= prevStart && t < prevEnd) prev[e.category] = (prev[e.category] || 0) + e.amountMinor;
-    });
+  const curSums: Record<string, number> = {};
+  const prevSums: Record<string, number> = {};
+  for (const { e, d } of datedInCurrency(expenses, currency)) {
+    const t = d.getTime();
+    if (t >= currentStart && t < currentEnd) curSums[e.category] = (curSums[e.category] || 0) + e.amountMinor;
+    else if (t >= prevStart && t < prevEnd) prevSums[e.category] = (prevSums[e.category] || 0) + e.amountMinor;
+  }
 
-  return Array.from(new Set([...Object.keys(cur), ...Object.keys(prev)]))
+  return Array.from(new Set([...Object.keys(curSums), ...Object.keys(prevSums)]))
     .map((category) => {
-      const currentMinor = cur[category] || 0;
-      const prevMinor = prev[category] || 0;
+      const currentMinor = curSums[category] || 0;
+      const prevMinor = prevSums[category] || 0;
       return { category, currentMinor, prevMinor, deltaMinor: currentMinor - prevMinor };
     })
     .sort((a, b) => (Math.abs(b.deltaMinor) - Math.abs(a.deltaMinor)) || a.category.localeCompare(b.category));
@@ -179,20 +192,11 @@ export function categoryDrift(expenses: Expense[], currency: string, monthsBack:
 
 /** Tento měsíc vs. minulý (daná měna). `pctChange` je `null`, když minulý měsíc byl 0. */
 export function trendSummary(expenses: Expense[], currency: string): TrendSummary {
-  const now = new Date();
-  const thisKey = monthKey(new Date(now.getFullYear(), now.getMonth(), 1));
-  const lastKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-  let thisMonthMinor = 0;
-  let lastMonthMinor = 0;
-  expenses
-    .filter((e) => e.currency === currency)
-    .forEach((e) => {
-      const d = new Date(e.spentAt);
-      if (Number.isNaN(d.getTime())) return;
-      const key = monthKey(d);
-      if (key === thisKey) thisMonthMinor += e.amountMinor;
-      else if (key === lastKey) lastMonthMinor += e.amountMinor;
-    });
+  // Poslední dva prvky měsíční řady jsou přesně „minulý" a „tento" měsíc —
+  // stejné bucketování (lokální čas, NaN guard, jen daná měna) na jednom místě.
+  const [lastMonth, thisMonth] = monthlyTotals(expenses, currency, 2);
+  const lastMonthMinor = lastMonth.totalMinor;
+  const thisMonthMinor = thisMonth.totalMinor;
   const pctChange = lastMonthMinor === 0
     ? null
     : ((thisMonthMinor - lastMonthMinor) / lastMonthMinor) * 100;

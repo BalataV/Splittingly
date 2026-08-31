@@ -364,7 +364,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           signedOut: false,
         })
       : emptySnapshot('signedOut');
-    writeWidgetSnapshot(snap).catch((e) => console.warn('[widget] zápis snapshotu selhal:', String(e)));
+    // Chybu zápisu loguje sama fasáda (`src/widget`); tady stačí spolknout
+    // odmítnutí, widget je nadstavba, ne kritická cesta.
+    writeWidgetSnapshot(snap).catch(() => undefined);
   }, [state.booting, state.groups, state.expenses, state.payments, state.isPro, state.meUid]);
 
   // ------------------------------------------------------------------- start

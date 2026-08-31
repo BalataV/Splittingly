@@ -8,7 +8,7 @@
 // selže, zůstane tlačítko „Unlock".
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StatusBar } from 'react-native';
 import { useUi, Button } from './ui';
 import { useApp } from '../store';
 import { t } from '../i18n';
@@ -31,6 +31,7 @@ export default function LockGate() {
 
   return (
     <View style={{ flex: 1, backgroundColor: ground, alignItems: 'center', justifyContent: 'center', gap: SPACE.lg, padding: 40 }}>
+      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
       <Text style={{ fontFamily: 'ArchivoBlack_400Regular', fontSize: 34, lineHeight: 33, color: ink, textAlign: 'center', letterSpacing: -0.7 }}>
         {'SPLIT\nTINGLY'}
       </Text>

@@ -398,19 +398,3 @@ export interface AppContextValue {
   state: AppState;
   actions: Actions;
 }
-
-// ===========================================================================
-// Pro batch 2 — typový povrch APLIKOVÁN (viz změny výše: `Expense.fxRate/fxCcy`,
-// `ExpenseDraft.fxRate/fxCcy`, `AppState.locked/appLock/appIcon/groupCategories`,
-// akce `setAppLock`/`unlock`/`setAppIcon`/`addGroupCategory`/`renameGroupCategory`/
-// `deleteGroupCategory`, `ScreenName += 'trends' | 'group_categories'`).
-// Store wiring: `src/store.tsx`. Guardované fasády nativní části:
-// `src/applock.ts` (biometrie) a `src/appicon.ts` (alt ikony) — zatím no-op
-// stuby (deps `expo-local-authentication` / `expo-alternate-app-icons` už
-// nainstalované, nativní napojení dělá vydani-a-provoz). Widget snapshot:
-// `useEffect` ve `store.tsx` →
-// `writeWidgetSnapshot` z `src/widget`. Merge kategorií: `mergedCategories()`
-// v `src/categories.ts`. `src/widget/` a `src/categories.ts` zůstávají LIST —
-// neimportují `store`/`logic`/`money` (cyklus); `fmtMoneyMap`/`fmtSigned` se
-// injektují.
-// ===========================================================================

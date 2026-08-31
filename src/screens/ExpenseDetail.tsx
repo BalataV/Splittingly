@@ -8,7 +8,7 @@ import { ReceiptThumb } from '../components/Receipt';
 import { useApp, CLOUD_MODE } from '../store';
 import { expensesApi } from '../api';
 import { t, fmtDate, fmtTime } from '../i18n';
-import { shareOf, fmt } from '../money';
+import { shareOf, fmt, applyRate } from '../money';
 import { decimalsOf } from '../currencies';
 import { category } from '../categories';
 import { initial, ME } from '../logic';
@@ -65,7 +65,7 @@ export default function ExpenseDetail() {
             <Text style={[ty('rowMeta'), { color: c.textMuted, marginTop: -6 }]}>
               {t('≈ {amount} (locked rate)', {
                 amount: fmt(
-                  Math.round((e.amountMinor / Math.pow(10, decimalsOf(e.currency))) * e.fxRate * Math.pow(10, decimalsOf(e.fxCcy))),
+                  applyRate(e.amountMinor, decimalsOf(e.currency), decimalsOf(e.fxCcy), e.fxRate),
                   e.fxCcy,
                 ),
               })}
