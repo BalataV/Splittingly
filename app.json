@@ -117,6 +117,7 @@
         }
       ],
       "./plugins/withAndroidWidget",
+      "./plugins/withNitrogenCodegen",
       [
         "@bacons/apple-targets",
         {
