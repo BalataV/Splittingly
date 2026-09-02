@@ -224,6 +224,85 @@
       border: 2.5px solid var(--ink); display: grid; place-items: center;
       font-family: 'Archivo Black', sans-serif; font-size: 13px;
     }
+
+    /* ---------------------------------------------------- pohyb a odhalování
+       Vrstvení řízené scrollem. Prvky se ukládají zdola, ne poletují —
+       „Hard Split" je hranatý jazyk a měkké animace by ho popřely.
+
+       VŠECHNO je vypnutelné: kdo má v systému omezený pohyb, dostane
+       hotovou stránku bez jediného posunu. Není to ústupek, je to
+       podmínka — animace tu nenese žádnou informaci navíc. */
+    /* Skrývá se JEN tehdy, když si o to skript řekl třídou `js-anim`
+       na <html>. Bez skriptu — a při jakékoli jeho poruše — je stránka
+       normálně vidět. Text na landing page nesmí záviset na tom, jestli
+       doběhne ozdoba. */
+    .js-anim .rise { opacity: 0; transform: translateY(22px); }
+    .js-anim .rise.in { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1); }
+    .js-anim .rise:nth-child(2).in { transition-delay: .06s; }
+    .js-anim .rise:nth-child(3).in { transition-delay: .12s; }
+    .js-anim .rise:nth-child(4).in { transition-delay: .18s; }
+
+    /* Nouzové odkrytí. Odhalení přes `.in` závisí na tom, že přechod
+       doopravdy DOBĚHNE — a to není samozřejmost: v neaktivní záložce,
+       při předběžném vykreslování nebo v úsporném režimu prohlížeč
+       snímky nepočítá a `opacity` uvízne na nule. Text by pak zůstal
+       neviditelný, i když má prvek správnou třídu.
+       Tohle pravidlo ho ukáže bez přechodu, tedy i bez jediného snímku. */
+    .js-anim.reveal-all .rise {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+
+    /* ------------------------------------------------------- hero: sesypání
+       Čtyři dluhy se složí do jednoho převodu. Řádky nemizí — sjedou
+       na sebe a slehnou, protože o to v appce jde: dluhy nezmizí,
+       jen se započtou. */
+    .collapse { position: relative; }
+    .collapse .stack { position: relative; }
+    .collapse .row { transition: transform .55s cubic-bezier(.6,0,.2,1), opacity .35s ease; }
+    .collapse.done .row.folds { transform: translateY(var(--fold)) scaleY(.55); opacity: 0; }
+    .collapse .settled {
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .4s ease .45s, transform .4s ease .45s;
+    }
+    .collapse.done .settled { opacity: 1; transform: none; }
+    .collapse .settled .row { background: var(--accent); border-color: var(--ink); }
+
+    /* ---------------------------------------------------- jazyky a měny
+       Jedna a tatáž věta v deseti písmech, jedna a táž částka v šesti
+       formátech. Střídá se obsah, ne rozvržení — kdyby se přeskládal
+       i blok, čtenář by pokaždé hledal, kam se dívat. */
+    .swap {
+      display: block; min-height: 1.15em;
+      font-family: 'Archivo Black', sans-serif;
+      line-height: 1.12; letter-spacing: -0.5px;
+      transition: opacity .28s ease;
+    }
+    .swap.out { opacity: 0; }
+    .swap-lang { font-size: clamp(26px, 5.2vw, 46px); }
+    .swap-amt  { font-size: clamp(30px, 6.5vw, 52px); font-variant-numeric: tabular-nums; }
+    .swap-note { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 1.2em; }
+    .swap-rtl { direction: rtl; }
+
+    .ticker { border: 3px solid var(--ink); background: var(--surface); padding: 22px; }
+
+    /* Bez JavaScriptu je to obyčejný seznam a je vidět celý. Skript mu
+       přidá `.rotating` a od té chvíle svítí jen položka s `.on`. */
+    .swap-list { list-style: none; margin: 0; padding: 0; }
+    .swap-list > li + li { margin-top: 12px; }
+    .swap-list.rotating { position: relative; }
+    .swap-list.rotating > li { display: none; margin-top: 0; }
+    .swap-list.rotating > li.on { display: block; }
+    .ticker + .ticker { margin-top: 14px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .js-anim .rise, .js-anim .rise.in { opacity: 1; transform: none; transition: none; }
+      .collapse .row, .collapse .settled { transition: none; }
+      .collapse.done .row.folds { display: none; }
+      .collapse .settled { opacity: 1; transform: none; }
+      .swap { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -285,6 +364,8 @@
 
 <section class="hero">
   <div class="wrap">
+    <div class="grid cols-2" style="align-items:center">
+      <div>
     <p class="label" style="color:#101010">Split shared expenses</p>
     <h1>ONE BILL.<br />NO<br />ARGUMENTS.</h1>
     <p>Anyone logs what they paid and who it concerns. Splittingly works out who owes whom — and collapses ten debts into one payment.</p>
@@ -298,6 +379,28 @@
       <div class="soon-note">Coming soon to both stores.</div>
     </div>
     <p style="font-size:13px; margin-top:16px">Free. Ad-supported. One-time purchase removes the ads.</p>
+      </div>
+
+      <!-- Táž věc, kterou tvrdí nadpis, jen ukázaná. Čísla sedí se sekcí
+           „TEN DEBTS. ONE PAYMENT." o kus níž — kdyby se rozešla, čtenář
+           by si toho všiml dřív než my. -->
+      <div class="collapse" id="collapse" aria-hidden="true">
+        <div class="card flat">
+          <p class="label">Four debts</p>
+          <div class="stack">
+            <div class="row folds" style="--fold:0px"><span class="who">Mira → Tomáš</span><span class="amt neg">€33.60</span></div>
+            <div class="row folds" style="--fold:-44px"><span class="who">Kenji → Tomáš</span><span class="amt neg">€44.60</span></div>
+            <div class="row folds" style="--fold:-88px"><span class="who">Tomáš → Aya</span><span class="amt neg">€18.00</span></div>
+            <div class="row folds" style="--fold:-132px; margin-bottom:0"><span class="who">Aya → Mira</span><span class="amt neg">€18.00</span></div>
+          </div>
+          <div class="settled">
+            <p class="label" style="margin-top:14px">Two payments</p>
+            <div class="row"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
+            <div class="row" style="margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -368,13 +471,45 @@
         <p class="muted">Right-to-left languages mirror the whole interface. Amounts stay left-to-right inside the line, where they belong.</p>
         <p class="muted">Forty-five languages are translated in full — every screen, every error, every line the two characters say. The picker lists fifty; the remaining five run in English until their translation lands.</p>
       </div>
-      <div class="card flat">
-        <div class="row"><span class="who">Euro</span><span class="amt">€1.234,56</span></div>
-        <div class="row"><span class="who">US Dollar</span><span class="amt">$1,234.56</span></div>
-        <div class="row"><span class="who">Swedish Krona</span><span class="amt">1 234,56 kr</span></div>
-        <div class="row"><span class="who">Japanese Yen</span><span class="amt">¥1,235</span></div>
-        <div class="row"><span class="who">Indonesian Rupiah</span><span class="amt">Rp2.500.000</span></div>
-        <div class="row" style="margin-bottom:0"><span class="who">Thai Baht</span><span class="amt">฿1,234.56</span></div>
+      <div>
+        <!-- Řetězce jsou VYTAŽENÉ ze slovníků v src/translations, ne
+             přepsané ručně — jinak by se web a appka rozešly a nikdo by
+             si toho nevšiml.
+
+             Položky jsou v HTML, ne v poli uvnitř skriptu. Bez JavaScriptu
+             je vidět celý seznam; se skriptem se střídají. Čtečka obrazovky
+             i vyhledávač tak dostanou všechno, ne jen první řádek. -->
+        <div class="ticker">
+          <p class="label">One screen, forty-five languages</p>
+          <ul class="swap-list" data-rotate="4200">
+            <li class="swap-item first"><span class="swap swap-lang">WHO OWES WHOM.</span><span class="swap-note">English</span></li>
+            <li class="swap-item"><span class="swap swap-lang">WER WEM WAS SCHULDET.</span><span class="swap-note">Deutsch</span></li>
+            <li class="swap-item"><span class="swap swap-lang">QUIÉN LE DEBE A QUIÉN.</span><span class="swap-note">Español</span></li>
+            <li class="swap-item"><span class="swap swap-lang">QUI DOIT À QUI.</span><span class="swap-note">Français</span></li>
+            <li class="swap-item"><span class="swap swap-lang">KTO KOMU JEST WINIEN.</span><span class="swap-note">Polski</span></li>
+            <li class="swap-item"><span class="swap swap-lang">КТО КОМУ ДОЛЖЕН.</span><span class="swap-note">Русский</span></li>
+            <li class="swap-item"><span class="swap swap-lang">誰が誰に借りているか。</span><span class="swap-note">日本語</span></li>
+            <li class="swap-item"><span class="swap swap-lang">누가 누구에게 빚졌는지.</span><span class="swap-note">한국어</span></li>
+            <li class="swap-item"><span class="swap swap-lang">谁欠谁多少。</span><span class="swap-note">简体中文</span></li>
+            <li class="swap-item"><span class="swap swap-lang">ΠΟΙΟΣ ΧΡΩΣΤΑΕΙ ΣΕ ΠΟΙΟΝ.</span><span class="swap-note">Ελληνικά</span></li>
+            <li class="swap-item"><span class="swap swap-lang">ใครติดหนี้ใคร</span><span class="swap-note">ไทย</span></li>
+            <li class="swap-item"><span class="swap swap-lang">किस पर किसका उधार।</span><span class="swap-note">हिन्दी</span></li>
+            <li class="swap-item"><span class="swap swap-lang swap-rtl">من يدين لمن.</span><span class="swap-note">العربية</span></li>
+            <li class="swap-item"><span class="swap swap-lang swap-rtl">מי חייב למי.</span><span class="swap-note">עברית</span></li>
+          </ul>
+        </div>
+
+        <div class="ticker">
+          <p class="label">One amount, every currency</p>
+          <ul class="swap-list" data-rotate="2600">
+            <li class="swap-item first"><span class="swap swap-amt">€1.234,56</span><span class="swap-note">Euro</span></li>
+            <li class="swap-item"><span class="swap swap-amt">$1,234.56</span><span class="swap-note">US Dollar</span></li>
+            <li class="swap-item"><span class="swap swap-amt">1 234,56 kr</span><span class="swap-note">Swedish Krona</span></li>
+            <li class="swap-item"><span class="swap swap-amt">¥1,235</span><span class="swap-note">Japanese Yen — no decimals</span></li>
+            <li class="swap-item"><span class="swap swap-amt">Rp2.500.000</span><span class="swap-note">Indonesian Rupiah</span></li>
+            <li class="swap-item"><span class="swap swap-amt">฿1,234.56</span><span class="swap-note">Thai Baht</span></li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -473,6 +608,87 @@
       document.getElementById('openApp').href = 'splittingly://join/' + code;
     }
   })();
+</script>
+
+<script>
+/* Vrstvení a střídání. Obojí je POUZE ozdoba: bez tohoto skriptu je
+   stránka celá vidět a všechny položky seznamů jsou vypsané pod sebou.
+   Proto tu není žádná kontrola dostupnosti — když skript nedojde,
+   nic se neztratí.
+
+   Kdo má v systému omezený pohyb, dostane hotový stav bez animací.
+   Kontroluje se to jednou, ne u každého prvku. */
+(function () {
+  var klid = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* --- odhalování při scrollu -------------------------------------
+     Prvky ve skrytých sekcích (`.hidden`, třeba pozvánkový panel) se
+     vynechávají: pozorovatel se jich nikdy nedotkne, protože nemají
+     rozměr — a zůstaly by neviditelné i po tom, co se sekce ukáže. */
+  var vse = document.querySelectorAll('section .wrap > *, .grid > *');
+  var kandidati = [];
+  for (var i = 0; i < vse.length; i++) {
+    if (!vse[i].closest('.hidden')) kandidati.push(vse[i]);
+  }
+
+  if (!klid && 'IntersectionObserver' in window && kandidati.length) {
+    document.documentElement.classList.add('js-anim');
+    for (var a = 0; a < kandidati.length; a++) kandidati[a].classList.add('rise');
+
+    var oko = new IntersectionObserver(function (zaznamy) {
+      zaznamy.forEach(function (z) {
+        if (z.isIntersecting) { z.target.classList.add('in'); oko.unobserve(z.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0 });
+    for (var b = 0; b < kandidati.length; b++) oko.observe(kandidati[b]);
+
+    /* POJISTKA. Po třech vteřinách se ukáže všechno — bez přechodu,
+       protože ten k doběhnutí potřebuje vykreslované snímky a ty nemusí
+       přijít. Neviditelná stránka je horší porucha než chybějící animace
+       a příčin, proč se nespustí, je víc, než se dá vyjmenovat dopředu. */
+    setTimeout(function () {
+      document.documentElement.classList.add('reveal-all');
+    }, 3000);
+  }
+
+  /* --- sesypání dluhů v hlavičce ---------------------------------- */
+  var slozit = document.getElementById('collapse');
+  if (slozit) {
+    if (klid) slozit.classList.add('done');
+    else setTimeout(function () { slozit.classList.add('done'); }, 1400);
+  }
+
+  /* --- střídání jazyků a měn -------------------------------------- */
+  var seznamy = document.querySelectorAll('.swap-list');
+  for (var k = 0; k < seznamy.length; k++) (function (seznam) {
+    var polozky = seznam.children;
+    if (polozky.length < 2) return;
+
+    seznam.classList.add('rotating');
+    polozky[0].classList.add('on');
+    if (klid) return;              // klid = první položka a hotovo
+
+    var kde = 0;
+    var krok = parseInt(seznam.getAttribute('data-rotate'), 10) || 3000;
+
+    setInterval(function () {
+      /* Stránka na pozadí nemá co střídat — prohlížeč by časovač stejně
+         zpomalil a po návratu by naskočilo několik přeskoků za sebou. */
+      if (document.hidden) return;
+
+      var stara = polozky[kde];
+      var text = stara.querySelector('.swap');
+      if (text) text.classList.add('out');
+
+      setTimeout(function () {
+        stara.classList.remove('on');
+        if (text) text.classList.remove('out');
+        kde = (kde + 1) % polozky.length;
+        polozky[kde].classList.add('on');
+      }, 280);
+    }, krok);
+  })(seznamy[k]);
+})();
 </script>
 </body>
 </html>
