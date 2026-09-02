@@ -1,0 +1,21 @@
+
+**** Log file opened at 2026-08-28 09:12:29.655368 UTC+02:00 (Střední Evropa (běžný čas)), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 14
+Compilation date          : Jun 15 2024 06:07:33
+CPIC library              : 754.2024.02.29 version 3
+NI library                : 40
+Kernel Release            : 754 Patch Level 325
+Current working directory : c:\Users\Vojta\Desktop\splittingly\SplittinglyApp
+Program                   : python
+Process ID                : 11580
+User                      : Vojta
+Hardware                  : PC with Windows NT 12x AMD64 Level 25 (Mod 97 Step 2)
+Binary Type               : 64bit
+Operating_system          : Windows NT 10.0
+Hostname                  : DESKTOP-61DH7B0
+IP address                : 192.168.0.185
+IPv6 address              : 2a02:830a:b005:5100::e117
+Global trace level        : 0
+
+2026-08-28 09:12:29.655963 [32400] >> Info entry
+	Did not find config file c:\Users\Vojta\Desktop\splittingly\SplittinglyApp\sapnwrfc.ini.

@@ -1,0 +1,5 @@
+# Splittingly — vše veřejné, nic k blokování.
+User-agent: *
+Allow: /
+
+Sitemap: https://splittingly.com/sitemap.xml

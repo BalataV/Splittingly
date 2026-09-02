@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bez mapy webu si Google podstránky najde jen náhodou přes odkazy.
+     Datum měň, až se obsah opravdu změní; falešné „dnes" u všeho
+     vyhledávač ignoruje. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://splittingly.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://splittingly.com/support.html</loc><priority>0.6</priority></url>
+  <url><loc>https://splittingly.com/privacy.html</loc><priority>0.4</priority></url>
+  <url><loc>https://splittingly.com/terms.html</loc><priority>0.4</priority></url>
+  <url><loc>https://splittingly.com/delete-account.html</loc><priority>0.3</priority></url>
+</urlset>
