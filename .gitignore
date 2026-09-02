@@ -31,3 +31,6 @@ web-smoke/
 # nic tajného, ale do repozitáře nepatří.
 supabase/.temp/
 supabase/.branches/
+
+# Ladici log z vyvoje, do repozitare nepatri.
+dev_rfc.log
