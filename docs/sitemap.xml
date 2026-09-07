@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Bez mapy webu si Google podstránky najde jen náhodou přes odkazy.
-     Datum měň, až se obsah opravdu změní; falešné „dnes" u všeho
-     vyhledávač ignoruje. -->
+     `lastmod` měň jen tehdy, když se obsah opravdu změnil; falešné
+     „dnes" u všeho vyhledávač ignoruje a přestane datu věřit.
+
+     /app/ a /join/ tu ZÁMĚRNĚ nejsou. Obě jsou průchozí stránky
+     (potvrzení e-mailu, otevření pozvánky) a nesou `noindex`. Do mapy
+     patří jen to, co má někdo najít ve vyhledávání. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://splittingly.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://splittingly.com/</loc><lastmod>2026-09-07</lastmod><priority>1.0</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://splittingly.com/support.html</loc><priority>0.6</priority></url>
   <url><loc>https://splittingly.com/privacy.html</loc><priority>0.4</priority></url>
   <url><loc>https://splittingly.com/terms.html</loc><priority>0.4</priority></url>

@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#FFE500" />
   <title>Splittingly — expense splitting app. One bill, no arguments.</title>
-  <meta name="description" content="Splittingly is a free expense splitting app for flatmates, trips and family. Log what you paid, and it works out who owes whom — ten debts collapse into one payment. 45 languages, any currency." />
+  <meta name="description" content="Splittingly is a free expense splitting app for flatmates, trips and family. Log what you paid, and it works out who owes whom — ten debts collapse into one payment. 45 languages, 50 currencies." />
 
   <meta property="og:title" content="Splittingly — ten debts. One payment." />
   <meta property="og:description" content="Anyone logs what they paid. Splittingly works out who owes whom and minimises the number of transfers." />
@@ -28,7 +29,7 @@
     "applicationCategory": "FinanceApplication",
     "applicationSubCategory": "Expense splitting",
     "operatingSystem": "Android, iOS",
-    "description": "Free expense splitting app for flatmates, trips and family. Log what you paid and Splittingly works out who owes whom, collapsing ten debts into one payment. 45 languages, any currency, works offline.",
+    "description": "Free expense splitting app for flatmates, trips and family. Log what you paid and Splittingly works out who owes whom, collapsing ten debts into one payment. 45 languages, 50 currencies, works offline.",
     "url": "https://splittingly.com/",
     "image": "https://splittingly.com/img/og.png",
     "inLanguage": "en",
@@ -43,7 +44,7 @@
       "Fewest transfers needed to settle a group",
       "Receipt photos, categories and statistics",
       "Works offline",
-      "45 languages and any currency"
+      "45 languages and 50 currencies"
     ],
     "author": { "@type": "Person", "name": "Vojtěch Balata" }
   }
@@ -77,6 +78,27 @@
       }
     }
 
+    /* ------------------------------------------- světlé plochy uvnitř tmy
+       `.hero`, `.card.accent` a maketa telefonu mají barvu pozadí NAPEVNO —
+       žlutou nebo bílou — takže jsou světlé i v tmavém režimu. Tokeny uvnitř
+       se ale přepínaly s režimem: karta si vzala tmavý `--surface`, kdežto
+       text zůstal `#101010`. Černý text na černé kartě; celá ukázka výpočtu
+       v hlavičce byla v tmavém režimu nečitelná.
+
+       Uvnitř těchto ploch proto tokeny přibíjíme na světlé hodnoty. Zelená
+       a červená jsou tmavší než v appce záměrně — jejich světlé varianty
+       jsou určené na černé pozadí a na bílé kartě by nedaly ani 3:1. */
+    .on-light, .hero, .card.accent {
+      --surface: #FFFFFF;
+      --sunken: #EFEDE4;
+      --ink: #101010;
+      --muted: #4A4A4A;
+      --divider: #D8D4C8;
+      --positive: #007A38;
+      --negative: #C9200D;
+      color: #101010;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -86,6 +108,7 @@
       font-size: 17px;
       line-height: 1.5;
       min-height: 100vh;
+      overflow-x: hidden;
     }
     h1, h2, h3, .display, .amount {
       font-family: 'Archivo Black', system-ui, sans-serif;
@@ -98,7 +121,7 @@
     img, svg { max-width: 100%; display: block; }
     a { color: var(--primary); }
 
-    .wrap { width: 100%; max-width: 1020px; margin: 0 auto; padding: 0 18px; }
+    .wrap { width: 100%; max-width: 1060px; margin: 0 auto; padding: 0 18px; }
 
     /* Karta: 3px okraj + tvrdý posunutý stín, nulový poloměr. Žádné výjimky. */
     .card {
@@ -108,9 +131,16 @@
       padding: 24px;
     }
     .card.flat { box-shadow: none; }
-    .card.accent { background: var(--accent); color: #101010; }
+    .card.accent { background: var(--accent); }
     .card.accent a { color: #101010; }
     .card.ink { background: var(--ink); color: var(--bg); }
+
+    /* Stín povyroste, karta se posune proti němu. Stejná fyzika jako
+       u tlačítka, jen opačným směrem — nic se nerozmazává ani neškáluje. */
+    .card.lift { transition: transform .13s linear, box-shadow .13s linear; }
+    @media (hover: hover) {
+      .card.lift:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 var(--ink); }
+    }
 
     .btn {
       display: inline-block;
@@ -139,6 +169,14 @@
       text-transform: uppercase; color: var(--muted);
     }
 
+    /* ------------------------------------------------------ ukazatel scrollu
+       Vkládá ho JEN skript. Bez něj tenhle proužek vůbec neexistuje —
+       nehybný modrý pruh nahoře by byl horší než žádný. */
+    .prog {
+      position: fixed; top: 0; left: 0; height: 4px; width: 0;
+      background: var(--primary); z-index: 60; pointer-events: none;
+    }
+
     header.top {
       border-bottom: 3px solid var(--ink);
       background: var(--bg);
@@ -147,22 +185,39 @@
     header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; padding-bottom: 12px; }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
     .brand .name { font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: -0.02em; }
-    nav a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 14px; margin-left: 18px; }
+    nav a {
+      color: var(--ink); text-decoration: none; font-weight: 700; font-size: 14px;
+      margin-left: 18px; padding-bottom: 3px; border-bottom: 3px solid transparent;
+    }
+    nav a:hover { border-bottom-color: var(--accent); }
+    @media (max-width: 560px) { nav a { margin-left: 12px; font-size: 13px; } }
 
-    section { padding: 56px 0; border-bottom: 3px solid var(--ink); }
+    section { padding: 72px 0; border-bottom: 3px solid var(--ink); }
     section:last-of-type { border-bottom: none; }
-    .hero { background: var(--accent); color: #101010; }
-    .hero h1 { font-size: clamp(38px, 9vw, 74px); }
-    .hero p { font-size: 19px; max-width: 620px; margin-top: 20px; }
-    .hero .stores { margin-top: 28px; }
 
-    .grid { display: grid; gap: 18px; }
-    @media (min-width: 760px) { .cols-2 { grid-template-columns: 1fr 1fr; } .cols-3 { grid-template-columns: repeat(3, 1fr); } }
-
-    h2 { font-size: clamp(28px, 5vw, 40px); margin-bottom: 22px; }
+    /* Žlutý blok nad nadpisem sekce. Jediná ozdoba, kterou si nadpisy
+       dovolí — sjednotí stránku, aniž by cokoli tvrdila. */
+    h2 { font-size: clamp(30px, 5.4vw, 46px); margin-bottom: 24px; }
+    h2::before {
+      content: ""; display: block; width: 46px; height: 12px;
+      background: var(--accent); border: 3px solid var(--ink); margin-bottom: 16px;
+    }
     h3 { font-size: 19px; margin-bottom: 8px; }
     p + p { margin-top: 12px; }
     .muted { color: var(--muted); }
+
+    .hero { background: var(--accent); padding: 60px 0 68px; }
+    .hero h1 { font-size: clamp(40px, 9.2vw, 78px); }
+    .hero p.lead { font-size: 19px; max-width: 560px; margin-top: 20px; }
+    .hero .stores { margin-top: 28px; }
+
+    .grid { display: grid; gap: 18px; }
+    @media (min-width: 780px) {
+      .cols-2 { grid-template-columns: 1fr 1fr; }
+      .cols-3 { grid-template-columns: repeat(3, 1fr); }
+      .cols-4 { grid-template-columns: repeat(4, 1fr); }
+      .hero .cols-2 { grid-template-columns: 1.08fr .92fr; gap: 36px; align-items: center; }
+    }
 
     /* Ukázka výpočtu — žádné číslo se v ní nesmí ořezat. */
     .row {
@@ -200,9 +255,12 @@
       .badge.google img { height: 57px; margin: -9px -9px; }
     }
 
-    /* Rám reklamy je v appce SDĚLENÍ. Tady ho ukazujeme jako ukázku. */
+    /* Rám reklamy je v appce SDĚLENÍ. Tady ho ukazujeme jako ukázku.
+       Čárkovaná linka drží přesnou barvu z appky (theme.ts → adFrame),
+       ale POPISEK je tmavší: #5F5F5F na světlém podkladu dá 2,8:1 a to
+       je pod hranicí čitelnosti. Rám je ozdoba, text ne. */
     .adframe {
-      border: 2px dashed #5F5F5F; background: var(--sunken); color: #5F5F5F;
+      border: 2px dashed #5F5F5F; background: var(--sunken); color: #454545;
       padding: 16px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
     }
 
@@ -217,13 +275,84 @@
       text-align: center; border: 3px solid var(--ink); background: var(--surface);
       padding: 16px; margin: 18px 0;
     }
-    ol.steps { list-style: none; counter-reset: s; }
+    ol.steps { list-style: none; }
     ol.steps li { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
     ol.steps .num {
       flex: none; width: 26px; height: 26px; background: var(--accent); color: #101010;
       border: 2.5px solid var(--ink); display: grid; place-items: center;
       font-family: 'Archivo Black', sans-serif; font-size: 13px;
     }
+
+    /* ====================================================== maketa telefonu
+       Kreslená, ne vyfocená — screenshot by se s každou verzí appky rozešel
+       a nikdo by si toho nevšiml. Rozvržení, barvy i ikonky spodní lišty
+       jsou ale ty skutečné: tři záložky (src/components/TabIcon.tsx), žlutá
+       hlavička, tvrdé okraje. */
+    .phone {
+      width: 100%; max-width: 330px; margin: 0 auto;
+      border: 3px solid #101010; box-shadow: 12px 12px 0 #101010;
+      background: #FFFFFF;
+    }
+    .ph-bar {
+      background: #101010; color: #FAF7F0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 13px; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+    }
+    .ph-head { background: #FFE500; border-bottom: 3px solid #101010; padding: 14px 14px 13px; }
+    .ph-head .t { font-family: 'Archivo Black', sans-serif; font-size: 21px; letter-spacing: -.02em; }
+    .ph-body { padding: 14px; }
+    .ph-tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 3px solid #101010; background: #FAF7F0; }
+    .ph-tabs div {
+      padding: 9px 0 11px; display: grid; place-items: center; gap: 4px;
+      font-size: 9px; font-weight: 700; letter-spacing: .08em; color: #5A5A5A;
+    }
+    .ph-tabs div.on { color: #101010; }
+    .phone .row { margin-bottom: 6px; padding: 9px 11px; }
+    .phone .row .who { font-size: 13px; }
+    .phone .row .amt { font-size: 13.5px; }
+    .ph-btn {
+      background: #FFE500; border: 2.5px solid #101010; box-shadow: 4px 4px 0 #101010;
+      text-align: center; font-weight: 700; font-size: 13px; letter-spacing: .06em;
+      padding: 12px; margin-top: 12px;
+    }
+    .ph-note { font-size: 11.5px; color: #4A4A4A; margin-top: 9px; }
+
+    /* ------------------------------------------------------------ číselný pás
+       Čtyři čísla, která se dají ověřit: 45 přeložených jazyků, 50 měn
+       v přepínači, nula reklam na penězových obrazovkách, jeden převod.
+       Nic zaokrouhleného nahoru, nic s hvězdičkou. */
+    .band { background: var(--ink); color: var(--bg); }
+    .band .n { font-family: 'Archivo Black', sans-serif; font-size: clamp(46px, 8vw, 72px); line-height: .95; letter-spacing: -.03em; }
+    .band .k { font-size: 14px; margin-top: 10px; opacity: .82; }
+    .band h2 { color: var(--bg); }
+    .band .cell { border-left: 3px solid var(--bg); padding-left: 16px; }
+    @media (max-width: 779px) { .band .cell + .cell { margin-top: 26px; } }
+
+    /* ---------------------------------------------------- běžící pás jazyků
+       Řetězce jsou VYTAŽENÉ ze slovníků v src/translations, ne přepsané
+       ručně — jinak by se web a appka rozešly a nikdo by si toho nevšiml.
+
+       Druhá kopie seznamu je v HTML, ne doklonovaná skriptem: posun
+       o -50 % pak navazuje sám na sebe a bez JavaScriptu je pás obyčejný
+       vodorovně rolovatelný seznam se všemi jazyky. */
+    .marquee {
+      border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink);
+      background: var(--sunken); overflow-x: auto;
+    }
+    .js-anim .marquee { overflow: hidden; }
+    .mtrack { display: flex; width: max-content; }
+    .js-anim .mtrack { animation: slide 78s linear infinite; }
+    .js-anim .marquee.rev .mtrack { animation-duration: 94s; animation-direction: reverse; }
+    .js-anim .marquee:hover .mtrack { animation-play-state: paused; }
+    @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .mtrack ul { display: flex; list-style: none; }
+    .mtrack li {
+      display: flex; align-items: baseline; gap: 10px; white-space: nowrap;
+      padding: 13px 22px; border-right: 2px solid var(--divider);
+    }
+    .mtrack b { font-family: 'Archivo Black', sans-serif; font-weight: 400; font-size: 18px; letter-spacing: -.02em; }
+    .mtrack i { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+    .marquee + .marquee { border-top: none; }
 
     /* ---------------------------------------------------- pohyb a odhalování
        Vrstvení řízené scrollem. Prvky se ukládají zdola, ne poletují —
@@ -248,31 +377,89 @@
        snímky nepočítá a `opacity` uvízne na nule. Text by pak zůstal
        neviditelný, i když má prvek správnou třídu.
        Tohle pravidlo ho ukáže bez přechodu, tedy i bez jediného snímku. */
-    .js-anim.reveal-all .rise {
+    .js-anim.reveal-all .rise,
+    .js-anim.reveal-all .hw {
       opacity: 1 !important;
       transform: none !important;
       transition: none !important;
+      animation: none !important;
     }
 
+    /* --------------------------------------------------- úvodní zaclonění
+       Clona NENÍ v základním stavu vidět: `display:none` platí, dokud si
+       skript neřekne o `intro-on`. Bez JavaScriptu tedy neexistuje a nemá
+       jak se zaseknout přes obsah.
+
+       Odklízí ji časovač, ne konec přechodu. `setTimeout` běží i tam, kde
+       se nevykresluje jediný snímek; `transitionend` ne. Na tom už jsme
+       jednou uvízli a stránka zůstala prázdná. */
+    .intro { display: none; }
+    html.intro-on .intro {
+      display: grid; place-items: center;
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--accent); color: #101010;
+    }
+    html.intro-on body { overflow: hidden; }
+    html.intro-out .intro { opacity: 0; transition: opacity .4s ease; }
+    html.intro-gone .intro { display: none !important; }
+    /* Základní stav je HOTOVÝ, ne skrytý. Animace přidává až třída
+       `intro-anim` / `go`, a tu skript nasadí jedině po potvrzeném
+       snímku (requestAnimationFrame). Kdyby se totiž prohlížeč
+       nevykresloval — neaktivní karta, předběžné vykreslení, úsporný
+       režim — animace s `both` by uvízla na svém prvním klíčovém snímku
+       a z clony by zbyla prázdná žlutá plocha. Tohle přesně se stalo
+       při zkoušce. */
+    .intro-in { text-align: center; padding: 20px; }
+    .intro-mark { margin: 0 auto 18px; }
+    .intro-word {
+      font-family: 'Archivo Black', sans-serif; letter-spacing: -.02em;
+      font-size: clamp(34px, 9vw, 62px);
+    }
+    .intro-sub { font-size: 13px; font-weight: 700; letter-spacing: .18em; margin-top: 8px; }
+    .intro-bar { width: 190px; height: 10px; border: 3px solid #101010; background: #fff; margin: 22px auto 0; }
+    .intro-bar span { display: block; height: 100%; background: #101010; transform-origin: left; }
+    html.intro-anim .intro-mark { animation: markIn .5s cubic-bezier(.2,.7,.3,1) both; }
+    html.intro-anim .intro-word { animation: wordIn .45s ease .12s both; }
+    html.intro-anim .intro-sub { animation: wordIn .45s ease .2s both; }
+    html.intro-anim .intro-bar span { animation: barIn 1s linear both; }
+    @keyframes markIn { from { opacity: 0; transform: scale(.55) rotate(-10deg); } to { opacity: 1; transform: none; } }
+    @keyframes wordIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes barIn  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* Nadpis hlavičky po řádcích. Rozjede se, až clona zmizí — nebo hned,
+       když žádná nebyla. Bez `go` je nadpis prostě vidět, a `go` se nasadí
+       jen tehdy, když prohlížeč doopravdy kreslí. */
+    .hw { display: block; }
+    .js-anim.go .hw { opacity: 0; animation: hwIn .5s cubic-bezier(.2,.7,.3,1) both; }
+    .js-anim.go .hw:nth-child(1) { animation-delay: .04s; }
+    .js-anim.go .hw:nth-child(2) { animation-delay: .13s; }
+    .js-anim.go .hw:nth-child(3) { animation-delay: .22s; }
+    @keyframes hwIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
     /* ------------------------------------------------------- hero: sesypání
-       Čtyři dluhy se složí do jednoho převodu. Řádky nemizí — sjedou
-       na sebe a slehnou, protože o to v appce jde: dluhy nezmizí,
-       jen se započtou. */
-    .collapse { position: relative; }
-    .collapse .stack { position: relative; }
-    .collapse .row { transition: transform .55s cubic-bezier(.6,0,.2,1), opacity .35s ease; }
-    .collapse.done .row.folds { transform: translateY(var(--fold)) scaleY(.55); opacity: 0; }
-    .collapse .settled {
+       Čtyři dluhy se složí do dvou převodů. Řádky nemizí — sjedou na sebe
+       a slehnou, protože o to v appce jde: dluhy nezmizí, jen se započtou.
+
+       Oba stavy leží v JEDNÉ buňce mřížky přes sebe. Kdyby se čtyři řádky
+       opravdu odklidily z toku, karta by se o dvě stě bodů srazila,
+       hlavička by se přeskládala a stránka by po dvou a půl vteřinách
+       skočila. Takhle drží výšku vyšší z obou stavů a hýbe se jen obsah. */
+    .swapbox { display: grid; }
+    .swapbox > .pane { grid-area: 1 / 1; }
+    .collapse .pane.a { transition: opacity .3s ease .25s; }
+    .collapse.done .pane.a { opacity: 0; pointer-events: none; }
+    .collapse .row.folds { transition: transform .55s cubic-bezier(.6,0,.2,1); }
+    .collapse.done .row.folds { transform: translateY(var(--fold)) scaleY(.55); }
+    .collapse .pane.b {
       opacity: 0; transform: translateY(10px);
       transition: opacity .4s ease .45s, transform .4s ease .45s;
     }
-    .collapse.done .settled { opacity: 1; transform: none; }
-    .collapse .settled .row { background: var(--accent); border-color: var(--ink); }
+    .collapse.done .pane.b { opacity: 1; transform: none; }
+    .collapse .pane.b .row { background: var(--accent); border-color: var(--ink); }
 
-    /* ---------------------------------------------------- jazyky a měny
-       Jedna a tatáž věta v deseti písmech, jedna a táž částka v šesti
-       formátech. Střídá se obsah, ne rozvržení — kdyby se přeskládal
-       i blok, čtenář by pokaždé hledal, kam se dívat. */
+    /* ---------------------------------------------------------------- měny
+       Jedna a táž částka v šesti formátech. Střídá se obsah, ne rozvržení —
+       kdyby se přeskládal i blok, čtenář by pokaždé hledal, kam se dívat. */
     .swap {
       display: block; min-height: 1.15em;
       font-family: 'Archivo Black', sans-serif;
@@ -280,10 +467,8 @@
       transition: opacity .28s ease;
     }
     .swap.out { opacity: 0; }
-    .swap-lang { font-size: clamp(26px, 5.2vw, 46px); }
     .swap-amt  { font-size: clamp(30px, 6.5vw, 52px); font-variant-numeric: tabular-nums; }
     .swap-note { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 1.2em; }
-    .swap-rtl { direction: rtl; }
 
     .ticker { border: 3px solid var(--ink); background: var(--surface); padding: 22px; }
 
@@ -291,21 +476,40 @@
        přidá `.rotating` a od té chvíle svítí jen položka s `.on`. */
     .swap-list { list-style: none; margin: 0; padding: 0; }
     .swap-list > li + li { margin-top: 12px; }
-    .swap-list.rotating { position: relative; }
     .swap-list.rotating > li { display: none; margin-top: 0; }
     .swap-list.rotating > li.on { display: block; }
-    .ticker + .ticker { margin-top: 14px; }
 
     @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
       .js-anim .rise, .js-anim .rise.in { opacity: 1; transform: none; transition: none; }
-      .collapse .row, .collapse .settled { transition: none; }
-      .collapse.done .row.folds { display: none; }
-      .collapse .settled { opacity: 1; transform: none; }
+      .js-anim.go .hw { opacity: 1; animation: none; }
+      .collapse .row, .collapse .pane { transition: none; }
+      .collapse.done .pane.a { display: none; }
+      .collapse .pane.b { opacity: 1; transform: none; }
       .swap { transition: none; }
+      .mtrack { animation: none !important; }
+      .marquee { overflow-x: auto !important; }
+      .intro-mark, .intro-word, .intro-sub, .intro-bar span { animation: none !important; }
     }
   </style>
 </head>
 <body>
+
+<!-- ====================== ÚVODNÍ CLONA ======================
+     V základním stavu `display:none`. Zapne ji jedině skript. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-in">
+    <svg class="intro-mark" width="104" height="104" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#FFE500"/>
+      <polygon points="0,0 100,0 0,100" fill="#1F49FF"/>
+      <line x1="-13" y1="99.3" x2="113" y2="0.7" stroke="#101010" stroke-width="9"/>
+      <rect x="1.9" y="1.9" width="96.2" height="96.2" fill="none" stroke="#101010" stroke-width="3.8"/>
+    </svg>
+    <div class="intro-word">SPLITTINGLY</div>
+    <div class="intro-sub">ONE BILL. NO ARGUMENTS.</div>
+    <div class="intro-bar"><span></span></div>
+  </div>
+</div>
 
 <!-- ====================== POZVÁNKA (?g=KÓD) ====================== -->
 <section id="invite" class="invite hidden">
@@ -364,42 +568,192 @@
 
 <section class="hero">
   <div class="wrap">
-    <div class="grid cols-2" style="align-items:center">
+    <div class="grid cols-2">
       <div>
-    <p class="label" style="color:#101010">Split shared expenses</p>
-    <h1>ONE BILL.<br />NO<br />ARGUMENTS.</h1>
-    <p>Anyone logs what they paid and who it concerns. Splittingly works out who owes whom — and collapses ten debts into one payment.</p>
-    <div class="stores">
-<a class="badge apple soon" id="appleHero" href="#get" aria-label="Download on the App Store — coming soon">
-        <img src="img/appstore-en.svg" alt="Download on the App Store" />
-      </a>
-      <a class="badge google soon" id="playHero" href="#get" aria-label="Get it on Google Play — coming soon">
-        <img src="img/googleplay-en.png" alt="Get it on Google Play" />
-      </a>
-      <div class="soon-note">Coming soon to both stores.</div>
-    </div>
-    <p style="font-size:13px; margin-top:16px">Free. Ad-supported. One-time purchase removes the ads.</p>
+        <p class="label" style="color:#101010">Split shared expenses</p>
+        <h1><span class="hw">ONE BILL.</span><span class="hw">NO</span><span class="hw">ARGUMENTS.</span></h1>
+        <p class="lead">Anyone logs what they paid and who it concerns. Splittingly works out who owes whom — and collapses ten debts into one payment.</p>
+        <div class="stores">
+          <a class="badge apple soon" id="appleHero" href="#get" aria-label="Download on the App Store — coming soon">
+            <img src="img/appstore-en.svg" alt="Download on the App Store" />
+          </a>
+          <a class="badge google soon" id="playHero" href="#get" aria-label="Get it on Google Play — coming soon">
+            <img src="img/googleplay-en.png" alt="Get it on Google Play" />
+          </a>
+          <div class="soon-note">Coming soon to both stores.</div>
+        </div>
+        <p style="font-size:13px; margin-top:16px">Free. Ad-supported. One-time purchase removes the ads.</p>
       </div>
 
-      <!-- Táž věc, kterou tvrdí nadpis, jen ukázaná. Čísla sedí se sekcí
-           „TEN DEBTS. ONE PAYMENT." o kus níž — kdyby se rozešla, čtenář
-           by si toho všiml dřív než my. -->
-      <div class="collapse" id="collapse" aria-hidden="true">
-        <div class="card flat">
-          <p class="label">Four debts</p>
-          <div class="stack">
-            <div class="row folds" style="--fold:0px"><span class="who">Mira → Tomáš</span><span class="amt neg">€33.60</span></div>
-            <div class="row folds" style="--fold:-44px"><span class="who">Kenji → Tomáš</span><span class="amt neg">€44.60</span></div>
-            <div class="row folds" style="--fold:-88px"><span class="who">Tomáš → Aya</span><span class="amt neg">€18.00</span></div>
-            <div class="row folds" style="--fold:-132px; margin-bottom:0"><span class="who">Aya → Mira</span><span class="amt neg">€18.00</span></div>
+      <!-- Táž věc, kterou tvrdí nadpis, jen ukázaná na telefonu. Čísla sedí
+           se sekcí „TEN DEBTS. ONE PAYMENT." o kus níž — kdyby se rozešla,
+           čtenář by si toho všiml dřív než my. -->
+      <div>
+        <div class="phone on-light" aria-hidden="true">
+          <div class="ph-bar"><span>9:41</span><span>SPLITTINGLY</span></div>
+          <div class="ph-head">
+            <p class="label" style="color:#101010">Group · 4 people · EUR</p>
+            <div class="t">TOKYO TRIP</div>
           </div>
-          <div class="settled">
-            <p class="label" style="margin-top:14px">Two payments</p>
-            <div class="row"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
-            <div class="row" style="margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
+          <div class="ph-body collapse" id="collapse">
+            <div class="swapbox">
+              <div class="pane a">
+                <p class="label">Four debts</p>
+                <div class="stack" style="margin-top:8px">
+                  <div class="row folds" style="--fold:0px"><span class="who">Mira → Tomáš</span><span class="amt neg">€33.60</span></div>
+                  <div class="row folds" style="--fold:-49px"><span class="who">Kenji → Tomáš</span><span class="amt neg">€44.60</span></div>
+                  <div class="row folds" style="--fold:-98px"><span class="who">Tomáš → Aya</span><span class="amt neg">€18.00</span></div>
+                  <div class="row folds" style="--fold:-147px; margin-bottom:0"><span class="who">Aya → Mira</span><span class="amt neg">€18.00</span></div>
+                </div>
+              </div>
+              <div class="pane b">
+                <p class="label">Two payments</p>
+                <div class="row" style="margin-top:8px"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
+                <div class="row" style="margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
+                <div class="ph-btn">SETTLE UP</div>
+                <p class="ph-note">2 transfers settle everything. Aya is already even.</p>
+              </div>
+            </div>
+          </div>
+          <div class="ph-tabs">
+            <div class="on">
+              <svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" fill="none" stroke="#101010" stroke-width="2.5"/><rect x="8" y="8" width="8" height="8" fill="#101010"/></svg>
+              <span>GROUPS</span>
+            </div>
+            <div>
+              <svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" fill="none" stroke="#5A5A5A" stroke-width="2.5"/><line x1="2" y1="9" x2="22" y2="9" stroke="#5A5A5A" stroke-width="2.5"/><line x1="2" y1="15" x2="22" y2="15" stroke="#5A5A5A" stroke-width="2.5"/></svg>
+              <span>ACTIVITY</span>
+            </div>
+            <div>
+              <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#5A5A5A" stroke-width="2.5"/><circle cx="12" cy="12" r="4" fill="#5A5A5A"/></svg>
+              <span>YOU</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== BĚŽÍCÍ PÁS: jedna věta ve všech 45 přeložených jazycích ======
+     Každý řetězec je vytažený ze src/translations, ne přepsaný ručně.
+     Druhá kopie je tu kvůli plynulému navázání posunu; pro čtečky je
+     schovaná, aby jméno každého jazyka nezaznělo dvakrát. -->
+<div class="marquee" aria-label="Who owes whom, in all 45 translated languages">
+  <div class="mtrack">
+    <ul>
+      <li><b>WHO OWES WHOM.</b><i>English</i></li>
+      <li dir="rtl"><b>من يدين لمن.</b><i>العربية</i></li>
+      <li><b>КОЙ НА КОГО ДЪЛЖИ.</b><i>Български</i></li>
+      <li><b>কে কার কাছে দেনা।</b><i>বাংলা</i></li>
+      <li><b>QUI DEU A QUI.</b><i>Català</i></li>
+      <li><b>KDO KOMU DLUŽÍ.</b><i>Čeština</i></li>
+      <li><b>HVEM SKYLDER HVEM.</b><i>Dansk</i></li>
+      <li><b>WER WEM WAS SCHULDET.</b><i>Deutsch</i></li>
+      <li><b>ΠΟΙΟΣ ΧΡΩΣΤΑΕΙ ΣΕ ΠΟΙΟΝ.</b><i>Ελληνικά</i></li>
+      <li><b>QUIÉN LE DEBE A QUIÉN.</b><i>Español</i></li>
+      <li><b>KES KELLELE VÕLGNEB.</b><i>Eesti</i></li>
+      <li><b>NORK NORI ZOR DION.</b><i>Euskara</i></li>
+      <li dir="rtl"><b>چه کسی به چه کسی بدهکار است.</b><i>فارسی</i></li>
+      <li><b>KUKA ON VELKAA KENELLE.</b><i>Suomi</i></li>
+      <li><b>SINO ANG MAY UTANG KANINO.</b><i>Filipino</i></li>
+      <li><b>QUI DOIT À QUI.</b><i>Français</i></li>
+      <li><b>QUEN LLE DEBE A QUEN.</b><i>Galego</i></li>
+      <li dir="rtl"><b>מי חייב למי.</b><i>עברית</i></li>
+      <li><b>किस पर किसका उधार।</b><i>हिन्दी</i></li>
+      <li><b>TKO KOME DUGUJE.</b><i>Hrvatski</i></li>
+      <li><b>KI KINEK TARTOZIK.</b><i>Magyar</i></li>
+      <li><b>SIAPA BERUTANG KE SIAPA.</b><i>Indonesia</i></li>
+      <li><b>HVER SKULDAR HVERJUM.</b><i>Íslenska</i></li>
+    </ul>
+    <ul aria-hidden="true">
+      <li><b>WHO OWES WHOM.</b><i>English</i></li>
+      <li dir="rtl"><b>من يدين لمن.</b><i>العربية</i></li>
+      <li><b>КОЙ НА КОГО ДЪЛЖИ.</b><i>Български</i></li>
+      <li><b>কে কার কাছে দেনা।</b><i>বাংলা</i></li>
+      <li><b>QUI DEU A QUI.</b><i>Català</i></li>
+      <li><b>KDO KOMU DLUŽÍ.</b><i>Čeština</i></li>
+      <li><b>HVEM SKYLDER HVEM.</b><i>Dansk</i></li>
+      <li><b>WER WEM WAS SCHULDET.</b><i>Deutsch</i></li>
+      <li><b>ΠΟΙΟΣ ΧΡΩΣΤΑΕΙ ΣΕ ΠΟΙΟΝ.</b><i>Ελληνικά</i></li>
+      <li><b>QUIÉN LE DEBE A QUIÉN.</b><i>Español</i></li>
+      <li><b>KES KELLELE VÕLGNEB.</b><i>Eesti</i></li>
+      <li><b>NORK NORI ZOR DION.</b><i>Euskara</i></li>
+      <li dir="rtl"><b>چه کسی به چه کسی بدهکار است.</b><i>فارسی</i></li>
+      <li><b>KUKA ON VELKAA KENELLE.</b><i>Suomi</i></li>
+      <li><b>SINO ANG MAY UTANG KANINO.</b><i>Filipino</i></li>
+      <li><b>QUI DOIT À QUI.</b><i>Français</i></li>
+      <li><b>QUEN LLE DEBE A QUEN.</b><i>Galego</i></li>
+      <li dir="rtl"><b>מי חייב למי.</b><i>עברית</i></li>
+      <li><b>किस पर किसका उधार।</b><i>हिन्दी</i></li>
+      <li><b>TKO KOME DUGUJE.</b><i>Hrvatski</i></li>
+      <li><b>KI KINEK TARTOZIK.</b><i>Magyar</i></li>
+      <li><b>SIAPA BERUTANG KE SIAPA.</b><i>Indonesia</i></li>
+      <li><b>HVER SKULDAR HVERJUM.</b><i>Íslenska</i></li>
+    </ul>
+  </div>
+</div>
+
+<div class="marquee rev" aria-label="Who owes whom, continued">
+  <div class="mtrack">
+    <ul>
+      <li><b>CHI DEVE A CHI.</b><i>Italiano</i></li>
+      <li><b>誰が誰に借りているか。</b><i>日本語</i></li>
+      <li><b>누가 누구에게 빚졌는지.</b><i>한국어</i></li>
+      <li><b>KAS KAM SKOLINGAS.</b><i>Lietuvių</i></li>
+      <li><b>KURŠ KURAM IR PARĀDĀ.</b><i>Latviešu</i></li>
+      <li><b>SIAPA BERHUTANG KEPADA SIAPA.</b><i>Melayu</i></li>
+      <li><b>HVEM SKYLDER HVEM.</b><i>Norsk</i></li>
+      <li><b>WIE IS WIE WAT SCHULDIG.</b><i>Nederlands</i></li>
+      <li><b>KTO KOMU JEST WINIEN.</b><i>Polski</i></li>
+      <li><b>QUEM DEVE A QUEM.</b><i>Português</i></li>
+      <li><b>CINE CUI ÎI DATOREAZĂ.</b><i>Română</i></li>
+      <li><b>КТО КОМУ ДОЛЖЕН.</b><i>Русский</i></li>
+      <li><b>KTO KOMU DLHUJE.</b><i>Slovenčina</i></li>
+      <li><b>KDO KOMU DOLGUJE.</b><i>Slovenščina</i></li>
+      <li><b>КО КОМЕ ДУГУЈЕ.</b><i>Српски</i></li>
+      <li><b>VEM ÄR SKYLDIG VEM.</b><i>Svenska</i></li>
+      <li><b>ใครติดหนี้ใคร</b><i>ไทย</i></li>
+      <li><b>KİM KİME BORÇLU.</b><i>Türkçe</i></li>
+      <li><b>ХТО КОМУ ВИНЕН.</b><i>Українська</i></li>
+      <li><b>AI NỢ AI.</b><i>Tiếng Việt</i></li>
+      <li><b>谁欠谁多少。</b><i>简体中文</i></li>
+      <li><b>誰欠誰多少。</b><i>繁體中文</i></li>
+    </ul>
+    <ul aria-hidden="true">
+      <li><b>CHI DEVE A CHI.</b><i>Italiano</i></li>
+      <li><b>誰が誰に借りているか。</b><i>日本語</i></li>
+      <li><b>누가 누구에게 빚졌는지.</b><i>한국어</i></li>
+      <li><b>KAS KAM SKOLINGAS.</b><i>Lietuvių</i></li>
+      <li><b>KURŠ KURAM IR PARĀDĀ.</b><i>Latviešu</i></li>
+      <li><b>SIAPA BERHUTANG KEPADA SIAPA.</b><i>Melayu</i></li>
+      <li><b>HVEM SKYLDER HVEM.</b><i>Norsk</i></li>
+      <li><b>WIE IS WIE WAT SCHULDIG.</b><i>Nederlands</i></li>
+      <li><b>KTO KOMU JEST WINIEN.</b><i>Polski</i></li>
+      <li><b>QUEM DEVE A QUEM.</b><i>Português</i></li>
+      <li><b>CINE CUI ÎI DATOREAZĂ.</b><i>Română</i></li>
+      <li><b>КТО КОМУ ДОЛЖЕН.</b><i>Русский</i></li>
+      <li><b>KTO KOMU DLHUJE.</b><i>Slovenčina</i></li>
+      <li><b>KDO KOMU DOLGUJE.</b><i>Slovenščina</i></li>
+      <li><b>КО КОМЕ ДУГУЈЕ.</b><i>Српски</i></li>
+      <li><b>VEM ÄR SKYLDIG VEM.</b><i>Svenska</i></li>
+      <li><b>ใครติดหนี้ใคร</b><i>ไทย</i></li>
+      <li><b>KİM KİME BORÇLU.</b><i>Türkçe</i></li>
+      <li><b>ХТО КОМУ ВИНЕН.</b><i>Українська</i></li>
+      <li><b>AI NỢ AI.</b><i>Tiếng Việt</i></li>
+      <li><b>谁欠谁多少。</b><i>简体中文</i></li>
+      <li><b>誰欠誰多少。</b><i>繁體中文</i></li>
+    </ul>
+  </div>
+</div>
+
+<section class="band">
+  <div class="wrap">
+    <div class="grid cols-4">
+      <div class="cell"><div class="n">45</div><div class="k">languages translated in full — every screen, every error message.</div></div>
+      <div class="cell"><div class="n">50</div><div class="k">currencies. Symbol side, separators and decimals follow the currency.</div></div>
+      <div class="cell"><div class="n">0</div><div class="k">ads on any screen where money is entered or confirmed.</div></div>
+      <div class="cell"><div class="n">1</div><div class="k">payment can settle a whole group. Usually it is two.</div></div>
     </div>
   </div>
 </section>
@@ -420,8 +774,8 @@
       <div>
         <div class="card accent">
           <p class="label" style="color:#101010">After · two payments</p>
-          <div class="row" style="background:#fff"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
-          <div class="row" style="background:#fff; margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
+          <div class="row"><span class="who">Mira → Tomáš</span><span class="amt">€15.60</span></div>
+          <div class="row" style="margin-bottom:0"><span class="who">Kenji → Tomáš</span><span class="amt">€44.60</span></div>
           <p style="margin-top:14px; font-size:14px"><strong>2 transfers settle everything.</strong> Aya paid and was owed the same amount, so she is out of it entirely — without anyone having to notice.</p>
         </div>
       </div>
@@ -433,27 +787,27 @@
   <div class="wrap">
     <h2>WHAT IT DOES</h2>
     <div class="grid cols-3">
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Log it in seconds</h3>
         <p class="muted">Amount, who paid, who it concerns. A receipt photo if you want one.</p>
       </div>
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Split any way</h3>
         <p class="muted">Equally, by shares, or exact amounts. The remainder always goes to the payer, so nothing is lost.</p>
       </div>
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Settle in one tap</h3>
         <p class="muted">Splittingly records the payment. It never touches your bank account.</p>
       </div>
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Live groups</h3>
         <p class="muted">Invite by link or six-character code. Everyone sees the same numbers immediately.</p>
       </div>
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Categories and stats</h3>
         <p class="muted">Where the money went, who spent most, and a playful year in review.</p>
       </div>
-      <div class="card flat">
+      <div class="card flat lift">
         <h3>Push when it matters</h3>
         <p class="muted">New expense, settled debt, edited amount. Quiet hours included.</p>
       </div>
@@ -472,42 +826,18 @@
         <p class="muted">Forty-five languages are translated in full — every screen, every error, every line the two characters say. The picker lists fifty; the remaining five run in English until their translation lands.</p>
       </div>
       <div>
-        <!-- Řetězce jsou VYTAŽENÉ ze slovníků v src/translations, ne
-             přepsané ručně — jinak by se web a appka rozešly a nikdo by
-             si toho nevšiml.
-
-             Položky jsou v HTML, ne v poli uvnitř skriptu. Bez JavaScriptu
+        <!-- Položky jsou v HTML, ne v poli uvnitř skriptu. Bez JavaScriptu
              je vidět celý seznam; se skriptem se střídají. Čtečka obrazovky
              i vyhledávač tak dostanou všechno, ne jen první řádek. -->
         <div class="ticker">
-          <p class="label">One screen, forty-five languages</p>
-          <ul class="swap-list" data-rotate="4200">
-            <li class="swap-item first"><span class="swap swap-lang">WHO OWES WHOM.</span><span class="swap-note">English</span></li>
-            <li class="swap-item"><span class="swap swap-lang">WER WEM WAS SCHULDET.</span><span class="swap-note">Deutsch</span></li>
-            <li class="swap-item"><span class="swap swap-lang">QUIÉN LE DEBE A QUIÉN.</span><span class="swap-note">Español</span></li>
-            <li class="swap-item"><span class="swap swap-lang">QUI DOIT À QUI.</span><span class="swap-note">Français</span></li>
-            <li class="swap-item"><span class="swap swap-lang">KTO KOMU JEST WINIEN.</span><span class="swap-note">Polski</span></li>
-            <li class="swap-item"><span class="swap swap-lang">КТО КОМУ ДОЛЖЕН.</span><span class="swap-note">Русский</span></li>
-            <li class="swap-item"><span class="swap swap-lang">誰が誰に借りているか。</span><span class="swap-note">日本語</span></li>
-            <li class="swap-item"><span class="swap swap-lang">누가 누구에게 빚졌는지.</span><span class="swap-note">한국어</span></li>
-            <li class="swap-item"><span class="swap swap-lang">谁欠谁多少。</span><span class="swap-note">简体中文</span></li>
-            <li class="swap-item"><span class="swap swap-lang">ΠΟΙΟΣ ΧΡΩΣΤΑΕΙ ΣΕ ΠΟΙΟΝ.</span><span class="swap-note">Ελληνικά</span></li>
-            <li class="swap-item"><span class="swap swap-lang">ใครติดหนี้ใคร</span><span class="swap-note">ไทย</span></li>
-            <li class="swap-item"><span class="swap swap-lang">किस पर किसका उधार।</span><span class="swap-note">हिन्दी</span></li>
-            <li class="swap-item"><span class="swap swap-lang swap-rtl">من يدين لمن.</span><span class="swap-note">العربية</span></li>
-            <li class="swap-item"><span class="swap swap-lang swap-rtl">מי חייב למי.</span><span class="swap-note">עברית</span></li>
-          </ul>
-        </div>
-
-        <div class="ticker">
           <p class="label">One amount, every currency</p>
           <ul class="swap-list" data-rotate="2600">
-            <li class="swap-item first"><span class="swap swap-amt">€1.234,56</span><span class="swap-note">Euro</span></li>
-            <li class="swap-item"><span class="swap swap-amt">$1,234.56</span><span class="swap-note">US Dollar</span></li>
-            <li class="swap-item"><span class="swap swap-amt">1 234,56 kr</span><span class="swap-note">Swedish Krona</span></li>
-            <li class="swap-item"><span class="swap swap-amt">¥1,235</span><span class="swap-note">Japanese Yen — no decimals</span></li>
-            <li class="swap-item"><span class="swap swap-amt">Rp2.500.000</span><span class="swap-note">Indonesian Rupiah</span></li>
-            <li class="swap-item"><span class="swap swap-amt">฿1,234.56</span><span class="swap-note">Thai Baht</span></li>
+            <li><span class="swap swap-amt">€1.234,56</span><span class="swap-note">Euro</span></li>
+            <li><span class="swap swap-amt">$1,234.56</span><span class="swap-note">US Dollar</span></li>
+            <li><span class="swap swap-amt">1 234,56 kr</span><span class="swap-note">Swedish Krona</span></li>
+            <li><span class="swap swap-amt">¥1,235</span><span class="swap-note">Japanese Yen — no decimals</span></li>
+            <li><span class="swap swap-amt">Rp2.500.000</span><span class="swap-note">Indonesian Rupiah</span></li>
+            <li><span class="swap swap-amt">฿1,234.56</span><span class="swap-note">Thai Baht</span></li>
           </ul>
         </div>
       </div>
@@ -536,10 +866,10 @@
 
 <section id="get">
   <div class="wrap" style="text-align:center">
-    <h2>GET SPLITTINGLY</h2>
+    <h2 style="display:inline-block; text-align:left">GET SPLITTINGLY</h2>
     <p class="muted" style="max-width:520px; margin: 0 auto 24px">Free on iPhone and Android. Your first group takes about twenty seconds.</p>
     <div class="stores stores-center">
-<a class="badge apple soon" id="appleFinal" href="#get" aria-label="Download on the App Store — coming soon">
+      <a class="badge apple soon" id="appleFinal" href="#get" aria-label="Download on the App Store — coming soon">
         <img src="img/appstore-en.svg" alt="Download on the App Store" />
       </a>
       <a class="badge google soon" id="playFinal" href="#get" aria-label="Get it on Google Play — coming soon">
@@ -611,15 +941,78 @@
 </script>
 
 <script>
-/* Vrstvení a střídání. Obojí je POUZE ozdoba: bez tohoto skriptu je
-   stránka celá vidět a všechny položky seznamů jsou vypsané pod sebou.
-   Proto tu není žádná kontrola dostupnosti — když skript nedojde,
-   nic se neztratí.
+/* Ozdoby. VŠECHNY jsou dobrovolné: bez tohoto skriptu je stránka celá
+   vidět, seznamy jsou vypsané pod sebou, běžící pás se dá odrolovat
+   prstem a žádná clona neexistuje. Proto tu nenajdeš jedinou kontrolu
+   dostupnosti — když skript nedojde, neztratí se nic než pohyb.
 
    Kdo má v systému omezený pohyb, dostane hotový stav bez animací.
    Kontroluje se to jednou, ne u každého prvku. */
 (function () {
   var klid = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var html = document.documentElement;
+
+  /* --- pozvánka clonu nepotřebuje ---------------------------------
+     Kdo přišel s kódem, jde vyřídit konkrétní věc. Uvítací animace
+     by mu jen stála v cestě. */
+  var jePozvanka = /[?&]g=/.test(window.location.search);
+
+  /* --- úvodní zaclonění -------------------------------------------
+     Jednou za návštěvu, ne při každém návratu na kartu. `sessionStorage`
+     umí házet výjimku (soukromé okno, zakázaná data webu), takže se na
+     jeho existenci nespoléháme — když selže, clona se prostě ukáže. */
+  function videloUz() {
+    try { return sessionStorage.getItem('sl_intro') === '1'; } catch (e) { return false; }
+  }
+  function zapamatuj() {
+    try { sessionStorage.setItem('sl_intro', '1'); } catch (e) { /* nevadí */ }
+  }
+
+  /* Animace zapínáme jen po POTVRZENÉM snímku.
+     `requestAnimationFrame` se ohlásí těsně před vykreslením — takže
+     když prohlížeč nekreslí (neaktivní karta, předběžné vykreslení,
+     úsporný režim), tenhle callback prostě nepřijde a nic se nikam
+     neschová. Animace s `both` by v takové chvíli uvízla na prvním
+     klíčovém snímku a nadpis i clona by zůstaly prázdné.
+     Callback běží ještě před vykreslením toho samého snímku, takže
+     v normálním prohlížeči není vidět žádné bliknutí. */
+  function ažKresli(co) {
+    if (window.requestAnimationFrame) window.requestAnimationFrame(co);
+  }
+
+  function rozjed() {
+    ažKresli(function () { html.classList.add('go'); });
+  }
+
+  if (!klid && !jePozvanka && !videloUz()) {
+    zapamatuj();
+    html.classList.add('intro-on');
+    ažKresli(function () { html.classList.add('intro-anim'); });
+
+    var odklizeno = false;
+    function odkliď() {
+      if (odklizeno) return;
+      odklizeno = true;
+      html.classList.add('intro-out');
+      html.classList.remove('intro-on', 'intro-anim');
+      rozjed();
+      /* Druhý časovač jen dořeže prvek z toku. I kdyby nedoběhl,
+         `intro-on` je už pryč a clona se nevykresluje. */
+      setTimeout(function () { html.classList.add('intro-gone'); }, 600);
+    }
+
+    /* Časovač, ne konec animace. `setTimeout` běží i tam, kde prohlížeč
+       nevykresluje jediný snímek — `animationend` ne. */
+    setTimeout(odkliď, 1250);
+    /* Pojistka pro případ, že by ten první někdo zdržel. */
+    setTimeout(odkliď, 3000);
+    /* A kdo čekat nechce, clonu shodí čímkoli. */
+    ['click', 'keydown', 'wheel', 'touchstart'].forEach(function (u) {
+      window.addEventListener(u, odkliď, { once: true, passive: true });
+    });
+  } else {
+    rozjed();
+  }
 
   /* --- odhalování při scrollu -------------------------------------
      Prvky ve skrytých sekcích (`.hidden`, třeba pozvánkový panel) se
@@ -632,7 +1025,7 @@
   }
 
   if (!klid && 'IntersectionObserver' in window && kandidati.length) {
-    document.documentElement.classList.add('js-anim');
+    html.classList.add('js-anim');
     for (var a = 0; a < kandidati.length; a++) kandidati[a].classList.add('rise');
 
     var oko = new IntersectionObserver(function (zaznamy) {
@@ -646,19 +1039,34 @@
        protože ten k doběhnutí potřebuje vykreslované snímky a ty nemusí
        přijít. Neviditelná stránka je horší porucha než chybějící animace
        a příčin, proč se nespustí, je víc, než se dá vyjmenovat dopředu. */
-    setTimeout(function () {
-      document.documentElement.classList.add('reveal-all');
-    }, 3000);
+    setTimeout(function () { html.classList.add('reveal-all'); }, 3000);
+
+    /* --- ukazatel scrollu ----------------------------------------
+       Vzniká až tady, takže bez skriptu na stránce vůbec není. */
+    var pruh = document.createElement('div');
+    pruh.className = 'prog';
+    document.body.appendChild(pruh);
+    var ceka = false;
+    window.addEventListener('scroll', function () {
+      if (ceka) return;
+      ceka = true;
+      requestAnimationFrame(function () {
+        ceka = false;
+        var d = document.documentElement;
+        var max = d.scrollHeight - d.clientHeight;
+        pruh.style.width = (max > 0 ? (d.scrollTop / max) * 100 : 0) + '%';
+      });
+    }, { passive: true });
   }
 
-  /* --- sesypání dluhů v hlavičce ---------------------------------- */
+  /* --- sesypání dluhů na telefonu --------------------------------- */
   var slozit = document.getElementById('collapse');
   if (slozit) {
     if (klid) slozit.classList.add('done');
-    else setTimeout(function () { slozit.classList.add('done'); }, 1400);
+    else setTimeout(function () { slozit.classList.add('done'); }, jePozvanka ? 1400 : 2600);
   }
 
-  /* --- střídání jazyků a měn -------------------------------------- */
+  /* --- střídání měn ----------------------------------------------- */
   var seznamy = document.querySelectorAll('.swap-list');
   for (var k = 0; k < seznamy.length; k++) (function (seznam) {
     var polozky = seznam.children;

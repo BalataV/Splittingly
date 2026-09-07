@@ -1,4 +1,9 @@
-# Splittingly — vše veřejné, nic k blokování.
+# Splittingly — nic se neblokuje, a je to schválně.
+#
+# /app/ a /join/ do indexu nepatří, ale řeší to `noindex` v jejich
+# hlavičce, NE zákaz tady. Kdyby je robots.txt zakázal, Google by je
+# nesměl stáhnout — a tím pádem by se o tom `noindex` nikdy nedozvěděl.
+# Odkaz zvenčí by je pak dostal do výsledků i tak, jen bez popisku.
 User-agent: *
 Allow: /
 
