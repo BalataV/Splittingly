@@ -46,7 +46,7 @@ WHAT IT DOES
 BUILT FOR TRAVEL
 Language and currency are separate settings. The app in Italian while your group counts in Thai baht is a normal state, not an edge case. Zero-decimal currencies like yen and won drop the fraction everywhere, including the split maths. Right-to-left languages mirror the whole interface.
 
-45 languages. Any currency.
+45 languages. 50 currencies.
 
 HONEST ABOUT ADS
 Splittingly is free and pays for itself with advertising. So we drew a line: no ads where money is entered or confirmed. New expense, split editor, receipt capture, settling up — all commercially empty. That is not a setting, it is how the app is built.
@@ -90,7 +90,7 @@ WAS DIE APP KANN
 FÜR UNTERWEGS GEBAUT
 Sprache und Währung sind getrennte Einstellungen. Die App auf Italienisch, während die Gruppe in thailändischen Baht rechnet, ist ein normaler Zustand. Währungen ohne Nachkommastellen wie Yen oder Won lassen den Bruchteil überall weg, auch beim Aufteilen. Rechts-nach-links-Sprachen spiegeln die gesamte Oberfläche.
 
-45 Sprachen. Jede Währung.
+45 Sprachen. 50 Währungen.
 
 EHRLICH ZUR WERBUNG
 Splittingly ist kostenlos und finanziert sich über Werbung. Deshalb haben wir eine Grenze gezogen: keine Werbung dort, wo Geld eingegeben oder bestätigt wird. Neue Ausgabe, Aufteilung, Beleg, Ausgleich — alle werbefrei. Das ist keine Einstellung, sondern die Bauweise der App.
@@ -134,7 +134,7 @@ QUÉ HACE
 PENSADO PARA VIAJAR
 El idioma y la moneda son ajustes independientes. La app en italiano mientras el grupo cuenta en bahts tailandeses es un estado normal. Las monedas sin decimales, como el yen o el won, eliminan la fracción en todas partes, también en el reparto. Los idiomas de derecha a izquierda reflejan toda la interfaz.
 
-45 idiomas. Cualquier moneda.
+45 idiomas. 50 monedas.
 
 SINCEROS SOBRE LA PUBLICIDAD
 Splittingly es gratis y se paga con publicidad. Por eso trazamos una línea: nada de anuncios donde se introduce o se confirma dinero. Nuevo gasto, reparto, recibo, saldar cuentas — todos sin publicidad. No es un ajuste, es cómo está construida la app.
@@ -178,7 +178,7 @@ CE QUE FAIT L'APPLI
 CONÇUE POUR VOYAGER
 La langue et la devise sont deux réglages distincts. L'appli en italien pendant que le groupe compte en bahts thaïlandais est un état normal. Les devises sans décimales, comme le yen ou le won, suppriment la fraction partout, y compris dans le calcul du partage. Les langues de droite à gauche inversent toute l'interface.
 
-45 langues. Toutes les devises.
+45 langues. 50 devises.
 
 HONNÊTES SUR LA PUBLICITÉ
 Splittingly est gratuite et se finance par la publicité. Nous avons donc tracé une limite : aucune publicité là où l'on saisit ou confirme de l'argent. Nouvelle dépense, partage, reçu, règlement — tout cela reste vierge de publicité. Ce n'est pas un réglage, c'est la façon dont l'appli est construite.
@@ -222,7 +222,7 @@ COSA FA
 PENSATA PER VIAGGIARE
 Lingua e valuta sono impostazioni separate. L'app in italiano mentre il gruppo conta in baht thailandesi è uno stato normale. Le valute senza decimali, come lo yen o il won, eliminano la frazione ovunque, anche nel calcolo della divisione. Le lingue da destra a sinistra ribaltano tutta l'interfaccia.
 
-45 lingue. Qualsiasi valuta.
+45 lingue. 50 valute.
 
 ONESTI SULLA PUBBLICITÀ
 Splittingly è gratuita e si ripaga con la pubblicità. Per questo abbiamo tracciato una linea: niente pubblicità dove si inserisce o si conferma denaro. Nuova spesa, divisione, scontrino, saldo — tutto commercialmente vuoto. Non è un'impostazione, è il modo in cui l'app è costruita.
@@ -266,7 +266,7 @@ O QUE FAZ
 FEITO PARA VIAJAR
 O idioma e a moeda são definições separadas. A aplicação em italiano enquanto o grupo conta em bahts tailandeses é um estado normal. As moedas sem casas decimais, como o iene ou o won, eliminam a fracção em todo o lado, incluindo no cálculo da divisão. Os idiomas da direita para a esquerda espelham toda a interface.
 
-45 idiomas. Qualquer moeda.
+45 idiomas. 50 moedas.
 
 HONESTOS QUANTO À PUBLICIDADE
 O Splittingly é gratuito e paga-se com publicidade. Por isso traçámos uma linha: nada de anúncios onde se introduz ou confirma dinheiro. Nova despesa, divisão, recibo, acerto de contas — tudo sem publicidade. Não é uma definição, é a forma como a aplicação foi construída.
@@ -310,7 +310,7 @@ WAT DE APP DOET
 GEMAAKT VOOR ONDERWEG
 Taal en valuta zijn losse instellingen. De app in het Italiaans terwijl de groep in Thaise baht rekent, is een normale toestand. Valuta zonder decimalen, zoals de yen of de won, laten het deel achter de komma overal weg, ook in de verdeelsom. Talen van rechts naar links spiegelen de hele interface.
 
-45 talen. Elke valuta.
+45 talen. 50 valuta's.
 
 EERLIJK OVER ADVERTENTIES
 Splittingly is gratis en betaalt zichzelf met advertenties. Daarom hebben we een grens getrokken: geen advertenties waar geld wordt ingevoerd of bevestigd. Nieuwe uitgave, verdeling, bon, afrekenen — allemaal reclamevrij. Dat is geen instelling, zo is de app gebouwd.
@@ -354,7 +354,7 @@ CO POTRAFI
 ZROBIONE W DROGĘ
 Język i waluta to osobne ustawienia. Aplikacja po włosku, podczas gdy grupa liczy w bahtach tajskich, to normalny stan. Waluty bez części dziesiętnych, jak jen czy won, pomijają ułamek wszędzie, także w matematyce podziału. Języki pisane od prawej do lewej odbijają cały interfejs.
 
-45 języków. Dowolna waluta.
+45 języków. 50 walut.
 
 UCZCIWIE O REKLAMACH
 Splittingly jest darmowe i utrzymuje się z reklam. Dlatego postawiliśmy granicę: żadnych reklam tam, gdzie wpisuje się albo zatwierdza pieniądze. Nowy wydatek, podział, paragon, rozliczenie — wszędzie tam jest handlowo pusto. To nie jest ustawienie, tylko sposób, w jaki aplikacja została zbudowana.
@@ -398,7 +398,7 @@ NELER YAPAR
 YOLCULUK İÇİN YAPILDI
 Dil ve para birimi ayrı ayarlardır. Uygulama İtalyanca iken grubun Tayland bahtıyla hesaplaması normal bir durumdur. Yen veya won gibi kuruşsuz para birimleri kesri her yerde atar, bölüşme hesabında da. Sağdan sola yazılan diller arayüzün tamamını aynalar.
 
-45 dil. Her para birimi.
+45 dil. 50 para birimi.
 
 REKLAMLAR KONUSUNDA DÜRÜST
 Splittingly ücretsizdir ve kendini reklamla finanse eder. Bu yüzden bir sınır çizdik: paranın girildiği veya onaylandığı hiçbir yerde reklam yok. Yeni masraf, bölüşme, fiş, hesaplaşma — hepsi ticari olarak boş. Bu bir ayar değil, uygulamanın kuruluş biçimi.
