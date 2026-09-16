@@ -1,11 +1,17 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.balata.splittingly",
       "sha256_cert_fingerprints": [
-        "96:0F:85:FF:40:29:F2:F3:FA:5D:C4:61:72:B6:6B:3B:0F:58:F4:1E:08:51:85:84:17:9E:53:2A:98:1C:87:5C"
+        "96:0F:85:FF:40:29:F2:F3:FA:5D:C4:61:72:B6:6B:3B:0F:58:F4:1E:08:51:85:84:17:9E:53:2A:98:1C:87:5C",
+        "7B:DE:85:4A:96:2D:CB:59:E9:5D:3D:FA:AC:F5:8E:4F:2A:85:45:43:F7:95:0F:81:EA:77:43:F8:64:16:D9:7B",
+        "41:EE:13:57:E6:CB:7B:6D:32:73:56:2E:EB:8B:2D:79:98:57:C0:48:39:5F:FD:69:57:B1:05:70:51:1C:B1:C8",
+        "68:A4:6C:82:48:54:8C:A9:73:62:10:C9:F4:DE:C4:46:9A:24:60:18:74:D7:BA:F5:9A:B3:92:48:A0:D4:30:E7"
       ]
     }
   }
