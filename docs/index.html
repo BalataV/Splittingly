@@ -904,10 +904,10 @@
     document.getElementById('year').textContent = new Date().getFullYear();
 
     var APPLE_URL = '';   // doplň po vydání v App Store
-    var PLAY_URL  = '';   // doplň po vydání v Google Play
-    // Dokud jsou adresy prázdné, odznaky jsou ztlumené a nikam nevedou.
-    // Po vydání stačí vyplnit APPLE_URL / PLAY_URL nahoře a ožijí samy.
-    function wire(ids, url) {
+    var PLAY_URL  = 'https://play.google.com/store/apps/details?id=com.balata.splittingly';
+    // Dokud je adresa prázdná, odznak je ztlumený a nikam nevede.
+    // Po vydání na druhém obchodě stačí vyplnit APPLE_URL nahoře.
+    function wire(ids, url, label) {
       ids.forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -916,15 +916,23 @@
           el.target = '_blank';
           el.rel = 'noopener';
           el.classList.remove('soon');
+          el.setAttribute('aria-label', label);
         } else {
           el.href = '#get';
         }
       });
     }
-    wire(['appleHero','appleFinal','appleInvite'], APPLE_URL);
-    wire(['playHero','playFinal','playInvite'], PLAY_URL);
-    if (APPLE_URL || PLAY_URL) {
+    wire(['appleHero','appleFinal','appleInvite'], APPLE_URL, 'Download on the App Store');
+    wire(['playHero','playFinal','playInvite'], PLAY_URL, 'Get it on Google Play');
+
+    // Poznámka pod odznaky se řídí tím, kolik obchodů ještě chybí — ne
+    // paušálním „coming soon to both", jakmile je živý jen jeden z nich.
+    if (APPLE_URL && PLAY_URL) {
       [].forEach.call(document.querySelectorAll('.soon-note'), function (n) { n.remove(); });
+    } else if (PLAY_URL && !APPLE_URL) {
+      [].forEach.call(document.querySelectorAll('.soon-note'), function (n) { n.textContent = 'Coming soon to the App Store.'; });
+    } else if (APPLE_URL && !PLAY_URL) {
+      [].forEach.call(document.querySelectorAll('.soon-note'), function (n) { n.textContent = 'Coming soon to Google Play.'; });
     }
 
     var code = (new URLSearchParams(window.location.search).get('g') || '')
