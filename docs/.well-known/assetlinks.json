@@ -5,8 +5,7 @@
       "namespace": "android_app",
       "package_name": "com.balata.splittingly",
       "sha256_cert_fingerprints": [
-        "PASTE_UPLOAD_KEY_SHA256_HERE",
-        "PASTE_PLAY_APP_SIGNING_SHA256_HERE"
+        "96:0F:85:FF:40:29:F2:F3:FA:5D:C4:61:72:B6:6B:3B:0F:58:F4:1E:08:51:85:84:17:9E:53:2A:98:1C:87:5C"
       ]
     }
   }
